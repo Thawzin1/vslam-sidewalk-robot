@@ -1,0 +1,20 @@
+{
+ "source": "wheel.tum = the robot's own /odometry/filtered (wheels + gyroscope), recorded ON THE ROBOT in its LiDAR bag (lidar_ref_f3dof/, pulled from the robot); unaffected by the Jetson's network loss",
+ "why": "the Jetson's copy of this stream (/robot/ekf_odom in fusion.bag, over the WiFi bridge) stops at 21:15:59, the WiFi roam, while the robot was still ~17 m from its start; numbers.json's robot row is therefore NOT end-to-start for drive 9",
+ "same_window_as_fusion_bag_start": {
+  "from_hamilton": "20:52:25",
+  "to_hamilton": "21:15:59",
+  "end_to_start_m": 17.229,
+  "heading_deg": -2.25,
+  "path_m_every_message": 231.2,
+  "path_m_2hz": 229.5
+ },
+ "whole_drive_to_parked": {
+  "from_hamilton": "20:52:25",
+  "to_hamilton": "21:24:09",
+  "end_to_start_m": 0.694,
+  "heading_deg": -3.6,
+  "path_m_every_message": 256.9,
+  "path_m_2hz": 255.1
+ }
+}

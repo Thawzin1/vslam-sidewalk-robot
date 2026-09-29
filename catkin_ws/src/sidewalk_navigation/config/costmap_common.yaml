@@ -1,0 +1,67 @@
+# costmap_common.yaml - loaded into BOTH costmaps (global_costmap and local_costmap), costmap_2d 1.17.3.
+# Layered costmaps: Lu, Hershberger, Smart 2014 ("Layered costmaps for context-sensitive navigation", IROS).
+# *Plain terms: a costmap is a grid laid over the floor; each 5 cm cell holds 0 (free) to 254 (wall). Layers
+#  stack: the saved walls, what the camera sees now, and a "keep-away" halo around both.*
+
+# ROBOT OUTLINE - Clearpath Husky A200 manufacturer size 0.99 x 0.67 m (sidewalk_bringup/config/robot_frames.yaml,
+# measured: false; Clearpath's husky_navigation uses 1.00 x 0.66). base_link is the centre of the body.
+footprint: [[-0.495, -0.335], [-0.495, 0.335], [0.495, 0.335], [0.495, -0.335]]
+footprint_padding: 0.05      # m added all round (0.10 tried 27 Sept, sim run 14: "no valid control" at the east junction - the 10 cm margin is enforced in nav_cmd_sender.py instead, where turns are judged apart from straight driving): the camera mount and sensor arch are not in the manufacturer
+                             # outline and have never been measured. -> 1.09 x 0.77 m effective.
+robot_base_frame: base_link
+transform_tolerance: 0.5     # s: how old a position may be. RTAB-Map's map -> odom arrives in steps.
+resolution: 0.05             # m, the same 5 cm as drive 10's saved grid (Grid/CellSize 0.05)
+
+# THE SAVED WALLS - drive 10's own 2D grid (maps/d10_nav.*, served by map_server on /nav/map).
+static_layer:
+  map_topic: /nav/map
+  first_map_only: true       # the saved map never changes during a run
+  subscribe_to_updates: false
+  track_unknown_space: true  # grey (never seen) stays "unknown", and the planner will not route through it
+  use_maximum: false
+  lethal_cost_threshold: 100
+  unknown_cost_value: -1
+  trinary_costmap: true
+
+# WHAT THE CAMERA SEES NOW - the ZED X depth picture turned into points (rtabmap_util/point_cloud_xyz), split
+# into floor and not-floor by rtabmap_util/obstacles_detection (the same normals test RTAB-Map uses for its
+# own map: Grid/NormalsSegmentation). The UNMASKED depth is used: people must be obstacles here even though
+# the SLAM input blanks them (ENGINEERING_NOTES.md section 5: "mask the SLAM input only").
+obstacle_layer:
+  enabled: true
+  track_unknown_space: false
+  combination_method: 1      # take the maximum of saved-map cost and camera cost; the camera never erases a
+                             # saved wall (the static layer sits below, and "maximum" keeps it)
+  footprint_clearing_enabled: true    # package default, kept: camera marks under the robot's own outline are
+                             # wiped. Turning it off was tried (sim run 7) and the planner then found the robot's own
+                             # cell blocked ("NO PATH", every goal aborted) - so a wall already inside the ZED's 1.0 m
+                             # blind zone is NOT remembered once the robot overlaps it; the route (saved walls, 0.65 m
+                             # keep-away), the 0.30 rad/s turns and the 1.0 m leash are what keep it off walls.
+  observation_sources: obstacles floor
+  obstacles:                 # not-floor points: MARK the cell occupied, and clear the cells in front of them
+    topic: /nav/obstacles_cloud
+    data_type: PointCloud2
+    sensor_frame: ""         # take the frame from the message
+    marking: true
+    clearing: true
+    min_obstacle_height: -0.10   # m in the costmap frame. base_link is 0.132 m above the floor, so the
+                                 # floor is at z = -0.13: points below 3 cm above the floor are ignored
+    max_obstacle_height: 1.20    # m: above the robot's tallest part (sensor arch); a table edge at 1 m counts
+    obstacle_range: 2.5      # m: 27 Sept s2_nav_01: 4.0 m aborted G1 2.7 m short of the east junction with nothing there - plain end walls read too close beyond ~3 m (d10 corner diagnosis); mark only up to 2.5 m
+    raytrace_range: 5.0      # m: clear free space up to 5 m
+    expected_update_rate: 1.0    # s: warn if the cloud is older (the command sender STOPS the robot at 1.0 s)
+    inf_is_valid: false
+    observation_persistence: 0.0
+  floor:                     # floor points: never mark, only CLEAR the cells between the camera and the floor
+    topic: /nav/ground_cloud # (so a person who walked away is erased once the floor behind them is seen)
+    data_type: PointCloud2
+    sensor_frame: ""
+    marking: false
+    clearing: true
+    min_obstacle_height: -0.50
+    max_obstacle_height: 1.20
+    obstacle_range: 2.5
+    raytrace_range: 5.0
+    expected_update_rate: 1.0
+    inf_is_valid: false
+    observation_persistence: 0.0

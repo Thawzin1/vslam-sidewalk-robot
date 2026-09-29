@@ -1,0 +1,863 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VSLAM Sidewalk Robot: Information Worksheet Flow</title>
+<meta name="description" content="Handover worksheet for the student continuing the VSLAM sidewalk-robot project (Mitacs 50124): what was achieved, where everything lives, how to power up, run, evaluate and what went wrong.">
+<style>
+:root{
+  --bg:#fbfaf7; --fg:#1f2328; --muted:#5b6470; --line:#d9d4c8; --card:#ffffff; --code:#f1efe8;
+  --accent:#2a6f97; --accent2:#b8692a; --ok:#2f7d4f; --warn:#a35b00; --bad:#a8323e;
+  --toc:#f3f0e8; --shadow:0 1px 2px rgba(0,0,0,.06);
+  --w:900px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15181d; --fg:#e6e3dc; --muted:#a4a9b3; --line:#343a44; --card:#1c2027; --code:#232830;
+    --accent:#7fb7dc; --accent2:#e0a06a; --ok:#7dc59a; --warn:#e0b060; --bad:#e58a93; --toc:#1a1e25;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15181d; --fg:#e6e3dc; --muted:#a4a9b3; --line:#343a44; --card:#1c2027; --code:#232830;
+  --accent:#7fb7dc; --accent2:#e0a06a; --ok:#7dc59a; --warn:#e0b060; --bad:#e58a93; --toc:#1a1e25;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+a{color:var(--accent)}
+.wrap{display:grid;grid-template-columns:260px minmax(0,1fr);gap:0;max-width:1240px;margin:0 auto}
+nav.toc{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;background:var(--toc);border-right:1px solid var(--line);padding:18px 14px;font-size:14px}
+nav.toc h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+nav.toc ol{list-style:none;margin:0;padding:0}
+nav.toc li{margin:0 0 6px}
+nav.toc a{text-decoration:none;color:var(--fg)}
+nav.toc a:hover{color:var(--accent)}
+nav.toc .n{display:inline-block;width:1.7em;color:var(--muted)}
+nav.toc button{margin-top:14px;font:inherit;font-size:13px;padding:4px 10px;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:6px;cursor:pointer}
+main{padding:24px 16px 80px;max-width:var(--w);width:100%;min-width:0}
+header.top h1{font-size:30px;line-height:1.15;margin:0 0 6px}
+header.top .sub{color:var(--muted);font-size:15px}
+h2{font-size:24px;margin:56px 0 10px;padding-top:12px;border-top:3px solid var(--accent);scroll-margin-top:12px}
+h2 .n{color:var(--accent);margin-right:8px}
+h3{font-size:18px;margin:30px 0 8px;scroll-margin-top:12px}
+h4{font-size:16px;margin:22px 0 6px}
+p{margin:8px 0}
+.why{background:var(--card);border-left:4px solid var(--accent2);padding:10px 14px;margin:10px 0 18px;box-shadow:var(--shadow);border-radius:0 8px 8px 0}
+.why b{color:var(--accent2)}
+.plain{color:var(--muted);font-style:italic}
+.src{font-size:12px;color:var(--muted)}
+.src::before{content:"source: "}
+.note{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:12px 0}
+.warn{border-color:var(--warn)}
+.bad{border-color:var(--bad)}
+.tw{overflow-x:auto;margin:12px 0;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:14px;background:var(--card)}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:var(--code);font-weight:600}
+td.k{white-space:nowrap}
+code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px}
+code{background:var(--code);padding:1px 5px;border-radius:4px}
+pre{background:var(--code);padding:10px 12px;border-radius:8px;overflow-x:auto;border:1px solid var(--line)}
+pre code{background:none;padding:0}
+.ok{color:var(--ok);font-weight:600}.no{color:var(--bad);font-weight:600}.mid{color:var(--warn);font-weight:600}
+figure{margin:18px 0;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}
+figure svg{width:100%;height:auto;display:block}
+figcaption{font-size:13.5px;color:var(--muted);margin-top:8px}
+dl.gl dt{font-weight:600;margin-top:10px}
+dl.gl dd{margin:2px 0 0 0;color:var(--fg)}
+ul,ol{padding-left:22px}
+li{margin:3px 0}
+.chk li{list-style:"\2610  "}
+.small{font-size:13.5px}
+@media (max-width:860px){
+  .wrap{display:block}
+  nav.toc{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}
+  nav.toc ol{columns:2;column-gap:18px}
+  main{padding:16px 16px 60px}
+  header.top h1{font-size:24px}
+  h2{font-size:21px;margin-top:40px}
+}
+@media print{
+  nav.toc{display:none}
+  .wrap{display:block}
+  main{max-width:none;padding:0}
+  h2{page-break-before:always;break-before:page;border-top:0}
+  h2:first-of-type{page-break-before:avoid}
+  figure,table,pre{page-break-inside:avoid;break-inside:avoid}
+  a{color:inherit;text-decoration:none}
+  body{font-size:12.5px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc" aria-label="Table of contents">
+<h2>Contents</h2>
+<ol>
+<li><a href="#s0"><span class="n">0</span>How to use this page</a></li>
+<li><a href="#s1"><span class="n">1</span>Start here</a></li>
+<li><a href="#s2"><span class="n">2</span>Where everything lives</a></li>
+<li><a href="#s3"><span class="n">3</span>Hardware and power-on order</a></li>
+<li><a href="#s4"><span class="n">4</span>Software setup</a></li>
+<li><a href="#s5"><span class="n">5</span>Workflows (the run/ scripts)</a></li>
+<li><a href="#s6"><span class="n">6</span>The recordings</a></li>
+<li><a href="#s7"><span class="n">7</span>The evaluation method</a></li>
+<li><a href="#s8"><span class="n">8</span>What went wrong, what to do instead</a></li>
+<li><a href="#s9"><span class="n">9</span>Suggested next experiments</a></li>
+<li><a href="#s10"><span class="n">10</span>Glossary</a></li>
+<li><a href="#s11"><span class="n">11</span>Sources</a></li>
+</ol>
+<button id="themeBtn" type="button" onclick="toggleTheme()">Light / dark</button>
+<p class="small" style="color:var(--muted);margin-top:14px">Works offline. Print with your browser (each section starts a new page).</p>
+</nav>
+
+<main>
+<header class="top">
+<h1>VSLAM Sidewalk Robot: Information Worksheet Flow</h1>
+<div class="sub">Handover for the student who continues Mitacs Globalink 2026 project 50124, "VSLAM-Based Navigation for Autonomous Sidewalk Robots".
+Thaw Zin (Suranaree University of Technology) with Prof. Moein Mehrtash, McMaster University. Written 29 September 2026, at the end of the project.</div>
+</header>
+
+<h2 id="s0"><span class="n">0</span>How to use this page</h2>
+<div class="why"><b>Why you need this.</b> The project ran for twelve weeks and left about 400 files of notes. You do not have time to read them. This one page tells you what was achieved, where every file and recording is, how to switch the robot on without breaking anything, how to run each workflow, and which mistakes have already been made so you do not repeat them.</div>
+<p>Read section 1 first (10 minutes). Then, depending on what you want to do:</p>
+<ul>
+<li><b>Re-analyse existing data without the robot</b>: sections 2, 6 and 7, then the <code>replay.sh</code> and <code>evaluate.sh</code> parts of section 5.</li>
+<li><b>Drive the robot</b>: sections 3 and 4, then <code>mapping.sh</code> in section 5, and section 8 before your first drive.</li>
+
+</ul>
+<p>Every technical word is explained in brackets the first time it appears and again in the glossary (section 10). Every number names the file it came from in small grey text. Wherever this page would need an address, a login or a key, it says <b>ask Prof. Mehrtash or the lab</b>: none of that is written here on purpose.</p>
+<p class="plain">Plain terms: this is the map of the project, not the project itself. The project itself is the GitHub repository and the Autonomous Service Robot Teams folder named in section 2.</p>
+
+<!-- ============================================================ 1 -->
+<h2 id="s1"><span class="n">1</span>Start here</h2>
+<div class="why"><b>Why you need this.</b> Before touching anything you need to know what the robot can already do, how well, and where the evidence is. Otherwise you will re-measure things that are measured and trust things that were never proven.</div>
+
+<h3>1.1 What the project is</h3>
+<p>The question was: <i>can a small delivery robot map a building and find its way around it using a stereo camera (a camera with two lenses 12 cm apart that measures depth the way two eyes do), helped by its own wheels, rather than expensive laser scanners or GPS?</i></p>
+<p>The hardware is a Clearpath Husky A200 robot, a Stereolabs ZED X stereo camera on a 3D-printed mount, and an NVIDIA Jetson AGX Orin computer (a small computer with a graphics processor) that runs the camera and the mapping. The mapping program is RTAB-Map 0.21.13 (an open-source SLAM system; SLAM = simultaneous localisation and mapping, building a map while working out where you are on it), running on ROS 1 Noetic (the Robot Operating System, the message-passing framework robots use). A Kalman filter (a standard way of combining several noisy sensors into one best estimate) blends the camera's motion estimate with the robot's wheel odometry (distance counted from wheel turns) and gyroscope (a sensor that measures how fast the robot turns). Two LiDARs (laser scanners) on the robot's mast, processed with a colleague's <code>self_navigation</code> package used unchanged, give an <b>independent second opinion</b> on where the robot went. It is never called ground truth (section 7).</p>
+<p class="src">docs/ENGINEERING_NOTES.md section 1; docs/HARDWARE.md.</p>
+
+<h3>1.2 What was achieved: the results table</h3>
+<p>All walkway drives started and ended on the same tape mark on the building's second floor. Two kinds of start-to-end gap are always given (section 7 explains why): <b>tracking alone</b> = how far the robot's own step-by-step position estimate had drifted by the end, never corrected; <b>corrected</b> = where the map put the end after RTAB-Map's loop closures (moments when it recognised a place it had already mapped and pulled the map straight), with the number of closures beside it. "LiDAR agreement" is the median and 95th percentile (the value 95 % of points stay under) distance between the camera's corrected path and the independent LiDAR estimate, lined up by rotation and shift only; it is scored only when the LiDAR estimate passed its own check.</p>
+<div class="tw">
+<table>
+<tr><th>Drive</th><th>Date, time (Hamilton)</th><th>What was driven / changed</th><th>Path (map nodes, tracking alone)</th><th>Gap: tracking alone</th><th>Gap: corrected (closures; joining the start)</th><th>LiDAR agreement median / 95th</th></tr>
+<tr><td class="k">1</td><td>24 Sep, 01:09-03:30</td><td>camera only; corridors</td><td>240.2 m, 1001 s</td><td>39.65 m</td><td>0.056 m (3)</td><td>not scored: LiDAR estimate failed its check (3.84 m, 0 closures)</td></tr>
+<tr><td class="k">2</td><td>24 Sep, 03:54-04:17</td><td>camera only, slower, same-direction re-passes</td><td>277.5 m, 1343 s</td><td>19.37 m</td><td>0.081 m (103)</td><td>not scored (20.57 m, 0)</td></tr>
+<tr><td class="k">3</td><td>25 Sep, 04:30-04:58</td><td>first drive with the Kalman filter</td><td>140.2 m, 1686 s</td><td>5.60 m</td><td>0.055 m (320; 2)</td><td>0.39 / 1.00 m</td></tr>
+<tr><td class="k">4</td><td>26 Sep, 00:44-00:53</td><td>reference route; 16-bit depth, link-drop guard, camera gyroscope</td><td>87.2 m, 619 s</td><td>0.057 m</td><td>0.048 m (181; 3)</td><td>0.26 / 0.49 m</td></tr>
+<tr><td class="k">5</td><td>26 Sep, 02:14-02:35</td><td>longer loop; camera program crashed at 11.2 min</td><td>61.0 m to the crash</td><td>7.91 m at the crash</td><td>none: map stopped at the crash</td><td>0.24 / 0.59 m (to the crash)</td></tr>
+<tr><td class="k">6</td><td>26 Sep, 04:20-04:45</td><td>new walkway; camera guard restarted the camera in 12.7 s</td><td>238.1 m, 1512 s</td><td>1.85 m</td><td>0.74 m (135; 0 linked to before the crash)</td><td>0.65 / 1.01 m (flattened LiDAR)</td></tr>
+<tr><td class="k">7</td><td>26 Sep, 13:28-13:40</td><td>older camera tracker GEN_1</td><td>107.1 m, 824 s</td><td>0.995 m</td><td>0.170 m (30; 0)</td><td>not scored (LiDAR 0 closures)</td></tr>
+<tr><td class="k">8</td><td>26 Sep, 15:48-16:02</td><td>drive 4's route repeated</td><td>86.5 m, 850 s</td><td>0.601 m</td><td>0.102 m (145; 0)</td><td>0.26 / 0.51 m (flattened LiDAR)</td></tr>
+<tr><td class="k">9</td><td>26 Sep, 20:52-21:21</td><td>longer route, fresh Jetson restart; map not closed (WiFi lost)</td><td>251.9 m, 1734 s</td><td>0.827 m</td><td>0.014 m* (305; 0)</td><td>0.42 / 0.65 m</td></tr>
+<tr><td class="k">10</td><td>27 Sep, 02:02-02:31</td><td><b>the whole second floor</b></td><td>257.9 m, 1744 s</td><td>2.110 m</td><td><b>0.033 m</b> (199; 3)</td><td><b>0.69 / 1.15 m</b></td></tr>
+</table>
+</div>
+<p class="small">* Drive 9's map was not closed properly, so its corrected positions were recomputed from the map's own links with <code>optimize_graph_se2.py</code> (validated to 0.35 mm against RTAB-Map's own result on an August run). Drives 6 and 8: agreement from the flattened LiDAR replay's own scoring. "Flattened" = the LiDAR map replayed with <code>Reg/Force3DoF=true</code>, which keeps it on the floor plane (the robot's motion sensor starts tilted and bent the LiDAR map otherwise).</p>
+<p class="src">the per-drive <code>results/series2_static/&lt;run&gt;/RESULTS.md</code> files.</p>
+
+<div class="tw">
+<table>
+<tr><th>Other scored sessions</th><th>Result</th><th>Where scored</th></tr>
+<tr><td>Lab run 6 (26 Aug, the best August loop)</td><td>96.7 m in 33.2 min; tracking alone 1.82 m, corrected 0.22 m; 422 closures, none rejected</td><td>docs/SOLVED.md; docs/ENGINEERING_NOTES.md section 2.13</td></tr>
+<tr><td>Lab runs 3 and 4 (25 Aug)</td><td>run 3: corrected 0.77 m; run 4: corrected <b>11.47 m</b>, six times worse than tracking alone (1.83 m), because of false closures between identical signs</td><td>docs/SOLVED.md and docs/DO_NOT_REPEAT.md (the signboard entries)</td></tr>
+<tr><td>Taped 15.00 m test s2_scale_01 (26 Sep)</td><td>camera's own tracking 14.90 m (-0.7 %); wheels 15.94 m (+6.2 %); the camera is the honest ruler</td><td>s2_scale_01/RESULTS.md</td></tr>
+<tr><td>Localisation on the whole-floor map, s2_loc_04 (27 Sep)</td><td>W1 <span class="no">FAIL</span> (first fix 212 s, 6.26 m), W2 <span class="ok">PASS</span> (3 of 3 stops), W3 <span class="ok">PASS</span> (0 of 575 fixes wrong), W4 <span class="no">FAIL</span> (median 0.636 m vs 0.50 m line; the cause is the map's size, not the localiser)</td><td>s2_loc_04/RESULTS.md</td></tr>
+<tr><td>SLAM session s2_slam_01 (27 Sep)</td><td>joined drive 10's map in 0.4 s; 156 m; 238 links, 0 wrong; 73 m&sup2; new floor; corrected gap 0.044 m (tracking alone 0.221 m); S1, S2, S3, S5 PASS, S4 not scorable; people blanking replay: old map pushed 0.092 m with blanking vs 0.356 m without (N = 1)</td><td>s2_slam_01/RESULTS.md</td></tr>
+<tr><td>Navigation s2_nav_01 / 02 / 03 (27 Sep)</td><td>route A 2 of 2 goals (0.21, 0.20 m); route B stopped after a wall-post touch; then 4 of 5 goals with no contact; final round trip 4 of 5 on its own (ends 0.16-0.23 m from goals), 1.50 m driven straight through the doorway by command, home 0.19 m from the start mark</td><td>s2_nav_03/RESULTS.md</td></tr>
+</table>
+</div>
+<p class="src">the RESULTS.md files named in the last column.</p>
+
+<h3>1.3 What is open</h3>
+<div class="tw">
+<table>
+<tr><th>Open point</th><th>What is known</th><th>What would settle it</th></tr>
+<tr><td><b>Map size</b>: camera map and LiDAR estimate differ by about 7 %, the LiDAR's the larger (best-fit scale 1.072 on drive 10)</td><td>The LiDAR estimate takes its size from the wheels, which read 6.2 % long on a taped 15 m line while the camera read 0.7 % short, so the wheel-based reference is the likely cause. The NEURAL depth mode also reads 2.9 % short at 5 m, which would make the camera map smaller too: the same direction, so it may add to the difference. Allowing for the one scale factor, drive 10 agrees with the LiDAR to 0.14 m median.</td><td>A taped long leg on the second floor, the LiDAR-to-camera offset measured, and a drive in the QUALITY depth mode (section 9, experiments A and B).</td></tr>
+<tr><td><b>N = 1 per test</b></td><td>Every drive, session and route was run once. Only drive 8 repeated drive 4 (same route: 0.10 vs 0.05 m home, 0.26 m from the LiDAR both times).</td><td>Five repeats of the whole-floor drive, the localisation session and the navigation route (section 9, C).</td></tr>
+<tr><td><b>LiDAR-to-camera mounting offset never measured</b></td><td>Every agreement figure carries this unknown; the LiDAR's own range noise is 15-30 mm.</td><td>A tape/CAD measurement of the two sensors' positions on the robot, written into the comparison script.</td></tr>
+<tr><td><b>Tight doorways</b></td><td>The planner gave up 0.10 m from a door edge with 11.5 cm to spare each side of the 0.67 m robot; s2_nav_02 got through, s2_nav_03 did not.</td><td>A centring step before the doorway, or a slow straight-only mode through it.</td></tr>
+<tr><td><b>Second SLAM system not compared</b></td><td>ORB-SLAM3 is built on the Jetson but was never run on the recordings.</td><td>Run it on the same .svo2 recordings and score with the same evaluation (section 9, D).</td></tr>
+<tr><td><b>The real sidewalk not tested</b></td><td>All testing was indoors in one building: no sunlight, weather, kerbs or traffic.</td><td>An outdoor loop with the same procedure, once the size question is settled.</td></tr>
+<tr><td>Camera program crashes and freezes</td><td>The guard recovers a crash in about 13 s and a freeze in 30-45 s; freezes grow with Jetson uptime (0 in 3 min after a restart, 16 in 7 min after 20 h); the mechanism is unknown.</td><td>Restart the Jetson before every drive (procedure, not a fix).</td></tr>
+</table>
+</div>
+<p class="src">s2_static_10/RESULTS.md section 7; s2_scale_01/RESULTS.md; s2_nav_03/RESULTS.md; docs/SOLVED.md "Camera freezes ... grow with Jetson uptime".</p>
+
+<h3>1.4 What would strengthen the results, and which workflow answers each</h3>
+<div class="tw">
+<table>
+<tr><th>Likely request</th><th>Why they will ask</th><th>Which workflow answers it</th><th>Effort</th></tr>
+<tr><td>Repeat runs with a spread (median and range over at least 5)</td><td>Rule 2 of the project's own rulebook (docs/ENGINEERING_NOTES.md section 4): never report N = 1. The results can currently only say "indication".</td><td><code>run/mapping.sh</code> x5 on drive 4's route or the whole floor, then <code>run/lidar_reference.sh</code> and <code>run/evaluate.sh</code> for each (section 5).</td><td>1 lab night per 5 short drives; 2 nights for 5 whole-floor drives.</td></tr>
+<tr><td>A second method on the same data</td><td>A camera pipeline compared only with itself is not a comparison.</td><td><code>run/replay.sh</code> the existing .svo2 recordings through ORB-SLAM3 (already built), score with <code>run/evaluate.sh</code>.</td><td>No robot time; a few days of setup and replay.</td></tr>
+<tr><td>A surveyed or motion-capture reference</td><td>"Agreement with a LiDAR estimate" is honest but weak; the LiDAR failed its own check on 4 sessions.</td><td>A taped long leg plus the mount-offset measurement (section 9, A) is the cheap version; a total-station survey of corridor corners is the strong version, scored with the same <code>evaluate.sh</code> path.</td><td>Half a day with a tape; a day with a total station.</td></tr>
+<tr><td>Ablations (which part helped)</td><td>The improvement from drive 1 (39.6 m) to drive 10 (2.11 m tracking alone) mixes five changes.</td><td><code>run/replay.sh</code> drive 2's recording with and without the Kalman filter (this was done once offline: 0.66 m vs 19 m); repeat for depth limit, 16-bit depth, people mask.</td><td>No robot time.</td></tr>
+</table>
+</div>
+<p class="src">docs/ENGINEERING_NOTES.md section 4 rules 1-3.</p>
+
+<!-- ============================================================ 2 -->
+<h2 id="s2"><span class="n">2</span>Where everything lives</h2>
+<div class="why"><b>Why you need this.</b> The code, the recordings and the running software live in three different places: the GitHub repository, the Teams folder and the lab machines. Knowing which holds what saves you from looking for a 9 GB recording in a place that only holds its results.</div>
+
+<h3>2.1 The public GitHub repository</h3>
+<p><code>github.com/Thawzin1/vslam-sidewalk-robot</code> (MIT licence). This is the code and the small results; it holds no raw recording. Layout:</p>
+<div class="tw">
+<table>
+<tr><th>Path</th><th>What it holds</th></tr>
+<tr><td><code>run/</code></td><td>the one-command entry points, one per workflow (section 5): <code>mapping.sh</code>, <code>localise.sh</code>, <code>slam_session.sh</code>, <code>navigate.sh</code>, <code>replay.sh</code>, <code>lidar_reference.sh</code>, <code>evaluate.sh</code>, <code>simulate.sh</code>, <code>robot_side.sh</code>, <code>park.sh</code></td></tr>
+<tr><td><code>catkin_ws/src/sidewalk_slam</code></td><td>the RTAB-Map launch files and settings (<code>rtabmap_zedx.yaml</code>, <code>ekf_fused.yaml</code>), the live map page (<code>live_map_server.py</code>), map export tools</td></tr>
+<tr><td><code>catkin_ws/src/sidewalk_perception</code></td><td>the ZED X camera launch and settings (<code>zedx_front.launch</code>, <code>zedx_front.yaml</code>), the people-mask node</td></tr>
+<tr><td><code>catkin_ws/src/sidewalk_bringup</code></td><td>the robot-to-Jetson bridge, the storage and jobs pages, the start-up glue</td></tr>
+<tr><td><code>catkin_ws/src/sidewalk_evaluation</code></td><td>scoring: path comparison, segmenting a run, the truth-kind rules (<code>eval_common.py</code>)</td></tr>
+<tr><td><code>catkin_ws/src/sidewalk_sim</code></td><td>Gazebo worlds (<code>indoor.world</code>, <code>office.world</code>, <code>office2.world</code>, <code>mcity.world</code>, <code>sidewalk.world</code>, <code>marc_sidewalk_driveway.world</code>) and routes (<code>indoor_loop.yaml</code>, <code>indoor_shuttle.yaml</code>, <code>office1_full.yaml</code>, <code>office2_full.yaml</code>, <code>mcity_loop.yaml</code>, <code>mcity_building_loop.yaml</code>)</td></tr>
+<tr><td><code>catkin_ws/src/sidewalk_navigation</code></td><td>move_base (the ROS route planner) settings, the safety command sender/receiver, routes and goal files</td></tr>
+<tr><td><code>tools/</code></td><td>helpers: map-database tools (<code>db/</code>), drive helpers (<code>drive/</code>), results-pack writers, the robot-side scripts, the WiFi roaming helper, the project website (<code>live_site/</code>), videos</td></tr>
+<tr><td><code>config/CONFIG_GUIDE.md</code></td><td>what every setting controls, in plain words</td></tr>
+<tr><td><code>docs/OPERATIONS.md</code></td><td>hands-on procedures (remote display, session-start checklist, robot address changes)</td></tr>
+<tr><td><code>docs/SOLVED.md</code>, <code>docs/DO_NOT_REPEAT.md</code></td><td>the solved/unsolved log: symptom, cause, fix, verifying command; and what failed and why</td></tr>
+<tr><td><code>docs/INSTALLED.md</code>, <code>docs/HARDWARE.md</code>, <code>docs/REPLAY.md</code>, <code>docs/ENGINEERING_NOTES.md</code></td><td>what was installed on which machine; the hardware; how to replay a recording; the project's rules and hard-won facts</td></tr>
+<tr><td><code>data/DATA_INDEX.md</code></td><td>the index of the Teams folder (section 6); <code>data/list_folder.py</code> prints the same table for a local copy of any folder (see <code>data/README.md</code>)</td></tr>
+<tr><td><code>results/&lt;series&gt;/&lt;run&gt;/RESULTS.md</code></td><td>one results pack per drive or session: numbers, figures, timelapse; the videos and 3D clouds are in the Teams folder under <code>slam_research_01_runs/</code></td></tr>
+</table>
+</div>
+
+<h3>2.2 Where the recordings are: the Autonomous Service Robot Teams folder</h3>
+<p>Every recording and result is kept in the <b>Autonomous Service Robot</b> folder in Microsoft Teams (Microsoft's shared chat and file space). Ask Prof. Mehrtash (McMaster University) for access. Every folder path on this page and in <code>data/DATA_INDEX.md</code> is a path inside that Teams folder.</p>
+<p><b>Getting a recording onto the Jetson for a replay.</b> The Jetson does not read Teams itself, so the copy goes through any computer you have in the lab:</p>
+<ol>
+<li>In Teams, download the run's folder (for a drive: <code>series2_raw/&lt;run&gt;/</code>; for the camera depth study's station recordings: the files under <code>paper_zedx_vs_lidar/</code>) to your computer.</li>
+<li>Copy it to the Jetson over the lab network (the Jetson's address and login: ask Prof. Mehrtash or the lab). A SLAM drive goes into <code>~/replay_inputs/slam/&lt;run&gt;/</code>, a camera bench recording into <code>~/replay_inputs/bench/</code>:
+<pre><code>rsync -s -av --progress s2_slam_01/ &lt;user&gt;@&lt;jetson&gt;:replay_inputs/slam/s2_slam_01/
+scp w3_5.0m_burst01.svo2 &lt;user&gt;@&lt;jetson&gt;:replay_inputs/bench/</code></pre>
+<i>what it does:</i> copies the folder (or file) onto the Jetson's internal disk; <code>-s</code> keeps folder names with spaces in one piece. <code>rsync</code> (a copy program that can resume an interrupted copy) is better for big folders; <code>scp</code> (secure copy) is fine for one file.</li>
+<li>Check the copy arrived whole: compare the file sizes with <code>data/DATA_INDEX.md</code> (<code>ls -l</code> on the Jetson). A copy stopped half way is shorter than the listed size.</li>
+<li>Make sure at least 3 GB stay free on the Jetson after the copy (<code>df -h ~</code>), and delete the copy when you have finished with it: the Teams folder keeps the original.</li>
+</ol>
+<p class="plain">Plain terms: Teams is the library; the Jetson borrows one book at a time and gives it back.</p>
+<div class="tw">
+<table>
+<tr><th>Folder</th><th>Holds</th><th>Size listed 29 Sep</th></tr>
+<tr><td><code>series2_raw/&lt;run&gt;/</code></td><td>the Jetson's run records of the September walkway series: <code>&lt;run&gt;.db</code> (RTAB-Map database), <code>&lt;run&gt;/</code> (fusion.bag, .svo2 camera recording, logs, media/ timelapse frames), <code>lidar/</code> (the robot's LiDAR bag once moved)</td><td>124 GB, 22 runs</td></tr>
+<tr><td><code>robot_card_slam_series2/</code></td><td>the robot's own 128 GB card: every <code>&lt;run&gt;_lidar.bag</code>, <code>&lt;run&gt;_gyro_zero.json</code>, replay outputs, our robot-side tools</td><td>327 of 354 files (107.1 GiB): 27 files are missing because the card failed while being copied</td></tr>
+<tr><td><code>paper_zedx_vs_lidar/</code></td><td>the camera depth study data: a separate study, never mixed with the SLAM files; its station recordings (.svo2) are added separately</td><td>see <code>data/DATA_INDEX.md</code></td></tr>
+<tr><td><code>series1_august_lab/{logs_real_indoor, jetson_run_records_rescue, Week_7, jetson_sidewalk128/{rtabmap_maps, archive}}</code></td><td>August lab-room work, including the old microSD card's databases</td><td>13.4 GB</td></tr>
+<tr><td><code>slam_research_01_runs/</code></td><td>the results packs with their large files: timelapse videos, 3D point clouds</td><td>see <code>data/DATA_INDEX.md</code></td></tr>
+<tr><td><code>freeze_bench_2026-09-26/</code></td><td>parked camera-freeze benches (timing.bag per condition)</td><td>2.95 GB</td></tr>
+</table>
+</div>
+<p class="src">data/DATA_INDEX.md (listed 29 Sep 2026) and data/README.md.</p>
+
+<h3>2.3 The three machines</h3>
+<figure>
+<svg viewBox="0 0 900 400" role="img" aria-label="Your computer, the Jetson and the robot's computer, their links, the camera and the Teams folder">
+<style>.t{font:14px system-ui,sans-serif;fill:currentColor}.s{font:12px system-ui,sans-serif;fill:currentColor;opacity:.75}.bx{fill:none;stroke:currentColor;stroke-width:1.6;rx:10}.ln{stroke:currentColor;stroke-width:2;fill:none}.dash{stroke-dasharray:6 5}</style>
+<g color="var(--fg)">
+<rect class="bx" x="20" y="40" width="250" height="120"/>
+<text class="t" x="145" y="66" text-anchor="middle" font-weight="600">Your computer (any)</text>
+<text class="s" x="145" y="88" text-anchor="middle">browser: the Jetson's web pages</text>
+<text class="s" x="145" y="106" text-anchor="middle">ssh into the Jetson</text>
+<text class="s" x="145" y="124" text-anchor="middle">gets files from Teams and copies</text>
+<text class="s" x="145" y="142" text-anchor="middle">them to the Jetson (rsync / scp)</text>
+
+<rect class="bx" x="325" y="40" width="250" height="120"/>
+<text class="t" x="450" y="66" text-anchor="middle" font-weight="600">Jetson AGX Orin</text>
+<text class="s" x="450" y="88" text-anchor="middle">camera, mapping, recordings</text>
+<text class="s" x="450" y="106" text-anchor="middle">web pages: map, jobs, storage</text>
+<text class="s" x="450" y="124" text-anchor="middle">54 GB disk: 13 GB free per drive</text>
+<text class="s" x="450" y="142" text-anchor="middle">no monitor; display session on</text>
+
+<rect class="bx" x="630" y="40" width="250" height="120"/>
+<text class="t" x="755" y="66" text-anchor="middle" font-weight="600">Robot computer (Husky)</text>
+<text class="s" x="755" y="88" text-anchor="middle">ROS master for the wheels</text>
+<text class="s" x="755" y="106" text-anchor="middle">colleague's LiDAR stack (as is)</text>
+<text class="s" x="755" y="124" text-anchor="middle">128 GB card: our LiDAR bags</text>
+<text class="s" x="755" y="142" text-anchor="middle">own disk ~3 GB free: never write</text>
+
+<path class="ln dash" d="M270 100 H325"/>
+<text class="s" x="297" y="92" text-anchor="middle">lab</text>
+<text class="s" x="297" y="118" text-anchor="middle">network</text>
+<path class="ln" d="M575 100 H630"/>
+<text class="s" x="602" y="92" text-anchor="middle">USB-C</text>
+<text class="s" x="602" y="118" text-anchor="middle">cable</text>
+
+<rect class="bx" x="20" y="240" width="340" height="84"/>
+<text class="t" x="190" y="266" text-anchor="middle" font-weight="600">Teams: Autonomous Service Robot</text>
+<text class="s" x="190" y="288" text-anchor="middle">every recording and result</text>
+<text class="s" x="190" y="306" text-anchor="middle">(ask Prof. Mehrtash for access)</text>
+<path class="ln dash" d="M145 160 V240"/>
+<text class="s" x="155" y="205" text-anchor="start">download</text>
+
+<rect class="bx" x="400" y="240" width="200" height="84"/>
+<text class="t" x="500" y="266" text-anchor="middle" font-weight="600">ZED X camera</text>
+<text class="s" x="500" y="288" text-anchor="middle">GMSL2 cable</text>
+<text class="s" x="500" y="306" text-anchor="middle">into the Jetson</text>
+<path class="ln" d="M500 240 V160"/>
+
+<rect class="bx" x="640" y="240" width="240" height="84"/>
+<text class="t" x="760" y="266" text-anchor="middle" font-weight="600">Two LiDARs</text>
+<text class="s" x="760" y="288" text-anchor="middle">on the robot's mast,</text>
+<text class="s" x="760" y="306" text-anchor="middle">recorded by its computer</text>
+<path class="ln" d="M760 240 V160"/>
+
+<text class="s" x="20" y="365">Addresses, host names and logins are not on this page: ask Prof. Mehrtash or the lab.</text>
+<text class="s" x="20" y="385">Solid line = cable. Dashed = network or download.</text>
+</g>
+</svg>
+<figcaption>The machines and their links. The Jetson is the drive computer and serves the web pages; the robot's computer is never modified; your computer only watches and moves files between Teams and the Jetson.</figcaption>
+</figure>
+
+<div class="tw">
+<table>
+<tr><th>Machine</th><th>Role</th><th>What lives there (paths on that machine)</th><th>Rules</th></tr>
+<tr><td><b>Your computer</b> (any computer with a web browser and ssh)</td><td>Watching and file moves: the Jetson's web pages, a terminal or VS Code remote window on the Jetson, downloads from Teams</td><td>your clone of this repository if you want to read or edit code; the files you download from Teams on their way to the Jetson</td><td>It runs no robot software. It must be on the lab network to reach the Jetson.</td></tr>
+<tr><td><b>Jetson AGX Orin</b> (Ubuntu 20.04, aarch64, 12 cores, 29 GB memory, 54 GB internal disk)</td><td>Runs the camera, the mapping, the recordings, the web pages and the project website</td><td>your clone of this repository; <code>~/catkin_ws</code> (the ROS build); <code>~/slam_series2/</code> (drive tools, databases, the localisation master maps under <code>localise/</code>); <code>~/.run_records/&lt;run&gt;/</code> (each drive's logs, fusion.bag, .svo2, media); <code>~/lidar_slam_ws</code> (the LiDAR replay workspace); <code>~/lidar_ws</code> (the camera depth study's, do not touch); <code>~/robot_mirror/</code> (a copy of the robot computer's software, for reading); <code>~/Developer/ORB_SLAM3</code>; <code>~/replay_inputs/</code> (recordings copied from Teams for replays)</td><td>Name what you install before installing; prefer home-folder builds over system packages. Keep 13 GB free before a drive (the storage page, port 8092, shows the space). Two removable devices are attached and must never be written: <code>SIDEWALK128</code> (microSD) and <code>CAM_REC</code> (USB stick).</td></tr>
+<tr><td><b>Robot computer</b> (Husky's own Jetson Orin, Ubuntu 20.04, ROS Noetic 0.21.10 RTAB-Map)</td><td>ROS master for the wheels, joystick and LiDARs; runs the colleague's LiDAR stack</td><td>our files ONLY on its 128 GB card under <code>/media/administrator/USB Drive/slam_series2/</code> (recordings, <code>tools/</code>); a storage reporter started at boot from the administrator's crontab</td><td>Ask before changing anything not ours. Never install. Never write to its own disk. The colleague's <code>self_navigation</code> package is used, credited, never modified.</td></tr>
+</table>
+</div>
+<p class="src">docs/INSTALLED.md; docs/HARDWARE.md; docs/ENGINEERING_NOTES.md rule 18.</p>
+
+<!-- ============================================================ 3 -->
+<h2 id="s3"><span class="n">3</span>Hardware and power-on order</h2>
+<div class="why"><b>Why you need this.</b> The wrong switch-on order has hung the Jetson, and one wrong cable setting stops the camera from opening at all. Each item below cost at least one lab session to learn. Following the order takes five minutes.</div>
+
+<h3>3.1 Parts list</h3>
+<div class="tw">
+<table>
+<tr><th>Part</th><th>What it does</th><th>Facts that matter</th></tr>
+<tr><td>Clearpath Husky A200 (<code>cpr-a200-0985</code>)</td><td>the robot: four wheels, its own computer (an Orin) that drives the wheels and is the ROS master</td><td>drive by publishing to <code>/cmd_vel</code>; hardware e-stop (red button) cuts the motors whatever the software does; joystick L1 = manual drive, R2 = the dead-man button used for autonomy; battery voltage is not a readiness check, ask whether it is charged; the robot is OFF while charging</td></tr>
+<tr><td>Stereolabs ZED X stereo camera</td><td>the only mapping sensor: two 1920 x 1200 lenses 0.120 m apart, plus its own IMU (motion sensor)</td><td>connected by GMSL2 (a camera cable standard, not USB) to the Jetson; the mapping receives pictures at 15 per second; depth is computed by the ZED SDK 4.2.5 in the NEURAL mode for all drives; serial 47637666, firmware 2001</td></tr>
+<tr><td>3D-printed mount</td><td>holds the camera about 0.70 m above the floor, looking forward</td><td>two holder blocks + two clamps on the vertical rod of the robot's sensor frame (PACS 80 mm M5 grid on this Husky); the camera was once found pitched 3.24 degrees nose-down and nothing modelled it: check level after any remount</td></tr>
+<tr><td>NVIDIA Jetson AGX Orin developer kit</td><td>runs the camera, RTAB-Map, the Kalman filter, the live pages and the recordings</td><td>12 cores, 29 GB memory, 54 GB internal disk; JetPack 5.1 (L4T R35.4.1); an out-of-memory guard (earlyoom) kills the mapping FIRST when free memory drops under 15 %, so nothing heavy runs beside a drive</td></tr>
+<tr><td>EcoFlow River Plus power station</td><td>powers the Jetson and the camera separately from the robot's battery</td><td>Jetson work (replays, file copies) continues while the robot charges or is off</td></tr>
+<tr><td>USB-C cable Jetson to robot (UGreen adapter)</td><td>carries the wheel and gyroscope readings to the Jetson (the "bridge") and the navigation commands back</td><td>the Jetson is in USB device mode and hands the robot an address; about 26 MB/s; the first Type-C port tried on the robot did not work, the other did</td></tr>
+<tr><td>Two LiDARs on the mast: RoboSense Helios 32 and Ouster OS1-32</td><td>recorded on the robot during every drive; the Helios is replayed afterwards as the independent estimate</td><td>the two cannot run at the same time through the colleague's launch files (one fixed node name), but <code>record_dual_packets</code>-style recording captures both; recorded as raw packets (about 4.6 MB/s), never as clouds (about 15 MB/s, 18 GB per 20 min)</td></tr>
+<tr><td>Joystick (PS4-type)</td><td>manual driving; the dead-man button for navigation</td><td>no joystick messages = the robot stops by itself</td></tr>
+</table>
+</div>
+<p class="src">docs/ENGINEERING_NOTES.md section 1 and rule 18; docs/HARDWARE.md; docs/SOLVED.md "The ZED X was pitched 3.24 degrees".</p>
+
+<h3>3.2 Wiring</h3>
+<ul>
+<li><b>Camera to Jetson:</b> GMSL2 into the Jetson's camera card. The camera needs two services on the Jetson (<code>nvargus-daemon</code>, <code>zed_x_daemon</code>) and <b>the Jetson's own internal display session alive</b>, even though no monitor is attached (automatic login keeps it up; the camera cannot open without it).</li>
+<li><b>Jetson to robot:</b> the USB-C cable. The robot's computer gets its wire address from the Jetson. No other computer may be cabled to the robot at the same time (it would take that address).</li>
+<li><b>Power:</b> Jetson and camera from the EcoFlow; robot from its own battery. The Jetson can therefore stay up while the robot is switched off to charge.</li>
+<li><b>Network:</b> Jetson and robot both on the same lab WiFi for drives (which network: ask Prof. Mehrtash or the lab); your computer reaches the Jetson's pages over the lab network. The robot's WiFi address changes every time it comes back from charging: check it before every session.</li>
+</ul>
+<p class="src">docs/OPERATIONS.md "Robot address changes after charging"; catkin_ws/src/sidewalk_navigation/doc/PROTOCOL.md step 1.</p>
+
+<h3>3.3 Switch-on order</h3>
+<ol>
+<li><b>EcoFlow on, then the Jetson.</b> Wait until it answers over the network. Check its uptime: <b>if it has been up more than about 4-6 hours, restart it now</b>, because camera freezes grow with uptime (0 in 3 min after a restart, 16 in 7 min at 20 h).</li>
+<li><b>Check the camera is present</b> (<code>/dev/video0</code> and <code>/dev/video1</code> exist, both services active, a display session under <code>/tmp/.X11-unix/</code>). Do not open the camera yet.</li>
+<li><b>Robot on</b> (its computer boots in about a minute). Joystick on and paired. Confirm the wheels answer the joystick.</li>
+<li><b>Plug the USB-C cable in at the robot only after the robot has booted.</b> Check the wire answers from the Jetson.</li>
+<li><b>Check the robot's WiFi address</b> and update the Jetson's ssh alias if it changed.</li>
+<li>Start the Jetson's helper pages (storage page, jobs page) if they are not running; they do not survive a reboot.</li>
+<li><b>Walk the route once before the robot</b>: the corridor lights are motion-sensor controlled and a parked robot or empty corridor can be in the dark; a light switching on as the robot arrives changes the camera's exposure mid-drive. Note whether the lights were on.</li>
+<li>Park the robot <b>on the start mark, facing east down the long corridor</b>, exactly as every drive did. RTAB-Map anchors its map where the robot starts, so a different start silently offsets every number.</li>
+</ol>
+
+<h3>3.4 During a drive</h3>
+<ul>
+<li><b>Stand still at least 60 s at the start and at the end.</b> The robot's gyroscope heading drifts about 3.5-5 degrees a minute even parked (UM7 gyroscope bias, compass off); the first minute measures that drive's rate so the blend can subtract it. The robot-side start script also re-zeroes the gyroscope while the wheels are still.</li>
+<li>Slow: about 0.15 m/s; wide turns, about 20 degrees per second or less; never turn on the spot facing a wall closer than about 1.5 m (the camera ignores anything nearer than 1 m and sees nothing there).</li>
+<li>Drive every lap the same way round. If you must come back along a corridor, come back <b>in reverse without turning the robot round</b>: the camera then still faces what it saw going in and keeps recognising places (section 8).</li>
+<li>Every ~5 minutes make an extra 30 s stop (the blend re-measures the gyroscope).</li>
+<li>Do not rescue a bad drive: a bad drive is a data point, a rescued one is not comparable.</li>
+<li>The drive ends only when you say <b>"park"</b> (<code>run/park.sh &lt;run&gt;</code>); the map is then closed properly after 60 s of stillness. Standing still by itself never ends a drive.</li>
+</ul>
+<p class="src">docs/SOLVED.md; docs/ENGINEERING_NOTES.md section 2.13a.</p>
+
+<h3>3.5 Shutdown order</h3>
+<ol>
+<li>Say "park"; wait until the jobs page shows the map <b>closed properly</b> (the corrected positions are written only at shutdown; a map not closed properly loses them and its word dictionary).</li>
+<li>Stop the robot side (<code>run/robot_side.sh stop</code>): it interrupts the LiDAR recording by exact process name so the bag closes properly.</li>
+<li>Run the integrity check on the database and the bag <b>now</b>, not tomorrow (a memory card damaged four files at rest in this project).</li>
+<li><b>Unplug the USB-C cable at the robot BEFORE switching the robot off.</b> Twice the Jetson became unreachable when the robot was switched off with the cable in, and had to be power-cycled (its address requests every 7 s, then silence).</li>
+<li>Robot off, then charge it. Tell whoever is around that the robot is off while charging.</li>
+<li>Jetson: leave it running for replays and file copies, or shut it down cleanly (never pull the EcoFlow's plug: an unclean stop has cost a database).</li>
+</ol>
+<p class="src">docs/SOLVED.md "Ctrl+C on a mapping run can leave a database with no map"; docs/ENGINEERING_NOTES.md rule 7.</p>
+
+<div class="note bad"><b>The failing storage devices.</b> Never store data on <code>SIDEWALK128</code> (the Jetson's 128 GB microSD: since 8 Sept it silently discards writes, a full format was discarded, and it is not reversible) or on <code>CAM_REC</code> (32 GB USB stick: a copy read back corrupted on 26 Sept). The 250 GB USB stick from the depth study work is a dead controller stuck in factory mode; it is shelved for possible chip-off recovery and must not be reformatted. Record to the Jetson's internal disk, verify, then copy the recording off before the next drive. A replacement card must pass a full write-and-read-back pattern test and an unplug/re-plug read-back before use.</div>
+<p class="src">docs/DO_NOT_REPEAT.md "USB stick CAM_REC writes corrupt data".</p>
+
+<!-- ============================================================ 4 -->
+<h2 id="s4"><span class="n">4</span>Software setup</h2>
+<div class="why"><b>Why you need this.</b> The software stack is pinned to old versions on purpose. An "upgrade" that looks harmless (a newer Python, a newer Gazebo, a newer RTAB-Map) breaks something that took days to build, and the Jetson has already been re-flashed once.</div>
+
+<h3>4.1 The stack: versions, and what must not be upgraded</h3>
+<div class="tw">
+<table>
+<tr><th>Component</th><th>Version</th><th>Do not upgrade because</th></tr>
+<tr><td>Jetson platform</td><td>L4T R35.4.1, JetPack 5.1.x, CUDA 11.4, TensorRT 8.5.2</td><td>the ZED SDK 4.2.5 build and the camera card driver match this JetPack; JetPack 6/7 need a re-flash and a different ZED SDK</td></tr>
+<tr><td>Operating system / middleware</td><td>Ubuntu 20.04.6, ROS 1 Noetic (end of life), Python 3.8 pinned</td><td>everything (RTAB-Map, the ZED wrapper, the colleague's robot stack) is ROS 1 Noetic; anything needing Python 3.10 or ROS 2 is out (that includes evo above 1.31.1 and Isaac ROS / cuVSLAM)</td></tr>
+<tr><td>Simulator</td><td>Gazebo Classic 11.15.1</td><td>the new Gazebo needs ROS 2; the sim assets and launch files are Classic</td></tr>
+<tr><td>SLAM</td><td>RTAB-Map 0.21.13 (apt)</td><td>parameter names differ between versions; always check <code>rtabmap --params</code>; the robot runs 0.21.10 and the LiDAR replay on the Jetson was validated against it</td></tr>
+<tr><td>Vision library</td><td>OpenCV 4.2.0 without contrib (<code>xfeatures2d=false</code>, <code>nonfree=false</code>)</td><td>SIFT/SURF are unavailable; usable feature detectors are ORB (2), BRISK (7), GFTT/ORB (8, the default on this build), KAZE (9), ORB-OCTREE (10); a wrong choice falls back silently (section 8)</td></tr>
+<tr><td>Graph back-ends</td><td>g2o, GTSAM, Vertigo, TORO present; Ceres absent</td><td>anything needing Ceres (slam_toolbox) is blocked</td></tr>
+<tr><td>Camera software</td><td>ZED SDK 4.2.5; zed-ros-wrapper built for it; the people detector's one-time TensorRT optimisation file exists</td><td>the wrapper caps everything downstream at 15 Hz although the sensor runs 30 Hz; the SVO recorder inherits the 15 Hz; without the optimisation file the detector's first start takes 649 s with no pictures</td></tr>
+<tr><td>Second SLAM system</td><td>ORB-SLAM3 built at <code>~/Developer/ORB_SLAM3</code> (Jetson)</td><td>rebuild after any re-flash; never compared yet</td></tr>
+<tr><td>Path evaluation</td><td>evo 1.31.1 (Jetson)</td><td>1.32+ needs Python 3.10</td></tr>
+<tr><td>Extras (home folder, no sudo)</td><td><code>~/venvs/report</code> (python-docx, cairosvg, lxml&lt;6: drawing and document tools), <code>~/lidar_slam_ws</code> (rslidar_sdk + unpacked body-filter packages)</td><td>all installed into the home folder on purpose so a system package never changes</td></tr>
+</table>
+</div>
+<p class="src">docs/ENGINEERING_NOTES.md sections 1 and 3; docs/INSTALLED.md.</p>
+
+<h3>4.2 Install steps, summarised</h3>
+<p>The Jetson already has everything installed and built. Rebuild only after a re-flash (a full reinstall of the Jetson's operating system) or when a part stops working.</p>
+<ol>
+<li><b>After a re-flash:</b> reinstall in the order <code>docs/INSTALLED.md</code> lists (ROS Noetic, the RTAB-Map packages, the ZED SDK 4.2.5 and its ROS wrapper); it gives the exact command for each. Verify each by invoking it (<code>rtabmap --version</code> must show libpointmatcher yes, OpenGV no).</li>
+<li><b>Build the workspace:</b> <code>source ~/.sidewalk_env.sh &amp;&amp; cd ~/catkin_ws &amp;&amp; catkin_make -DCMAKE_BUILD_TYPE=Release -j6</code>. The LiDAR replay workspace is separate: <code>~/lidar_slam_ws</code>, entered ONLY with <code>source ~/lidar_slam_ws/setup_lidar_slam.bash</code> (it drops the main workspace on purpose).</li>
+<li><b>Home-folder tools:</b> <code>python3 -m venv ~/venvs/report &amp;&amp; ~/venvs/report/bin/pip install --only-binary=:all: "lxml&lt;6" python-docx cairosvg</code> (a virtual environment: a private Python package folder that cannot disturb the system).</li>
+<li><b>Services that keep the drives alive</b> (need <code>sudo</code>, the administrator password: ask Prof. Mehrtash or the lab): the WiFi roaming helper on the Jetson AND the robot (<code>tools/wifi/install_wifi_roam_helper.sh</code>); the Jetson crontab lines (a crontab is the list of commands the computer runs on a timer) for the live status sender and the website; the robot's <code>@reboot</code> line for its storage reporter.</li>
+<li><b>ORB-SLAM3:</b> already built at <code>~/Developer/ORB_SLAM3</code> on the Jetson; rebuild only after a re-flash.</li>
+<li><b>Record every install in <code>docs/INSTALLED.md</code></b>: what, which machine, the exact command, the date, why. Verify by invoking, never by trusting a silent log: one failed import is not an inventory either.</li>
+</ol>
+<p class="src">docs/INSTALLED.md (all entries); run/lib/lidar_reference/README.md.</p>
+
+<h3>4.3 Environment variables</h3>
+<pre><code># Jetson: ~/.sidewalk_env.sh (already set up on the Jetson; edit this, not .bashrc)
+source /opt/ros/noetic/setup.bash
+source ~/catkin_ws/devel/setup.bash
+export ROS_IP=127.0.0.1                       # the address other machines reach this one on; unset = topics connect but never deliver
+export ROS_MASTER_URI=http://${ROS_IP}:11311  # the drives run their own master on the Jetson; the robot's master is used only for the robot-side scripts
+export SIDEWALK_REPO="$HOME/vslam-sidewalk-robot"   # where you cloned this repository
+export PATH=/usr/local/cuda/bin:$PATH
+export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH</code></pre>
+<p>Per-workflow switches read by the drive script (all optional, all default off): <code>FUSION=1</code> (blend the wheels and gyroscope: every drive from 3 on), <code>SVO=1</code> (record the camera; needed for any later replay), <code>LOCALISE=1</code> / <code>SLAM=1</code> (set by <code>localise.sh</code> / <code>slam_session.sh</code>), <code>MASK=1</code> (people blanked from the depth), <code>BENCH=1</code> (camera only, robot off), <code>TRACKER=GEN_1</code> (the camera's older built-in tracker; GEN_2 is the default), <code>LOOP_THR</code> (how sure RTAB-Map must be before it accepts a recognised place; 0.08 in localisation and SLAM sessions), <code>MAP_DB</code> (the saved map to load), <code>KIDNAP_PRIOR="x y yaw"</code> (where to tell the localiser it starts; "40 40 0" = 40 m outside the building, the honest test), <code>ROBOT_ADDRS</code> / <code>LIDAR_PEER</code> (the robot's address(es); ask Prof. Mehrtash or the lab).</p>
+<p>Two traps: the camera needs <code>DISPLAY=:0</code> and <code>XAUTHORITY</code> of the Jetson's internal session and <b>fails with libEGL/Argus errors if X forwarding is on</b> (<code>ssh -X</code> hijacks DISPLAY); graphical programs opened for you need the opposite. And <code>/use_sim_time</code> must be <code>false</code> on the live master (a leftover <code>true</code> silently freezes a real run) but <code>true</code> on a replay master, or a LiDAR replay writes an empty database with no error.</p>
+<p class="src">~/.sidewalk_env.sh (Jetson); the headers of run/lib/start_drive_*.sh; docs/SOLVED.md "The ZED X will not open over SSH" and "A LiDAR replay writes an EMPTY database".</p>
+
+<!-- ============================================================ 5 -->
+<h2 id="s5"><span class="n">5</span>Workflows, one per <code>run/</code> script</h2>
+<div class="why"><b>Why you need this.</b> Each workflow is one command, but each has a checklist before it, a page to watch during it, a proper way to end it, and files it leaves behind that the scoring needs. Skipping any of those produced most of the lost sessions in this project.</div>
+
+<figure>
+<svg viewBox="0 0 900 330" role="img" aria-label="Data flow from camera and wheels through the Kalman filter and RTAB-Map to the map">
+<style>.t{font:14px system-ui,sans-serif;fill:currentColor}.s{font:12px system-ui,sans-serif;fill:currentColor;opacity:.75}.bx{fill:none;stroke:currentColor;stroke-width:1.6;rx:10}.ln{stroke:currentColor;stroke-width:2;fill:none;marker-end:url(#ar)}.dash{stroke-dasharray:6 5}</style>
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker></defs>
+<g color="var(--fg)">
+<rect class="bx" x="20" y="30" width="170" height="70"/><text class="t" x="105" y="58" text-anchor="middle" font-weight="600">ZED X camera</text><text class="s" x="105" y="80" text-anchor="middle">stereo pictures 15/s, depth, IMU</text>
+<rect class="bx" x="20" y="130" width="170" height="70"/><text class="t" x="105" y="158" text-anchor="middle" font-weight="600">Robot wheels + gyro</text><text class="s" x="105" y="180" text-anchor="middle">over the USB-C bridge</text>
+<rect class="bx" x="20" y="230" width="170" height="70"/><text class="t" x="105" y="258" text-anchor="middle" font-weight="600">LiDARs (robot)</text><text class="s" x="105" y="280" text-anchor="middle">recorded only, used later</text>
+
+<rect class="bx" x="250" y="30" width="180" height="70"/><text class="t" x="340" y="52" text-anchor="middle" font-weight="600">Visual odometry</text><text class="s" x="340" y="72" text-anchor="middle">RTAB-Map: motion from</text><text class="s" x="340" y="88" text-anchor="middle">one picture to the next</text>
+<rect class="bx" x="250" y="130" width="180" height="70"/><text class="t" x="340" y="152" text-anchor="middle" font-weight="600">Conditioner</text><text class="s" x="340" y="172" text-anchor="middle">subtracts the gyro's false</text><text class="s" x="340" y="188" text-anchor="middle">turn measured while parked</text>
+
+<rect class="bx" x="490" y="80" width="170" height="70"/><text class="t" x="575" y="105" text-anchor="middle" font-weight="600">Kalman filter</text><text class="s" x="575" y="125" text-anchor="middle">the "blend": one position</text><text class="s" x="575" y="141" text-anchor="middle">that never stops</text>
+
+<rect class="bx" x="710" y="30" width="170" height="120"/><text class="t" x="795" y="55" text-anchor="middle" font-weight="600">RTAB-Map</text><text class="s" x="795" y="76" text-anchor="middle">nodes = picture + position</text><text class="s" x="795" y="92" text-anchor="middle">loop closure = "seen this</text><text class="s" x="795" y="108" text-anchor="middle">place before" -> graph</text><text class="s" x="795" y="124" text-anchor="middle">re-optimised, map pulled straight</text>
+
+<rect class="bx" x="710" y="190" width="170" height="60"/><text class="t" x="795" y="215" text-anchor="middle" font-weight="600">Map</text><text class="s" x="795" y="235" text-anchor="middle">2D floor grid + 3D cloud + .db</text>
+<rect class="bx" x="490" y="190" width="170" height="60"/><text class="t" x="575" y="215" text-anchor="middle" font-weight="600">Live pages + recorder</text><text class="s" x="575" y="235" text-anchor="middle">map page, jobs page, fusion.bag</text>
+<rect class="bx" x="250" y="230" width="180" height="70"/><text class="t" x="340" y="255" text-anchor="middle" font-weight="600">LiDAR replay (later)</text><text class="s" x="340" y="275" text-anchor="middle">colleague's stack + Force3DoF</text><text class="s" x="340" y="291" text-anchor="middle">= the independent estimate</text>
+
+<path class="ln" d="M190 65 H250"/>
+<path class="ln" d="M190 165 H250"/>
+<path class="ln" d="M430 65 L490 100"/>
+<path class="ln" d="M430 165 L490 130"/>
+<path class="ln" d="M660 115 H710"/>
+<path class="ln dash" d="M190 65 C 480 -10, 700 -10, 795 30"/>
+<text class="s" x="470" y="20" text-anchor="middle">pictures + depth</text>
+<path class="ln" d="M795 150 V190"/>
+<path class="ln" d="M660 115 L 660 220"/>
+<path class="ln" d="M190 265 H250"/>
+<path class="ln dash" d="M430 265 H 710 "/>
+<text class="s" x="575" y="285" text-anchor="middle">compared with the map's path afterwards (evaluate.sh)</text>
+<text class="s" x="20" y="320">The map's nodes carry the BLEND's position, not the camera's; when the camera loses track it restarts from the blend. Camera-only (drives 1-2) had no blend, and drive 1 ended 39.6 m off by its own tracking.</text>
+</g>
+</svg>
+<figcaption>Data flow on a fused drive (drives 3-10, localisation, SLAM session, navigation). Solid arrows: live. Dashed: the LiDAR is recorded on the robot and only compared afterwards.</figcaption>
+</figure>
+
+<h3>5.0 Old name to new name</h3>
+<p>The <code>run/</code> scripts wrap the scripts the project actually ran. The RESULTS.md files and logs use the old names:</p>
+<div class="tw">
+<table>
+<tr><th>run/ script</th><th>What it wraps (Jetson unless said)</th></tr>
+<tr><td><code>mapping.sh &lt;run&gt;</code></td><td><code>FUSION=1 SVO=1 ~/slam_series2/tools/start_drive.sh &lt;run&gt;</code></td></tr>
+<tr><td><code>localise.sh &lt;run&gt; [map]</code></td><td><code>start_localise.sh</code> (+ <code>next_start.sh</code>, <code>stop_localise.sh</code>, <code>score_localise.py</code>)</td></tr>
+<tr><td><code>slam_session.sh &lt;run&gt;</code></td><td><code>start_slam.sh</code> (+ <code>stop_slam.sh</code>, <code>session_split.py</code>, <code>score_slam.py</code>)</td></tr>
+<tr><td><code>navigate.sh &lt;run&gt; &lt;route&gt;</code></td><td><code>start_nav.sh</code> + <code>go_nav.sh</code> + <code>stop_nav.sh</code> + <code>score_nav.py</code>; on the robot <code>nav_cmd_recv.py</code></td></tr>
+<tr><td><code>replay.sh &lt;run&gt;</code></td><td><code>replay_svo_slam.sh</code> (camera recording through the same stack)</td></tr>
+<tr><td><code>lidar_reference.sh &lt;run&gt;</code></td><td><code>replay_colleague_variant_jetson.sh &lt;run&gt; wrap f3dof</code> (or on the robot: <code>tools/replay_colleague_variant.sh</code>)</td></tr>
+<tr><td><code>evaluate.sh &lt;run&gt;</code></td><td><code>tools/db/</code>: <code>db_to_tum.py</code>, <code>db_corrected_tum.py</code> / <code>optimize_graph_se2.py</code>, <code>compare_lidar.py</code>, <code>check_closed.py</code>, and the pack writers in <code>tools/results_pack/</code></td></tr>
+<tr><td><code>simulate.sh &lt;world&gt; &lt;route&gt;</code></td><td>the <code>sidewalk_sim</code> launch files + a route yaml</td></tr>
+<tr><td><code>robot_side.sh start|stop</code></td><td>the robot card's <code>slam_series2/tools/robot_side.sh</code> (gyro re-zero, <code>record_lidar.sh</code>, live LiDAR view, bridge sender)</td></tr>
+<tr><td><code>park.sh &lt;run&gt;</code></td><td><code>touch ~/slam_series2/PARK_&lt;run&gt;</code>, read by <code>auto_stop_mapping.py</code></td></tr>
+</table>
+</div>
+
+<h3>5.1 What is common to every workflow</h3>
+<ul>
+<li><b>Watching:</b> every job writes a one-line <code>.progress</code> file next to its output (for example <code>NEURAL_PLUS 47/180  893s</code>); the <b>jobs page</b> on the Jetson finds those files by itself and draws a bar and time left; liveness is judged by the file's freshness, never by searching for a process name. The <b>live map page</b> shows the camera map (left) and the robot's live LiDAR view (right), refreshed every 1-2 s, with red banners for TRACKING LOST and CAMERA DOWN. Page addresses: the Jetson's address with the ports 8095 (live map), 8096 (jobs), 8092 (storage); the address, and the link to the project website served by the Jetson, from Prof. Mehrtash or the lab.</li>
+<li><b>Never</b> find or kill a process with <code>pgrep -f</code> / <code>pkill -f</code> or any "contains the name" test: it matched itself and reported dead jobs alive six times. Compare whole argument names; test every check against a name you know is absent.</li>
+<li>Everything starts detached (<code>setsid nohup</code>) so a dropped connection changes nothing; a job that outlives one command gets a watcher that reports failure and silent death, not only success.</li>
+<li>A results pack per run (<code>results/&lt;series&gt;/&lt;run&gt;/RESULTS.md</code>): both gap kinds with closure counts, the per-turn table, link statistics, tracking losses, camera outages (count, seconds, distance driven blind, resets per 100 m), processor load, the figures, the timelapse. Every number names its file.</li>
+<li>Run ids: <code>s2_static_NN</code> (mapping drives), <code>s2_loc_NN</code>, <code>s2_slam_NN</code>, <code>s2_nav_NN</code>, <code>s2_scale_NN</code>; the scripts refuse an id whose database already exists.</li>
+</ul>
+<p class="src">docs/ENGINEERING_NOTES.md rules 8, 13, 22; the header of tools/drive/camera_guard.py.</p>
+
+<h3>5.2 <code>run/replay.sh &lt;run&gt;</code>: re-run a recorded drive (no robot)</h3>
+<p><b>Purpose:</b> play a run's camera recording (<code>.svo2</code>) back through the same RTAB-Map stack, so a settings change can be tested on identical pictures.</p>
+<ul class="chk">
+<li>The run has a <code>.svo2</code> (drives recorded with <code>SVO=1</code>: the SLAM session s2_slam_01; rehearsals T5b/T5c; NOT drives 4-10, which have only <code>fusion.bag</code>, so their pictures cannot be replayed). Download it from the Teams folder <code>series2_raw/&lt;run&gt;/&lt;run&gt;/</code> and copy it to the Jetson (section 2.2); <code>run/replay.sh</code> reads <code>~/.run_records/&lt;run&gt;/</code> by default, or give the files with <code>--svo</code> and <code>--bag</code>.</li>
+<li>No camera and no map running on the Jetson; at least 3 GB free after copying the map.</li>
+<li>Pinned for repeatability: every frame processed (<code>svo_realtime false</code>), self-calibration off, depth stabilisation 1, NEURAL, GEN_2. Two replays of one file then match to every digit; change one setting at a time.</li>
+</ul>
+<pre><code>run/replay.sh s2_slam_01            # mask off (default), into a fresh copy of drive 10's map
+MASK=on run/replay.sh s2_slam_01    # people blanked; compare the two with evaluate.sh</code></pre>
+<p><b>Watch:</b> jobs page line <code>&lt;run&gt;_replay_&lt;mode&gt;</code>. <b>Ends</b> by itself when the recording ends (no new odometry for 30 s) and closes the map properly. <b>Leaves:</b> <code>~/slam_series2/&lt;run&gt;_replay_&lt;mode&gt;.db</code> and <code>~/.run_records/&lt;run&gt;_replay_&lt;mode&gt;/</code> (mapping.log, mask CSVs, tegrastats). <b>Score:</b> <code>run/evaluate.sh</code>. <b>Typical:</b> s2_slam_01 replayed camera-only joined drive 10's map at once (0.19 / 0.28 m from the mark) with 230 / 225 links; the old map moved 0.356 m median without blanking and 0.092 m with. A replay is camera-only (no wheels), so do not compare its end gap with a live fused drive's.</p>
+<p class="src">the header of run/replay.sh; docs/REPLAY.md; s2_slam_01/RESULTS.md "People blanking".</p>
+
+<h3>5.3 <code>run/simulate.sh &lt;world&gt; &lt;route&gt;</code>: Gazebo (no robot)</h3>
+<p><b>Purpose:</b> run the whole pipeline on a simulated Husky with a modelled ZED X (two plain cameras 0.120 m apart with image noise 0.005; Gazebo ignores noise on a "depth" sensor and clips depth at 5 m unless told otherwise). Useful for testing scripts, routes and navigation logic before the lab.</p>
+<ul class="chk">
+<li>Runs on the Jetson (GPU); <code>gzserver</code> renders cameras even headless and needs <code>DISPLAY</code>/<code>XAUTHORITY</code> exported or the sensor silently creates nothing.</li>
+<li>Never while a drive is live: the old sim script killed every ROS master by name; the current one uses its own ports (ROS 11411, Gazebo 11445).</li>
+<li>Reset the robot to the world origin before every run; drive routes as yaml.</li>
+</ul>
+<pre><code>run/simulate.sh indoor.world indoor_loop.yaml        # the 12 x 10 m brick-walled room, two laps
+run/simulate.sh office2.world office2_full.yaml      # 1.8 m doors; also office.world, mcity.world, sidewalk.world, marc_sidewalk_driveway.world</code></pre>
+<p><b>Watch:</b> the live map page or RViz on your PC (<code>ssh -X</code>). <b>Leaves:</b> a database and a run record like a real drive. <b>Score:</b> <code>run/evaluate.sh</code> with the simulator's truth (the only kind that counts as verified truth besides motion capture and RTK). <b>Typical:</b> the sim's world-of-the-day is texture, not colour: a feature-count check must pass before a drive means anything. Navigation dry runs on drive 10's map reached 2 of 2 goals in 64-102 s with 0.07-0.08 m median path error.</p>
+<p class="src">docs/ENGINEERING_NOTES.md sections 2.1, 2.2, 5; docs/OPERATIONS.md "Visual SLAM needs TEXTURE"; catkin_ws/src/sidewalk_navigation/doc/PASS_LINES.md dry-run column.</p>
+
+<h3>5.4 <code>run/lidar_reference.sh &lt;run&gt;</code>: the independent LiDAR estimate (no robot needed once the bag is copied)</h3>
+<p><b>Purpose:</b> replay a drive's LiDAR recording through the colleague's <code>self_navigation</code> pipeline, unchanged except <code>Reg/Force3DoF=true</code>, to get the path the camera map is compared with.</p>
+<ul class="chk">
+<li>Copy <code>&lt;run&gt;_lidar.bag</code> from the robot card (or the Teams folder <code>robot_card_slam_series2/</code>) to <code>~/lidar_bags/</code>; sha256 must match on both ends; the copy must leave 3 GB free.</li>
+<li>Enter the LiDAR workspace only via its own setup script; the replay runs an isolated ROS master (port 11350) with <code>/use_sim_time true</code> there only.</li>
+<li>Not during a drive (it stops itself if one starts).</li>
+</ul>
+<pre><code>run/lidar_reference.sh s2_static_10      # about the drive's length at 1x + 2 min; nice 19</code></pre>
+<p><b>Watch:</b> jobs page line <code>&lt;run&gt;_lidar_ref_f3dof_jetson</code>. <b>Leaves:</b> <code>~/lidar_replays/&lt;run&gt;/lidar_ref_f3dof/</code>: <code>rtab_helios.db</code>, <code>lidar.tum</code> (corrected path), <code>wheel.tum</code>, <code>lidar_map.png/.npz</code>, <code>provenance.txt</code>. <b>Its own check must pass before it is used:</b> end within about 0.5 m of its start with LiDAR loop closures of its own. Drive 10: 947 nodes, 76 closures, 0.044 m. The Jetson replay was validated against the robot's own result (path agreement median 0.04 m or better, 95th 0.13 m). <b>Failures seen:</b> 0 closures with the colleague's settings on drives 1, 2 and 7 (the path is then just the wheels + gyroscope, 3.8-20.6 m out); a tilted map (2.14 m, drive 6) before Force3DoF; an empty 96 kB database when <code>/use_sim_time</code> was not set.</p>
+<p class="src">run/lib/lidar_reference/README.md; docs/SOLVED.md "The robot's LiDAR map is wheel+IMU odometry corrected by LiDAR".</p>
+
+<h3>5.5 <code>run/evaluate.sh &lt;run&gt;</code>: score a run</h3>
+<p><b>Purpose:</b> turn a run's database, recording and LiDAR estimate into the results pack.</p>
+<pre><code>run/evaluate.sh s2_static_10</code></pre>
+<p>It does, in order: <code>check_closed.py</code> (was the map closed properly? corrected positions present?); <code>db_to_tum.py</code> (tracking-alone path from <code>Node.pose</code>); <code>db_corrected_tum.py</code> (corrected path from <code>Admin.opt_poses</code>) or, if the map was not closed, <code>optimize_graph_se2.py</code> (re-optimise from the links; validated to 0.35 mm); closure counts from the Link table (types 1 and 2, each pair counted once: rows are stored twice); <code>compare_lidar.py</code> (pairs positions within 0.05 s, rigid fit with no rescaling, median and 95th percentile; refuses a LiDAR estimate that failed its own check); the per-turn table; camera outages and freezes; then the RESULTS.md writer and figures. <code>grep -c "cannot be used" mapping.log</code> must be 0 or the run is invalid (silent feature-detector downgrade).</p>
+<p><b>Good looks like</b> (drive 10): closed properly; corrected gap a few centimetres with the number of end-to-start closures stated; 0.2-0.7 m median from the LiDAR; 0 camera crashes; freezes under 2 s. <b>Every gap says which kind it is</b>, and the LiDAR number is written "agreement with the independent LiDAR estimate".</p>
+<p class="src">docs/ENGINEERING_NOTES.md rule 20; docs/SOLVED.md "Loop closures are link types 1 and 2"; docs/DO_NOT_REPEAT.md "RTAB-Map stores every graph link TWICE".</p>
+
+<h3>5.6 <code>run/robot_side.sh start|stop &lt;run&gt;</code>: the robot's half (robot)</h3>
+<p><b>Purpose:</b> on the robot's card, in one command: re-zero the gyroscope if the wheels are still, start the LiDAR packet recording (<code>record_lidar.sh</code>), the live LiDAR view, and LAST the bridge sender that copies the wheels and gyroscope to the Jetson. <code>stop</code> interrupts the recording by exact process name so the bag closes, then the view, then the sender. It publishes nothing on the robot and changes no setting.</p>
+<pre><code>ssh robot 'bash "/media/administrator/USB Drive/slam_series2/tools/robot_side.sh" start s2_static_11'   # robot parked and still, BEFORE the Jetson side
+ssh robot 'bash "/media/administrator/USB Drive/slam_series2/tools/robot_side.sh" stop  s2_static_11'   # after "park" has closed the map</code></pre>
+<p><b>Refuses</b> if the card is not mounted (the recording would land on the robot's 3 GB disk) or the bag exists. <b>Leaves</b> <code>&lt;run&gt;_lidar.bag</code> (about 4.6 MB/s: 5-10 GB per drive) and <code>&lt;run&gt;_gyro_zero.json</code> on the card. Check <code>/imu/data</code> reads within 3 degrees of level before driving.</p>
+<p class="src">the headers of tools/robot_side/robot_side.sh and record_lidar.sh.</p>
+
+<h3>5.7 <code>run/mapping.sh &lt;run&gt;</code>: a mapping drive (robot)</h3>
+<p><b>Purpose:</b> build a new map of a route with camera + wheels + gyroscope blended.</p>
+<ul class="chk">
+<li>Section 3.3 done; Jetson up less than 4-6 h; at least 13 GB free on it; <code>/use_sim_time</code> false; no stale ROS processes; robot address checked.</li>
+<li><code>robot_side.sh start</code> already running, robot on the start mark facing east, still.</li>
+<li>Route written down with every turn direction; same speed and ending as the drive you want to compare with.</li>
+</ul>
+<pre><code>run/mapping.sh s2_static_11        # = FUSION=1 SVO=1 start_drive.sh: roscore, fresh camera, bridge, blend, mapping, live page, guard, recorder, autostop</code></pre>
+<p>It starts everything detached, checks each step, refuses if the bridge is not UP within 30 s (no silent camera-only fallback), and waits at a <b>ready gate</b> until the gyroscope's false turn has been measured and kept (about 30-60 s standing still); only then may the robot move. <b>Watch:</b> the live map page (a bad drive shows in the first two minutes) and the jobs page lines <code>&lt;run&gt;</code>, <code>_camera</code>, <code>_bridge</code>, <code>_ekf_inputs</code>, <code>_svo</code>, <code>_media</code>, <code>_autostop</code>; the ALERT file for CAMERA DOWN. <b>Ends:</b> park on the mark facing east, stand still, <code>run/park.sh &lt;run&gt;</code>; the map closes after 60 s of stillness (a 90-minute backstop exists; <code>STOP_&lt;run&gt;</code> closes at once). Then <code>robot_side.sh stop</code>. <b>Leaves:</b> <code>~/slam_series2/&lt;run&gt;.db</code>, <code>~/.run_records/&lt;run&gt;/</code> (fusion.bag, .svo2, camera.log, mapping.log, bridge_recv.log, fused_odometry.log, camera_outages.csv, tegrastats.log, media/). <b>Typical:</b> drive 4's route (87 m, 10 min): corrected gap 0.05-0.10 m, 145-181 closures, 0.26 m from the LiDAR; the whole floor (252 m by the corrected map, 29 min): 0.033 m, 199 closures, 0.69 m from the LiDAR, about 200 camera restarts from the blend, 1 freeze over 1.5 s.</p>
+<p class="src">the header of run/lib/start_drive_mapping.sh; s2_static_04 / 08 / 10 RESULTS.md.</p>
+
+<h3>5.8 <code>run/localise.sh &lt;run&gt; [map]</code>: find itself on a saved map (robot)</h3>
+<p><b>Purpose:</b> load a finished map (drive 10's master copy) with map-building off and see whether, and how fast, the robot recognises where it is.</p>
+<ul class="chk">
+<li>Everything of 5.7's checklist. The master map is read-only and is never passed to RTAB-Map itself; the script makes a working copy (passing the master's path to <code>load_database</code> with <code>clear: true</code> would erase it).</li>
+<li>Decide the starting guess before the session: <code>KIDNAP_PRIOR="40 40 0"</code> (40 m outside: every fix must come from real recognition) or <code>"0 0 0"</code> (on the start mark, as navigation uses).</li>
+<li><code>LOOP_THR=0.08</code>: tested offline, never a wrong fix; 0.065 gave off-map fixes in 2 of 20 stretches. Do not change it after the session has started.</li>
+<li>Drive the same way round as the map was made: the map only knows the views it saw.</li>
+</ul>
+<pre><code>KIDNAP_PRIOR="40 40 0" run/localise.sh s2_loc_05 ~/slam_series2/localise/s2_static_10_map.db</code></pre>
+<p><b>Watch:</b> jobs page line <code>&lt;run&gt;_localise</code> ("LOCALISED yes/no, since, distance to the map path"). After the start stand still at most 60 s; if not localised, drive on slowly along the map's route: standing still, RTAB-Map's recognition score cannot improve (a recognition is accepted only when a second one reaches the bar while the first is still in the last 10 positions, and still pictures are not added). <b>Ends:</b> "park", then <code>stop_localise.sh</code>, which checks the master's checksum (pass line P4/"master unchanged"). <b>Leaves:</b> fusion.bag (with <code>/rtabmap/info</code> and <code>/rtabmap/localization_pose</code>), <code>localise_track.csv</code>, <code>localise_events.csv</code>, <code>localise_summary.json</code>, <code>starts.csv</code>, <code>master.sha256</code>. Record with <code>SVO=1</code> if you want to replay it: fusion.bag has no pictures. <b>Typical:</b> s2_loc_04: first fix 212 s / 6.26 m from an off-map start (a start on the same mark 4 min earlier was accepted in about 3 s); then 576 fixes over 253 m by the wheels, 0 of 575 more than 1.5 m from the wheels' motion, 0.636 m median from the LiDAR (drive 10's own map scores 0.685 by the same method).</p>
+<p class="src">run/lib/localise/DEPLOY_NOTES.md, PROTOCOL.md, PASS_LINES_whole_floor.md; s2_loc_04/RESULTS.md; docs/SOLVED.md "Localisation: first fix slow".</p>
+
+<h3>5.9 <code>run/slam_session.sh &lt;run&gt;</code>: continue an existing map (robot)</h3>
+<p><b>Purpose:</b> open a copy of a saved map in mapping mode, recognise it, and keep mapping into corridors it never saw (multi-session SLAM), optionally with people blanked out of the depth.</p>
+<ul class="chk">
+<li>5.7's checklist; 13-22 GB free (the copy of drive 10's map is 3.3 GB and grows).</li>
+<li><code>MASK=1</code> only if the detector's optimisation file exists (else the first start takes 11 minutes with no pictures); the mask compares the label <code>"PERSON"</code> (upper case: the live session compared with "Person" and blanked nothing).</li>
+<li>In a new area come back out in reverse, under 10 m in.</li>
+</ul>
+<pre><code>MASK=1 run/slam_session.sh s2_slam_02      # SLAM=1 SVO=1 FUSION=1 on a fresh copy of drive 10's map</code></pre>
+<p><b>Watch:</b> jobs page line <code>&lt;run&gt;_slam</code> (JOINED yes/no, links to the old map, <code>!! SUSPECT JOIN</code>: if it appears, stop with <code>STOP_&lt;run&gt;</code>, go back to the mark and start the next run id). <b>Ends:</b> "park" (60 s still), <code>stop_slam.sh</code>: closed properly, sessions joined, master untouched. <b>Leaves:</b> the grown copy <code>~/slam_series2/&lt;run&gt;.db</code>, the run record with <code>.svo2</code>, <code>mask_*.csv</code>, <code>slam_events.csv</code>. <b>Score:</b> <code>session_split.py</code> + <code>score_slam.py</code> (S1-S5, section 7). <b>Typical:</b> s2_slam_01 joined in 0.4 s at 0.08 m; 156 m; 238 links, 0 wrong; old map moved 0.019 m median; new floor 73 m&sup2;; corrected gap 0.044 m; tracking rate with detector + mask 7.47 Hz vs 7.04 Hz without.</p>
+<p class="src">run/lib/slam_session/DEPLOY_NOTES.md, PROTOCOL.md, PASS_LINES.md; s2_slam_01/RESULTS.md.</p>
+
+<h3>5.10 <code>run/navigate.sh &lt;run&gt; &lt;route&gt;</code>: drive itself to goals on the saved map (robot)</h3>
+<p><b>Purpose:</b> localisation on drive 10's map plus move_base (the ROS route planner: dynamic window approach on layered costmaps) on the Jetson, sending speed commands to a small receiver on the robot that publishes <code>/cmd_vel</code> only while the person beside the robot holds R2.</p>
+<ul class="chk">
+<li>Prof. Mehrtash's (or the lab's) yes to running our receiver on the robot (it is the only thing of ours that runs there; it sits at the lowest priority of the robot's own command switch, under the joystick and the e-stop).</li>
+<li>No other computer cabled to the robot; USB-C wire up; <code>KIDNAP_PRIOR="0 0 0"</code> localisation READY first.</li>
+<li>Nothing heavy on the Jetson (a costmap update took 4.5 s under load and the robot overshot a goal by 1 m).</li>
+<li>Wheel check with the e-stop pressed: hold R2 5 s, the robot reports "button held/released", nothing moves.</li>
+</ul>
+<pre><code>run/navigate.sh s2_nav_04 B2          # starts the layer; sends goals only when you say "go" holding R2
+touch ~/slam_series2/NAV_PAUSE       # stop at once from the Jetson</code></pre>
+<p>Limits enforced in three places: 0.30 m/s, 0.40 rad/s, no reversing; stops on: R2 released, 0.5 s without commands, stale position or camera, more than 1.0 m from the route, less than 2 cm clearance (a real-time check against drive 10's saved walls and the robot's own outline; the camera ignores anything nearer than 1 m and cannot see beside its own corners, which is how a wall post was touched). <b>Watch:</b> jobs page lines <code>&lt;run&gt;_nav</code> (goal k/N, distance) and <code>&lt;run&gt;_navcmd</code> (link, gate, what the robot is doing and why). <b>Ends:</b> after the last goal <code>stop_nav.sh</code>, 60 s still, "park", <code>stop_localise.sh</code>, robot side stop. <b>Leaves:</b> <code>~/.run_records/&lt;run&gt;/nav_&lt;route&gt;/</code> (cmd.csv, odom.csv, actual.csv, plans.jsonl, fixes.csv, robot_status.jsonl, goals_result.json), <code>nav_params_move_base.yaml</code> (every setting move_base really loaded). <b>Score:</b> <code>score_nav.py</code> (N1-N4, section 7). <b>Typical:</b> route A 2 of 2 goals in 65-75 s each, 0.16-0.23 m from the goal; the loop 4 of 5, median path error 0.03-0.11 m, 184 fixes; the 0.90 m doorway is the open limit.</p>
+<p class="src">catkin_ws/src/sidewalk_navigation/doc/DEPLOY_NOTES.md, PROTOCOL.md, PASS_LINES.md; s2_nav_03/RESULTS.md; docs/DO_NOT_REPEAT.md "Navigation: tried after route B's front-left corner touched a wall post".</p>
+
+<h3>5.11 <code>run/park.sh &lt;run&gt;</code></h3>
+<p>Creates <code>~/slam_series2/PARK_&lt;run&gt;</code>. The stop helper (<code>auto_stop_mapping.py</code>, started by every drive) then waits until the robot has stood still 60 s, interrupts RTAB-Map by process number, waits with no deadline for the database to close, runs <code>check_closed.py</code>, and stops the recorder, blend and bridge in that order. Say "park" only when the robot is back on the mark facing the way it set off: the map needs that moment to recognise the start (drive 1's end-to-start closure came 21 s after stopping).</p>
+
+<figure>
+<svg viewBox="0 0 900 300" role="img" aria-label="The drive, record, evaluate, results loop">
+<style>.t{font:14px system-ui,sans-serif;fill:currentColor}.s{font:12px system-ui,sans-serif;fill:currentColor;opacity:.75}.bx{fill:none;stroke:currentColor;stroke-width:1.6;rx:10}.ln{stroke:currentColor;stroke-width:2;fill:none;marker-end:url(#ar2)}</style>
+<defs><marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker></defs>
+<g color="var(--fg)">
+<rect class="bx" x="20" y="40" width="190" height="90"/><text class="t" x="115" y="65" text-anchor="middle" font-weight="600">1. Prepare</text><text class="s" x="115" y="86" text-anchor="middle">pass lines written FIRST</text><text class="s" x="115" y="102" text-anchor="middle">Jetson restarted, 13 GB free</text><text class="s" x="115" y="118" text-anchor="middle">robot on the mark, 60 s still</text>
+<rect class="bx" x="250" y="40" width="190" height="90"/><text class="t" x="345" y="65" text-anchor="middle" font-weight="600">2. Drive + record</text><text class="s" x="345" y="86" text-anchor="middle">robot_side.sh + mapping.sh</text><text class="s" x="345" y="102" text-anchor="middle">watch map + jobs pages</text><text class="s" x="345" y="118" text-anchor="middle">"park" -> map closed</text>
+<rect class="bx" x="480" y="40" width="190" height="90"/><text class="t" x="575" y="65" text-anchor="middle" font-weight="600">3. Reference + score</text><text class="s" x="575" y="86" text-anchor="middle">lidar_reference.sh</text><text class="s" x="575" y="102" text-anchor="middle">evaluate.sh: both gaps,</text><text class="s" x="575" y="118" text-anchor="middle">closures, LiDAR, outages</text>
+<rect class="bx" x="710" y="40" width="170" height="90"/><text class="t" x="795" y="65" text-anchor="middle" font-weight="600">4. Results pack</text><text class="s" x="795" y="86" text-anchor="middle">RESULTS.md, figures,</text><text class="s" x="795" y="102" text-anchor="middle">timelapse; lessons in</text><text class="s" x="795" y="118" text-anchor="middle">SOLVED / DO_NOT_REPEAT</text>
+<path class="ln" d="M210 85 H250"/><path class="ln" d="M440 85 H480"/><path class="ln" d="M670 85 H710"/>
+<path class="ln" d="M795 130 V200 H115 V130"/>
+<text class="s" x="360" y="192" text-anchor="start">5. one failure -> one fix -> next drive keeps EVERY earlier fix</text>
+<rect class="bx" x="250" y="220" width="420" height="60"/><text class="t" x="460" y="243" text-anchor="middle" font-weight="600">6. Keep the recordings safe</text><text class="s" x="460" y="263" text-anchor="middle">check, copy off, check the copy, free the space</text>
+<path class="ln" d="M345 130 V220"/>
+</g>
+</svg>
+<figcaption>The loop every drive followed. Pass lines are registered before the drive so the result cannot be judged by what it happened to produce.</figcaption>
+</figure>
+
+<!-- ============================================================ 6 -->
+<h2 id="s6"><span class="n">6</span>The recordings</h2>
+<div class="why"><b>Why you need this.</b> A result you cannot trace to a recording cannot be re-derived, and this project already lost that ability once for the August numbers when a memory card was wiped. The full list of the Teams folder is <code>data/DATA_INDEX.md</code> (listed on 29 September 2026). This section is the summary.</div>
+
+<p>Every September run left three kinds of files. <b>Jetson:</b> <code>&lt;run&gt;.db</code> (the RTAB-Map database), <code>fusion.bag</code> (every position stream: camera tracking, wheels, gyroscopes, the blend, camera info; in localisation runs also <code>/rtabmap/info</code> and <code>/rtabmap/localization_pose</code>; in the SLAM session also the people-detector boxes), <code>&lt;run&gt;.svo2</code> (the camera recording, only when <code>SVO=1</code>), logs, and <code>media/</code> (the live-map timelapse frames and mp4). <b>Robot card:</b> <code>&lt;run&gt;_lidar.bag</code> (raw LiDAR packets from both LiDARs plus <code>/tf</code>, <code>/odometry/filtered</code>, <code>/imu/data</code>, raw wheel odometry, raw IMU and the robot's own 2D scans) and <code>&lt;run&gt;_gyro_zero.json</code> (the gyroscope's standing-still bias measured before the drive), plus replay outputs. <b>Repository:</b> the results pack.</p>
+
+<h3>6.1 Series 2 (September walkway series): Teams <code>series2_raw/&lt;run&gt;/</code>, robot files under <code>robot_card_slam_series2/</code></h3>
+<p class="note"><b>Robot card folder: 27 files missing.</b> <code>robot_card_slam_series2/</code> holds 327 of the card's 354 files (107.1 GiB); the other 27 were lost when the card failed while being copied. <code>data/DATA_INDEX.md</code> lists what is there.</p>
+<div class="tw">
+<table>
+<tr><th>Run</th><th>Date (Hamilton)</th><th>What</th><th>Jetson files (size in Teams)</th><th>Robot card</th><th>Scored in</th></tr>
+<tr><td class="k">s2_static_01</td><td>24 Sep 01:09-03:30</td><td>drive 1, camera only, pilot</td><td>.db + run folder, 4.74 GB, 13 files</td><td>bag (not in our folder listing)</td><td>s2_static_01/notes.txt</td></tr>
+<tr><td class="k">s2_static_02</td><td>24 Sep 03:54-04:17</td><td>drive 2, camera only, slower</td><td>7.07 GB, 13 files; its LiDAR bag already under <code>lidar/</code> (6.70 GB)</td><td>-</td><td>s2_static_02/ (numbers files)</td></tr>
+<tr><td class="k">s2_fusion_T4b</td><td>25 Sep 03:58-04:14</td><td>parked rehearsal of the blend</td><td>196 MB (fusion.bag; no .db on the Jetson)</td><td>-</td><td>s2_fusion_T4b/RESULTS.md</td></tr>
+<tr><td class="k">s2_static_03</td><td>25 Sep 04:30-04:58</td><td>drive 3, first fused drive</td><td>350 MB (run folder; the .db was not on the Jetson when copied)</td><td>8.80 GB bag + replay folder</td><td>s2_static_03/RESULTS.md</td></tr>
+<tr><td class="k">s2_fusion_T5 / T5b / T5c</td><td>25-26 Sep 23:00-00:41</td><td>rehearsals before drive 4 (Jetson reset; link drop; 16-bit depth)</td><td>T5b 8.36 GB (.db 3.26 GB, fusion.bag 2.67 GB, two .svo2 2.4 GB); T5c 3.03 GB</td><td>bags 7.09 / 5.51 / 4.48 GB</td><td>docs/SOLVED.md 16-bit depth</td></tr>
+<tr><td class="k">s2_static_04</td><td>26 Sep 00:44-00:53</td><td>drive 4, the reference route</td><td>5.36 GB (.db 1.18 GB, fusion.bag, media); no .svo2</td><td>bag (moved; see index)</td><td>s2_static_04/RESULTS.md</td></tr>
+<tr><td class="k">s2_static_05</td><td>26 Sep 02:14-02:35</td><td>drive 5, camera crash at 11 min</td><td>2.59 GB (.db 1.53 GB)</td><td>7.58 GB bag + replay</td><td>s2_static_05/RESULTS.md</td></tr>
+<tr><td class="k">s2_static_06</td><td>26 Sep 04:20-04:45</td><td>drive 6, new walkway, guard restart</td><td>11.83 GB (.db 3.01 GB)</td><td>bag + f3dof replay</td><td>s2_static_06/RESULTS.md</td></tr>
+<tr><td class="k">s2_loc_01 / 02 / 03</td><td>26 Sep 05:03, 06:16, 10:41</td><td>localisation sessions on drive 4's map</td><td>1.30 / 8.98 / 3.47 GB</td><td>bags 2.82 / (moved) / 9.08 GB + replays</td><td>s2_loc_02, s2_loc_03 RESULTS.md</td></tr>
+<tr><td class="k">s2_scale_01</td><td>26 Sep 13:10-13:22</td><td>taped 15 m test</td><td>1.73 GB (.db 1.41 GB)</td><td>3.80 GB bag</td><td>s2_scale_01/RESULTS.md</td></tr>
+<tr><td class="k">s2_static_07</td><td>26 Sep 13:28-13:40</td><td>drive 7, GEN_1 tracker</td><td>2.61 GB (.db 1.61 GB)</td><td>4.60 GB bag + replay</td><td>s2_static_07/RESULTS.md</td></tr>
+<tr><td class="k">s2_static_08</td><td>26 Sep 15:48-16:02</td><td>drive 8, drive 4 repeated</td><td>2.74 GB (.db 1.59 GB)</td><td>4.55 GB bag + f3dof replay</td><td>s2_static_08/RESULTS.md</td></tr>
+<tr><td class="k">s2_static_09</td><td>26 Sep 20:52-21:21</td><td>drive 9, longer route, not closed</td><td>10.05 GB (.db 2.95 GB, fusion.bag.active)</td><td>9.88 GB bag + f3dof replay</td><td>s2_static_09/RESULTS.md</td></tr>
+<tr><td class="k">s2_static_10</td><td>27 Sep 02:02-02:31</td><td>drive 10, the whole floor: the master map</td><td>6.21 GB (.db 3.49 GB)</td><td>9.17 GB bag + f3dof replay</td><td>s2_static_10/RESULTS.md</td></tr>
+<tr><td class="k">s2_loc_04</td><td>27 Sep 07:43-08:08</td><td>whole-floor localisation</td><td>13.36 GB</td><td>bag (moved) + f3dof replay</td><td>s2_loc_04/RESULTS.md</td></tr>
+<tr><td class="k">s2_slam_01</td><td>27 Sep 13:25-13:52</td><td>SLAM session + people replay</td><td>16.56 GB (includes the .svo2 and the two replay databases)</td><td>8.94 GB bag</td><td>s2_slam_01/RESULTS.md</td></tr>
+<tr><td class="k">s2_nav_01 / 02 / 03</td><td>27 Sep 16:14, 17:31, 18:53</td><td>navigation runs</td><td>3.04 / 1.77 / 1.47 GB (fusion.bag 2.99 / 1.74 GB, nav_* folders, media)</td><td>bags 9.27 / 6.30 / 5.92 GB</td><td>s2_nav_03/RESULTS.md; nav_score.json</td></tr>
+</table>
+</div>
+<p class="src">data/DATA_INDEX.md (29 Sep listing).</p>
+
+<h3>6.2 Series 1 (August lab room): Teams <code>series1_august_lab/</code></h3>
+<p>Holds <code>logs_real_indoor</code>, <code>jetson_run_records_rescue</code>, <code>Week_7</code> and <code>jetson_sidewalk128/{rtabmap_maps, archive}</code> (13.4 GB; <code>jetson_sidewalk128/</code> holds the Jetson's old microSD card's databases including run 1 <code>lab_map_01.db</code>, 8.54 GB, and the recovered <code>office1_explore_03.db</code>). <b>Not re-derivable:</b> the Week 6 numbers (runs 3 and 4: 0.77 m and 11.47 m, the two-signs diagnosis) and office run 5's 951 closures; their databases were deleted from the card on 24-25 August. Their figures, <code>rtabmap-info</code> dumps and link tables survive in the Teams folder (<code>series1_august_lab/Week_7/</code> and <code>logs_real_indoor/</code>). Run 7c's <code>mapping.log</code> was never committed, so 7c cannot be re-scored either.</p>
+<p class="src">docs/ENGINEERING_NOTES.md section 2.13 withdrawal notice.</p>
+
+<h3>6.3 The camera depth study: Teams <code>paper_zedx_vs_lidar/</code></h3>
+<p>The camera depth study (a separate study, with Nicolas Polga, that measured how accurately the ZED X measures distance against the LiDARs, using a ball on a stand at fixed distances) keeps its data in the Teams folder <code>paper_zedx_vs_lidar/</code>. Its station recordings (<code>.svo2</code>) are added to that folder separately from the rest. Names you will meet: walkway-3 stations <b>3 m</b> (CSVs and logs only: the recording itself was lost), <b>4 m</b> (<code>w3_4.0m_*</code>, 9 Sep), <b>5 m</b> (<code>w3_5.0m_burst01.svo2</code> and further ~80 s bursts), <b>7 m</b>, <b>8 m</b> (including the 1400 mm wide-box pass); scenario 3 (driving at the frame at 0.40 and 0.85 m/s, <code>s3_0.85ms_run2</code> etc.) and scenario 4, with their laser bags under <code>bags/</code>. Each <code>.svo2</code> is lossless (PNG) 1920 x 1200 and holds no depth: depth is recomputed at playback in any mode, and a replay reproduces the live camera to within 1.4 mm at 5 m. To replay one, copy it to <code>~/replay_inputs/bench/</code> on the Jetson (section 2.2). Keep its files out of the SLAM folders.</p>
+
+<h3>6.4 Results packs and benches</h3>
+<p><code>slam_research_01_runs/</code> in the Teams folder holds the results packs' large files (timelapse mp4, 3D clouds: drive 10's has 24.8 million points); the small files are in the repository under <code>results/</code>. <code>freeze_bench_2026-09-26/</code> (2.95 GB) holds the parked camera benches: <code>freeze_ab/R1-R4</code> (GEN_1 vs GEN_2, ABBA order: 35 vs 15 freezes in 4 x 10 min) and <code>freeze_cause/</code> (after-reboot 0 freezes vs 16 with lights on at 20 h uptime; services removed one by one).</p>
+
+<!-- ============================================================ 7 -->
+<h2 id="s7"><span class="n">7</span>The evaluation method</h2>
+<div class="why"><b>Why you need this.</b> There is no ground truth in the building. Every number therefore depends on how it was checked, and anyone reading the numbers will ask. The rules below are the ones the project's numbers were produced under; a new number produced under different rules cannot be set beside them.</div>
+
+<h3>7.1 The LiDAR reference and its limits</h3>
+<ul>
+<li><b>What it is:</b> the colleague's <code>self_navigation</code> LiDAR mapping (RTAB-Map in LiDAR mode: Helios packets decoded, re-stamped, the robot's own body filtered out, box-cropped, then <code>rtabmap_3d.launch</code> with <code>Reg/Strategy=1</code>), replayed from the recording with one setting added, <code>Reg/Force3DoF=true</code>. It takes the wheels + gyroscope path (<code>/odometry/filtered</code>) as its odometry and does not refine neighbour links, so <b>between LiDAR loop closures it IS the wheel path</b>; the scans correct it only where they match a place seen before.</li>
+<li><b>Write it as "agreement with the independent LiDAR estimate", never "error" or "ground truth".</b> The project's own evaluation code lists another SLAM stack as <code>cross_stack</code> and deliberately excludes it from the kinds of truth that count (only motion capture, RTK GNSS and simulator truth do).</li>
+<li><b>Its own check first:</b> it is used only if it ends within about 0.5 m of its start with LiDAR closures of its own. It failed on drives 1, 2 and 7 (0 closures), on drive 6 and 8 unflattened (tilted maps: 2.14 m, 4.73 m), on localisation session 3 (wall-fit drift 0.126 m against 0.10) and on the SLAM session (0.52 m).</li>
+<li><b>Its uncertainty, stated beside every figure:</b> range noise 15-30 mm; the two LiDARs agree to about 5 mm; its size comes from the wheels, which read 6.2 % long on a taped 15 m; the LiDAR-to-camera mounting offset was never measured; on the same route drives 4 and 8 agreed with it to 0.24-0.26 m median, which is why the localisation line W4 was set at 0.50 m and not tighter.</li>
+<li><b>How the comparison is made:</b> positions paired within 0.05 s (the once-a-second LiDAR nodes filled in with the 50 Hz wheel stream, or only about 10 % pair up), lined up by rotation and shift only (SE(3), never with a scale factor: a stereo camera measures true size), distance reported as median and 95th percentile, never RMSE alone.</li>
+</ul>
+<p class="src">docs/ENGINEERING_NOTES.md rule 19 and section 4 rules 1-4; docs/SOLVED.md "The robot's LiDAR map is wheel+IMU odometry corrected by LiDAR"; run/lib/lidar_reference/README.md; run/lib/localise/PASS_LINES_whole_floor.md.</p>
+
+<h3>7.2 The two kinds of start-to-end gap</h3>
+<p>A database's <code>Node.pose</code> is the robot's <b>tracking alone</b>; loop closures never change it. The map's <b>corrected</b> positions are <code>Admin.opt_poses</code>, saved only when the map is shut down properly, or a re-optimised graph from <code>optimize_graph_se2.py</code>. Anything drawn from <code>db_to_tum.py</code> or <code>render_map.py</code> is the first kind unless it says otherwise. <b>Report both, labelled, and never plot them on one axis.</b> A corrected gap always carries its closure count and how many closures join the end straight to the start: drive 1's 0.056 m came from a single end-to-start closure that moved points up to 39.9 m, so it says nothing about the middle of the map. In a fused drive the nodes carry the <b>blend's</b> position, and the camera's tracker restarts from the blend each time it gives up (180 times on drive 10), so "camera tracking alone" on a fused drive is not an independent camera path. Parking on a tape mark by eye is only good to 20-50 cm, so a corrected gap of a few centimetres shows the map closed its own loop, not that the robot was parked that precisely.</p>
+<p class="src">docs/ENGINEERING_NOTES.md rule 20; s2_static_04/RESULTS.md section 1.</p>
+
+<h3>7.3 The pass lines used (registered before each session)</h3>
+<div class="tw">
+<table>
+<tr><th>Line</th><th>Pass if</th><th>Plain meaning; what passing and failing say</th><th>Result</th></tr>
+<tr><td>W1 (whole-floor localisation)</td><td>first fix within 120 s and 3 m of driving from an off-map start</td><td>does it realise "I know this place" within two minutes of being switched on where it was told it isn't? Failing = it needs a longer run-in before its position can be used.</td><td>FAIL: 212 s, 6.26 m</td></tr>
+<tr><td>W2</td><td>a fix at, or in the 10 m before, all but one of the 30 s walkway-end stops</td><td>does it keep recognising places all round the floor? A miss marks a part of the floor driven on memory alone.</td><td>PASS 3 of 3</td></tr>
+<tr><td>W3</td><td>zero fixes more than 1.5 m from where the wheels + gyroscope say it moved since the previous fix</td><td>did any fix put it in the wrong corridor? A wrong place shows as a jump the wheels did not make.</td><td>PASS 0 of 575</td></tr>
+<tr><td>W4</td><td>median agreement with the LiDAR estimate 0.50 m or less (SE(3), no scale)</td><td>the only line that measures accuracy rather than consistency</td><td>FAIL 0.636 m (map size; 0.20 m with the size fitted, information only)</td></tr>
+<tr><td>S1 (SLAM session)</td><td>first link to the old map within 60 s and 5 m</td><td>it realises "this is drive 10's floor" before it has gone far</td><td>PASS 0.4 s, 0.0 m</td></tr>
+<tr><td>S2</td><td>zero links to the old map that disagree with the wheels by more than 1.5 m + 2 % of the distance since the previous link</td><td>it never glues today's map onto the wrong corridor</td><td>PASS 0 of 238</td></tr>
+<tr><td>S3</td><td>closed properly and joined; old map moved median 0.15 m or less and 95th 0.50 m or less; corrected gap 0.5 m or less</td><td>the old map was straightened where needed, not bent or torn, and the robot ends where it started</td><td>PASS 0.019 / 0.19 / 0.044 m</td></tr>
+<tr><td>S4</td><td>median agreement with this session's LiDAR estimate 0.70 m or less</td><td>adding a session does not make the map disagree with the LiDAR more than drive 10 already did</td><td>not scorable (LiDAR failed its own check)</td></tr>
+<tr><td>S5</td><td>at least 15 m&sup2; of floor more than 1.5 m from every old node, from at least 8 m of new path</td><td>at least one side corridor's worth of floor that drive 10 never mapped is now in the map</td><td>PASS 73.4 m&sup2; from 54.4 m</td></tr>
+<tr><td>N1 (navigation)</td><td>every goal reported reached within 150 s per leg and ended within 0.50 m of the goal by the robot's own estimate</td><td>it gets to each point on the floor plan in reasonable time, by its own reckoning (twice the planner's 0.25 m arrival tolerance)</td><td>s2_nav_03: 4 of 5 (the doorway goal not reached)</td></tr>
+<tr><td>N2</td><td>zero contacts and zero times the person had to let go of R2 to prevent one</td><td>it drives the route without touching anything and without a rescue</td><td>s2_nav_01 route B failed (wall post); s2_nav_02 and 03 no contact</td></tr>
+<tr><td>N3</td><td>robot's estimate vs the route planned when each goal was sent: median 0.15 m or less, 95th 0.40 m or less</td><td>it follows its own plan within a hand's width and never wanders across the corridor</td><td>0.03 / 0.24 m and 0.11 / 0.37 m (s2_nav_03)</td></tr>
+<tr><td>N4</td><td>a fix within the first 10 m, no stretch over 10 m without one, no single correction over 1.0 m</td><td>it keeps knowing where it is and never suddenly decides it is somewhere else</td><td>184 fixes, no suspect jumps</td></tr>
+<tr><td>Earlier lines (P1-P5, K1-K3 for the drive-4 localisation sessions; the drive-3 line "home within 0.3 m after correction"; the rehearsal lines 1-10)</td><td colspan="3">in <code>run/lib/localise/PASS_LINES.md</code> and <code>s2_fusion_T4b/RESULTS.md</code>. P4 = master map unchanged (checksum), P5 = median processing time under 1.0 s per picture (0.68-0.80 s measured).</td></tr>
+</table>
+</div>
+<p class="src">run/lib/localise/PASS_LINES_whole_floor.md; run/lib/slam_session/PASS_LINES.md; catkin_ws/src/sidewalk_navigation/doc/PASS_LINES.md; the three RESULTS.md files.</p>
+
+<h3>7.4 The uncertainty rules (never compare against zero)</h3>
+<ul>
+<li>Two measurements of the same thing will never be exactly equal. State the uncertainty of each source before comparing: tape to a housing edge about &plusmn;5 mm; a box drawn by eye on an image about &plusmn;10 px (&plusmn;20 mm at 2.5 m); factory calibration about 1 %; a depth reading's measured spread per surface; tape-mark parking 0.2-0.5 m; the robot's heading drift about 5 degrees a minute.</li>
+<li>Two independent sources agree if their difference is less than about the square root of the sum of the squared uncertainties. Say "agrees to within X" or "disagrees by X, which is N times the combined uncertainty"; never bare "matches" or "is wrong".</li>
+<li>Do not chase a difference smaller than the combined uncertainty; do chase one several times larger (the wheels' +0.94 m on 15 m was five times the parking spread, and real).</li>
+<li>Every figure carries its spread: median with range, or a quantile. Never N = 1 without saying so; minimum N = 5 for a claim, median with (min-max), valid/total run count.</li>
+<li>Judge every run against pass lines written before it. If the LiDAR estimate failed its own check, the accuracy lines are "not scorable", not "passed".</li>
+</ul>
+<p class="src">docs/ENGINEERING_NOTES.md section 4 rule 0 and rules 1-3; s2_scale_01/RESULTS.md "Uncertainty".</p>
+
+<!-- ============================================================ 8 -->
+<h2 id="s8"><span class="n">8</span>Things that went wrong, and what to do instead</h2>
+<div class="why"><b>Why you need this.</b> These are the entries of <code>docs/SOLVED.md</code> and <code>docs/DO_NOT_REPEAT.md</code> that will bite a newcomer first. Each cost between an hour and a night. Read this table before your first drive and again when something looks strange: most likely it is already here.</div>
+<div class="tw">
+<table>
+<tr><th>Symptom</th><th>Cause</th><th>Fix / do instead</th></tr>
+<tr><td>Camera program (<code>zed_wrapper_node</code>) crashes mid-drive (exit -11), map stops growing, nobody told for 9 min (drive 5)</td><td>segmentation fault inside the ZED SDK under <code>grab()</code> (backtrace on drive 8); the camera had run 1 h 41 min since the previous drive; the watcher looked only at a progress line that cannot see the camera</td><td>fresh camera every drive; the camera guard restarts it (crash back in 12-13 s, freeze 30-45 s, up to 5 tries) and writes ALERT / CAMERA DOWN on the jobs page, drive line and live map; the drive watcher pushes a phone notification on "NO camera positions"; report outages and distance driven blind in every pack</td></tr>
+<tr><td>Camera tracking silent for 1.5-4 s, 15-23 times per 10 min, growing through the day</td><td>time since the Jetson booted (0 in 3 min after a reboot, 16 in 7 min at 20 h); mechanism unknown; not the tracker engine, not the lights, not the added services</td><td>restart the Jetson before a drive once up more than about 4-6 h</td></tr>
+<tr><td>Camera freezes 2-4 s during map saves (drive 3: 9 in 28 min)</td><td>about 6.3 MB written per map node, 5.8 MB of it 32-bit depth, with saves waiting for disk confirmation</td><td><code>Mem/SaveDepth16Format=true</code> (3x fewer freezes) and <code>DbSqlite3/Synchronous=0</code> (saves 4.45 s -&gt; 0.86 s; risk: a damaged database on power loss)</td></tr>
+<tr><td>Older camera tracker GEN_1 tried to stop crashes</td><td>no crash on drive 7, but 16 freezes, half the position rate, only 30 closures in one 47 s burst</td><td>GEN_2 by default with the guard; <code>TRACKER=GEN_1</code> still selectable</td></tr>
+<tr><td>Camera will not open over ssh: libEGL / Argus errors</td><td><code>ssh -X</code> hijacks <code>DISPLAY</code>; the camera needs the Jetson's own internal display session</td><td>run the camera with <code>ForwardX11=no</code>, <code>DISPLAY=:0</code> and that session's <code>XAUTHORITY</code>; never kill the invisible desktop session; open your own windows the other way round (<code>ssh -X</code>)</td></tr>
+<tr><td>"Camera not detected" on a working ZED X</td><td>two traps, neither the cable: the services (<code>nvargus-daemon</code>, <code>zed_x_daemon</code>) or the display session down</td><td>check <code>/dev/video0-1</code>, both services active and <code>/tmp/.X11-unix/</code> before blaming hardware</td></tr>
+<tr><td>Drive 9: robot data stopped reaching the Jetson in the far corridors; the Jetson was unreachable and had to be power-cycled; map not closed</td><td>the Jetson's Realtek WiFi driver cannot report signal changes, so it looked for a better access point only every 5 min; the robot's card had power saving on</td><td>the WiFi roaming helper on both machines: every 2 s reads the signal, roams below -67 dBm to a point 8 dB stronger, reassociates after no gateway; power saving off; v3 waits 30 s on a strong link (v2 turned an 8 s blip into a 6 min outage by reassociating on a strong link and being rejected)</td></tr>
+<tr><td>Robot address refused right after charging ("sender is not answering")</td><td>the lab WiFi gives the robot a new address every time it comes back from charging; the drive script's fallback address is stale</td><td>check <code>ssh robot hostname -I</code> before every session; pass the address explicitly (<code>ROBOT_ADDRS</code> / <code>LIDAR_PEER</code>); or use the USB-C wire address, which does not change</td></tr>
+<tr><td>Jetson unreachable when the robot is switched off</td><td>the robot was switched off with the USB-C cable in (address re-requests every 7 s, then silence)</td><td>unplug the USB-C at the robot BEFORE switching the robot off; plug it back only after the robot has booted</td></tr>
+<tr><td>Recordings destroyed mid-write or corrupted at rest; a full format discarded; copies read back as zeros</td><td>the Jetson's microSD SIDEWALK128 (exFAT via FUSE first, then a controller that silently discards writes since 8 Sept); the CAM_REC stick corrupted a copy; the 250 GB stick's controller is stuck in factory mode</td><td>never store data on SIDEWALK128, CAM_REC or the 250 GB stick; record to the internal disk; integrity check right after the run (not just a checksum: a checksum proves a copy matches a source that may already be rotten); verify copies with a direct read, not through the memory cache; nothing deleted until its copy has been read back and compared; replacement cards must pass a pattern test plus an unplug/re-plug read-back</td></tr>
+<tr><td>Disk full kills a run mid-write (lab_map_02)</td><td>a live recording's final size is unknown when it starts; the internal disk had 8.4 GB free</td><td>13 GB free before every drive, made by moving the last drive off (verified copy), not by a gate that stops the drive; the storage page shows every disk live</td></tr>
+<tr><td>Map corrected 6x worse than tracking alone (lab run 4, 11.47 m)</td><td>perceptual aliasing: at least three identical "MARC 2ND FLOOR" signboards on different walls; the camera matched one to another and pulled two parts of the room together</td><td>check every recognised place against the wheels' motion (S2/W3: 1.5 m + 2 % rule) and throw out disagreements; in localisation keep <code>Rtabmap/LoopThr</code> at 0.08 (0.065 produced off-map fixes in 2 of 20 stretches)</td></tr>
+<tr><td>Loop closure stops dead over 16 m of already-mapped ground (lab run 7c); 17 zero-inlier rejections (run 9b) vs 0 (run 9a)</td><td><b>turning around</b>, not driving backwards: facing the other way is the same place but a different view; recognition succeeds, the 3D check gets 0 of 20 inliers</td><td>drive every lap the same way round; come back in reverse without turning; only compare matched pairs of runs on this count (a single run's rejection count proves nothing: clean forward runs produce it too)</td></tr>
+<tr><td>Camera alone loses track 59 times in plain corridors; each restart discards the distance driven (drive 1: 39.6 m out by its own tracking)</td><td>the camera and tracker ignore anything nearer than 1 m; a blank wall 1 m away shows nothing; <code>Odom/ResetCountdown</code> resumes from the last pose and the frames in between are dropped</td><td>blend wheels + gyroscope + camera in the Kalman filter so tracking never stops; drive slowly (0.15 m/s), wide turns, never turn on the spot facing a near wall; always log reset count and never quote a gap without resets per 100 m</td></tr>
+<tr><td>Robot's wheel + gyroscope path doubles corridors; its heading turns 2.6-5.4 degrees a minute while parked</td><td>UM7 gyroscope bias, zeroed only at boot, compass disabled</td><td>stand still 60 s at the start and end of every drive; measure and subtract the parked rate per drive (never reuse another drive's); re-zero the gyroscope while still (2.35 -&gt; 0.76 degrees/min alone: not enough by itself)</td></tr>
+<tr><td>LiDAR map twisted (tilt 70-80 degrees, 7-9 m of height; drives 6 and 8 unusable)</td><td>the robot's IMU reads 132-176 degrees of tilt at start and takes 4-11 min to settle; the gravity links bend the map</td><td>replay with <code>Reg/Force3DoF=true</code> (drive 8: 0.02 m, 87 closures); check <code>/imu/data</code> is within 3 degrees of level before driving</td></tr>
+<tr><td>LiDAR replay writes a normal-looking database with zero nodes and no error</td><td><code>rosbag play --clock</code> publishes the recording's time but nothing listens unless <code>/use_sim_time</code> is true on that master</td><td>set it true on the isolated replay master only; a leftover true on the live master silently freezes a real run</td></tr>
+<tr><td>Colleague's LiDAR settings used as-is gave 0 closures and 3.8-20.6 m end gaps</td><td>they trust the wheels for every step, cap corrections at 3 m, and the wheels had drifted further</td><td>test every reference against its own start-to-end gap first (<code>compare_lidar.py</code> refuses one over 0.5 m or with no closures); do not simply raise the 3 m cap</td></tr>
+<tr><td>Odometry covariance never reflects reality; a 1 m loop correction reads as a 10,000-sigma outlier and is rejected</td><td>RTAB-Map clamps it: <code>COVARIANCE_LINEAR_EPSILON = 1e-8</code>, sigma exactly 1e-4 m, no parameter binding; <code>Odom/CovarianceScale</code> does not exist</td><td>do not tune the back-end around it; fix the sensor noise, or floor the covariance by republishing <code>twist.covariance</code> (never exactly 1.0, which is discarded)</td></tr>
+<tr><td>Simulated depth beyond 5 m is NaN; simulated depth noise has no effect</td><td>Gazebo's depth plugin defaults <code>pointCloudCutoffMax</code> to 5 m; <code>DepthCameraSensor</code> never builds a noise model</td><td>set the cutoff explicitly; model the ZED X as two plain cameras in one <code>multicamera</code> sensor named left/right</td></tr>
+<tr><td>The floor map has no walls where scans are subscribed / grid range is infinite</td><td><code>Grid/Sensor</code> and <code>Grid/RangeMax</code> are overridden when scans are subscribed and you have not set them</td><td>pin both explicitly and identically in every configuration</td></tr>
+<tr><td>A run compares a different feature detector without saying so</td><td>on OpenCV 4.2 without contrib, SIFT/SURF fall back to GFTT/ORB with a warning, not an error</td><td><code>grep -c "cannot be used" mapping.log</code> must be 0; usable detectors 2, 7, 8, 9, 10 only</td></tr>
+<tr><td>Corridor ends bend in the whole-floor map</td><td>plain end walls read 0.5-0.85 m too close when seen from 4-7 m (a depth problem, not turning)</td><td>limit the depth used for the map to 3 m (removed about 90 % of the bent walls)</td></tr>
+<tr><td>Localisation showed "LOCALISED yes" at 4-10 m from the truth (session 2)</td><td>each reload put the robot on the saved start guess; the camera recognised the right place but RTAB-Map held it back waiting for a second confirming match; the page counted held links as fixes</td><td>start with an off-map guess so a wrong position is visibly off the map; "localised" means an accepted fix; nudge 10 cm at each spot (still pictures are not added); drive on if not localised after 60 s</td></tr>
+<tr><td><code>rtabmap_localization.launch</code> always started in mapping mode</td><td>a launch-file eval compared the wrong type for <code>Mem/IncrementalMemory</code></td><td>the localisation and SLAM launch files pin the values after the include; the shared launch file is left as it was</td></tr>
+<tr><td>People mask blanked 0 of 18,980 pictures in the live SLAM session</td><td>the filter compared the ZED label "PERSON" with "Person"</td><td>fixed; the comparison was done by replaying the recording with the mask off and on</td></tr>
+<tr><td>Navigation touched a wall post while turning</td><td>the local obstacle map held camera obstacles only; the camera ignores anything nearer than 1 m and cannot see beside its own corners</td><td>local costmap = drive 10's saved walls minus the cells its own outline drove over; turns only at the widest points; a real-time clearance guard (stop under 2 cm, slow under 0.40 m, turn on the spot only if the corner circle is clear). Tried and dropped: eroding the walls (erased the post), footprint padding 0.10 m, 1.0 m global inflation</td></tr>
+<tr><td>A process check says a dead job is alive; a kill loop kills its own shell (six times)</td><td><code>pgrep -f</code>/<code>pkill -f</code> and any "command line contains" test match the checker itself; <code>ps -eo comm</code> truncates at 15 characters and cannot see a python script's name</td><td>compare whole arguments by base name, skip <code>$$</code> and <code>$PPID</code>, kill by PID; test every check against a name known to be absent</td></tr>
+<tr><td>A job started in an ssh terminal died with the connection; a roslaunch that started its own master took the map with it when the terminal closed</td><td>foreground processes belong to the session</td><td>start everything detached (<code>setsid nohup</code>); one roscore per session, left alone; never edit a shell script while it runs (bash reads it incrementally)</td></tr>
+<tr><td>Live counters disagree with the database (closures 128 vs 181; "0/1144 accepted")</td><td>the live monitor counts messages, not links; the log never records acceptance; RTAB-Map stores each link twice</td><td>the database read after a proper close is the count: Link table types 1 and 2, each pair once; never mix live counters with database counts in one table</td></tr>
+<tr><td>Ctrl+C on a mapping run left a database with no map; an unfinished rsync copy was committed and blocked pushes for 12 days; a big copy to the microSD livelocked and rebooted the Jetson</td><td>process traps</td><td>close maps through the stop helper only; commit only verified copies; never write to the card; one big working copy at a time, never under 3 GB free</td></tr>
+</table>
+</div>
+<p class="src">docs/SOLVED.md and docs/DO_NOT_REPEAT.md (entries named in the rows); docs/ENGINEERING_NOTES.md sections 2.1-2.13a and 3; tools/wifi/FINDINGS.md.</p>
+
+<!-- ============================================================ 9 -->
+<h2 id="s9"><span class="n">9</span>Suggested next experiments</h2>
+<div class="why"><b>Why you need this.</b> Each experiment below buys a sentence the results cannot support today. They are ordered by how much they buy per lab hour. Write the pass lines before you drive.</div>
+<div class="tw">
+<table>
+<tr><th>#</th><th>Experiment</th><th>Why: what can be claimed afterwards that cannot be claimed now</th><th>Workflow</th><th>Expected effort</th></tr>
+<tr><td>A</td><td><b>Settle the map size.</b> Tape a long leg (30-40 m) on the second floor with two marks; drive it out and back three times; measure the LiDAR-to-camera offset with a tape and the CAD of the mount; write both into <code>compare_lidar.py</code>.</td><td>Today: "the camera and LiDAR maps differ by about 7 %, cause probably the wheels". After: which map has the right size, with a number and its spread; the 0.69 m median becomes about 0.14 m if the LiDAR estimate is the one that is off, and every agreement figure loses its largest unknown.</td><td><code>mapping.sh</code> (short), <code>robot_side.sh</code>, <code>lidar_reference.sh</code>, <code>evaluate.sh</code>; the s2_scale_01 method</td><td>half a lab day</td></tr>
+<tr><td>B</td><td><b>Depth mode QUALITY vs NEURAL on the same route</b> (drive 4's route, once each, then repeats).</td><td>The depth study says QUALITY is the accurate mode and NEURAL the consistent one that reads 2.9 % short. After: whether the mapping drives' scale and wall bending change with the mode, which decides the mode for future work.</td><td><code>mapping.sh</code> with the depth mode switched in <code>zedx_front.yaml</code>; or, with no robot, <code>replay.sh</code> on any run that has a .svo2 (the SLAM session, T5b/T5c)</td><td>one lab evening, or two days of replays</td></tr>
+<tr><td>C</td><td><b>Five repeats</b> of drive 4's route, then five of the whole floor, five localisation sessions, five navigation round trips.</td><td>Today every number is N = 1. After: a median with a range, the minimum the project's own rules require; and whether the single-drive differences (0.05 vs 0.10 m home; 0.26 vs 0.69 m LiDAR) were real or just drive-to-drive scatter. Either answer is useful; N = 1 is not conclusive.</td><td>the full loop of section 5 for each, with the checklists of sections 3 and 5.7</td><td>4-6 lab nights</td></tr>
+<tr><td>D</td><td><b>ORB-SLAM3 on the same recordings.</b></td><td>After: the camera pipeline compared with a second method, not only with itself. Needs recordings with pictures: the SLAM session and the rehearsals have .svo2; new drives must be recorded with <code>SVO=1</code>.</td><td><code>replay.sh</code> (a new ORB-SLAM3 branch of it), <code>evaluate.sh</code>; the build exists at <code>~/Developer/ORB_SLAM3</code></td><td>a week, no robot time</td></tr>
+<tr><td>E</td><td><b>Score the people test properly:</b> three or more SLAM sessions with staged person events, replayed mask off and on; score D0-D3 (ghost cells within 0.5 m of the person's recorded positions, tracking pushed, wrong closures).</td><td>Today: "the old map moved four times less with people removed, one recording". After: a repeatable removal figure with spread, comparable with DynaSLAM-style work.</td><td><code>slam_session.sh</code> with <code>MASK=1 SVO=1</code>, <code>replay.sh</code> twice per session, <code>evaluate.sh</code></td><td>one lab evening + two days of replays</td></tr>
+<tr><td>F</td><td><b>Tight doorways:</b> a centring step before a doorway, or a slow straight-only mode through it; test in the simulator first (sim run 18 reproduced the pinch), then the south corridor's double doors five times.</td><td>After: the loop driven fully on its own, 5 of 5 goals, with no manual assist; the open navigation limit closed.</td><td><code>simulate.sh</code> on drive 10's map, then <code>navigate.sh B2</code></td><td>2 days sim + one lab evening</td></tr>
+<tr><td>G</td><td><b>Camera outage bridging:</b> after a guard restart, drive back over ground mapped before the outage on purpose (drive 6's map never linked its two halves).</td><td>After: a rule for how far the robot must re-drive to re-tie a map after a crash, and whether the guard is enough for long drives.</td><td><code>mapping.sh</code> with a forced crash (<code>kill -SEGV</code> the camera, as the guard's test did) mid-route</td><td>one lab evening</td></tr>
+<tr><td>H</td><td><b>Outside on the real sidewalk</b>, the same procedure, after A and C.</td><td>After: the project's title claim tested where it matters: sunlight, kerbs, moving people and traffic. The simulator has <code>sidewalk.world</code> and <code>marc_sidewalk_driveway.world</code> for a rehearsal.</td><td>all of section 5; an RTK GNSS reference would count as verified truth</td><td>two days per loop</td></tr>
+</table>
+</div>
+<p class="src">docs/ENGINEERING_NOTES.md section 4 rules 2 and 5; s2_static_10/RESULTS.md section 7; run/lib/slam_session/PASS_LINES.md D0-D3; s2_nav_03/RESULTS.md.</p>
+
+<!-- ============================================================ 10 -->
+<h2 id="s10"><span class="n">10</span>Glossary</h2>
+<div class="why"><b>Why you need this.</b> The notes use these words constantly. Each is explained once here in plain words.</div>
+<dl class="gl">
+<dt>Blend / fused odometry / <code>/fused/odometry</code></dt><dd>the one position estimate the Kalman filter produces from the camera's motion, the wheels and the gyroscopes; it never stops, even when the camera loses track.</dd>
+<dt>Bridge</dt><dd>our small program pair that copies the robot's wheel and gyroscope readings to the Jetson over the USB-C wire (sender on the robot, receiver on the Jetson); it publishes nothing on the robot.</dd>
+<dt>Camera guard</dt><dd>a watcher that restarts the camera program if it dies or hangs and raises a CAMERA DOWN warning.</dd>
+<dt>Closed properly</dt><dd>RTAB-Map was shut down through its normal path, so the database holds the corrected positions and the word dictionary; checked by <code>check_closed.py</code>.</dd>
+<dt>Corrected gap / tracking-alone gap</dt><dd>the two kinds of start-to-end distance (section 7.2).</dd>
+<dt>Costmap</dt><dd>a grid that marks how risky each 5 cm square of the floor is for the route planner.</dd>
+<dt>Depth mode</dt><dd>one of the five ways the ZED X computes depth (QUALITY, PERFORMANCE, ULTRA, NEURAL, NEURAL_PLUS); all drives used NEURAL.</dd>
+<dt>Depth cutoff / min_depth</dt><dd>the camera ignores anything nearer than 1 m; the map uses depth only to 3 m since drive 10.</dd>
+<dt>EKF, Kalman filter</dt><dd>a standard method for combining several noisy sensors into one best estimate.</dd>
+<dt>evo</dt><dd>a trajectory-comparison tool that measures how closely two recorded robot paths agree (pinned at 1.31.1).</dd>
+<dt>Fix (localisation)</dt><dd>a moment RTAB-Map accepts where the robot is on a saved map, after at least 20 matching 3D points between the new picture and a map picture.</dd>
+<dt>Force3DoF (<code>Reg/Force3DoF=true</code>)</dt><dd>keep the map on the floor plane: it may slide and turn, never tip.</dd>
+<dt>fusion.bag</dt><dd>the Jetson's recording of every position stream during a run (a ROS bag: a timed log of messages).</dd>
+<dt>GEN_1 / GEN_2</dt><dd>the ZED camera's two built-in position-tracking methods, a camera setting; GEN_2 is the default.</dd>
+<dt>GMSL2</dt><dd>the camera cable standard the ZED X uses (not USB).</dd>
+<dt>Ground truth</dt><dd>an independent measurement of where the robot really is (motion capture, RTK GNSS, or a simulator's truth). The building has none; the LiDAR estimate is not it.</dd>
+<dt>Gyroscope</dt><dd>a sensor that measures how fast something turns; the robot's (UM7) drifts about 5 degrees a minute; the camera has one too.</dd>
+<dt>IMU</dt><dd>inertial measurement unit: a gyroscope plus accelerometers in one chip.</dd>
+<dt>Jobs page</dt><dd>the Jetson's web page that finds every running job by its <code>.progress</code> file and draws a bar (port 8096).</dd>
+<dt>LiDAR</dt><dd>a laser scanner that measures distance by timing reflected laser light (Helios 32 and Ouster OS1-32 here).</dd>
+<dt>LiDAR estimate / yardstick / reference</dt><dd>the robot's path from the colleague's LiDAR mapping, used as an independent second opinion (section 7.1).</dd>
+<dt>Live map page</dt><dd>the browser page showing the camera map and the LiDAR view during a drive (port 8095).</dd>
+<dt>Localisation</dt><dd>working out where the robot is on a finished map, without changing the map.</dd>
+<dt>Loop closure</dt><dd>the map recognising a place it has seen before and pulling itself straight; counted as Link table types 1 (recognised again) and 2 (nearby re-match).</dd>
+<dt>LoopThr (<code>Rtabmap/LoopThr</code>)</dt><dd>how sure RTAB-Map must be before it uses a recognised place; 0.08 in localisation and SLAM sessions.</dd>
+<dt>Mask / people blanking</dt><dd>zeroing the depth pixels inside the camera's person boxes so people leave no trace in the map.</dd>
+<dt>move_base</dt><dd>the standard ROS route planner (dynamic window approach: choosing speed and turn several times a second to follow the route without hitting anything).</dd>
+<dt>Node</dt><dd>one saved map snapshot: a picture plus the position it was taken from; the graph is the nodes and the links between them.</dd>
+<dt>Odometry</dt><dd>step-by-step position tracking (from wheels, or from pictures: visual odometry); never corrected by itself.</dd>
+<dt>Park</dt><dd>the word that ends a drive; the map is closed after 60 s of stillness.</dd>
+<dt>Pass line</dt><dd>a success criterion written before the test, with what passing and failing mean.</dd>
+<dt>Perceptual aliasing</dt><dd>different places that look the same (the identical signboards).</dd>
+<dt>Progress file</dt><dd>a one-line text file a job rewrites every ~30 s (<code>N/M</code> and seconds elapsed) so the jobs page can show it.</dd>
+<dt>Results pack</dt><dd>the small folder per run with the numbers, figures and timelapse.</dd>
+<dt>ROS, ROS master, topic</dt><dd>the Robot Operating System: programs exchange named message streams (topics) through one coordinating program (the master).</dd>
+<dt>RTAB-Map</dt><dd>the open-source SLAM program used throughout (0.21.13 on the Jetson, 0.21.10 on the robot).</dd>
+<dt>SE(3) alignment</dt><dd>lining two paths up by rotation and shift only; Sim(3) also allows a size change and is not used for scoring.</dd>
+<dt>SLAM</dt><dd>simultaneous localisation and mapping: building the map while working out where you are on it.</dd>
+<dt>SVO / .svo2</dt><dd>the ZED camera's own recording format: stereo pictures and IMU, no depth (depth is recomputed at playback).</dd>
+<dt>tegrastats</dt><dd>NVIDIA's once-a-second log of the Jetson's processor, GPU, memory and power.</dd>
+<dt>TF</dt><dd>ROS's shared table of where each part of the robot is relative to the others (map -&gt; odom -&gt; base_link).</dd>
+<dt>TUM format</dt><dd>a path file: time x y z qx qy qz qw per line.</dd>
+<dt>Twist mux, <code>/cmd_vel</code></dt><dd>the robot's command switch: joystick and e-stop rank above our navigation commands.</dd>
+<dt><code>/use_sim_time</code></dt><dd>the ROS setting that makes programs follow a recording's clock; true only on a replay master.</dd>
+<dt>Wall fit</dt><dd>the registered way of lining a session's LiDAR map up with a reference map to check the LiDAR's own drift.</dd>
+</dl>
+
+<!-- ============================================================ 11 -->
+<h2 id="s11"><span class="n">11</span>Sources</h2>
+<div class="why"><b>Why you need this.</b> Every statement above came from a file. If a number here and a file disagree, the file wins and this page should be corrected.</div>
+<p>All paths are in this repository unless marked "(Jetson)" or "(Teams)".</p>
+<div class="tw">
+<table>
+<tr><th>Section</th><th>Built from</th></tr>
+<tr><td>1 Start here</td><td>every <code>results/*/*/RESULTS.md</code>; <code>docs/ENGINEERING_NOTES.md</code> sections 1 and 4; <code>docs/HARDWARE.md</code></td></tr>
+<tr><td>2 Where everything lives</td><td><code>docs/INSTALLED.md</code>; <code>docs/HARDWARE.md</code>; <code>docs/ENGINEERING_NOTES.md</code> rule 18; <code>data/DATA_INDEX.md</code> (29 Sep listing of the Teams folder)</td></tr>
+<tr><td>3 Hardware and power-on order</td><td><code>docs/ENGINEERING_NOTES.md</code> section 1 and rules 7-12, 15; <code>docs/OPERATIONS.md</code> ("Session-start ritual", "Robot address changes"); <code>docs/HARDWARE.md</code>; <code>docs/SOLVED.md</code>; <code>docs/DO_NOT_REPEAT.md</code></td></tr>
+<tr><td>4 Software setup</td><td><code>docs/ENGINEERING_NOTES.md</code> sections 1 and 3; <code>docs/INSTALLED.md</code>; <code>~/.sidewalk_env.sh</code> (Jetson); <code>docs/SOLVED.md</code> ("The ZED X will not open over SSH", "A LiDAR replay writes an EMPTY database"); script headers</td></tr>
+<tr><td>5 Workflows</td><td><code>run/*.sh</code> and <code>run/lib/</code> (headers, <code>localise/</code>, <code>slam_session/</code>, <code>lidar_reference/README.md</code>); <code>tools/robot_side/</code>; <code>tools/drive/</code>; <code>catkin_ws/src/sidewalk_navigation/doc/</code>; <code>docs/REPLAY.md</code>; <code>docs/ENGINEERING_NOTES.md</code> rules 8, 13, 20, 22 and section 5</td></tr>
+<tr><td>6 The recordings</td><td><code>data/DATA_INDEX.md</code>; <code>data/README.md</code>; the Teams folder itself</td></tr>
+<tr><td>7 Evaluation method</td><td><code>docs/ENGINEERING_NOTES.md</code> rules 19, 20 and section 4 rule 0; <code>catkin_ws/src/sidewalk_evaluation/scripts/eval_common.py</code>; the three PASS_LINES files; <code>docs/SOLVED.md</code> ("The robot's LiDAR map is wheel+IMU odometry", "Loop closures are link types 1 and 2", "The database's Node.pose is the camera's raw tracking"); <code>s2_scale_01/RESULTS.md</code></td></tr>
+<tr><td>8 What went wrong</td><td><code>docs/SOLVED.md</code>; <code>docs/DO_NOT_REPEAT.md</code>; <code>docs/ENGINEERING_NOTES.md</code> sections 2.1-2.13a and 3; <code>tools/wifi/FINDINGS.md</code></td></tr>
+<tr><td>9 Next experiments</td><td><code>docs/ENGINEERING_NOTES.md</code> section 4; the RESULTS.md files named in the table</td></tr>
+<tr><td>10 Glossary</td><td>the "Words used below" paragraphs of the RESULTS.md files and <code>docs/ENGINEERING_NOTES.md</code></td></tr>
+</table>
+</div>
+<p class="small" style="margin-top:40px;color:var(--muted)">Written on 29 September 2026 from the files above; the numbers were checked against the results packs. Nothing here is ground truth (docs/ENGINEERING_NOTES.md rule 19), and every test was run once unless a table says otherwise.</p>
+</main>
+</div>
+<script>
+(function(){
+  var k='worksheet-theme';
+  function apply(t){ if(t){document.documentElement.setAttribute('data-theme',t);} else {document.documentElement.removeAttribute('data-theme');} }
+  try{ apply(localStorage.getItem(k)||''); }catch(e){}
+  window.toggleTheme=function(){
+    var cur=document.documentElement.getAttribute('data-theme');
+    var dark = cur ? cur==='dark' : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    var next = dark ? 'light' : 'dark';
+    apply(next);
+    try{ localStorage.setItem(k,next); }catch(e){}
+  };
+})();
+</script>
+</body>
+</html>

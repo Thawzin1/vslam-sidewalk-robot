@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<!--
+  depth_characterization.launch — measure the ZED X's depth against a flat wall.
+
+  Run this ONCE PER DISTANCE. It is an interactive measurement: you physically
+  move the camera, measure the distance with a tape, then run this launch with
+  that distance.
+
+      roslaunch sidewalk_evaluation depth_characterization.launch \
+          distance:=5 truth:=4.985 note:="outdoor overcast, brick, newspaper taped"
+
+  Results accumulate into logs/sidewalk_evaluation/depth_characterization.json,
+  one entry per distance. Re-running the same distance REPLACES its entry
+  rather than duplicating it, so a botched measurement can simply be repeated.
+
+  The full protocol — wall size, adding texture, squaring the camera, and where
+  exactly to measure from — is documented in config/depth_targets.yaml. Read it
+  before the first measurement; the most common mistakes happen with the tape
+  measure, not the software.
+-->
+<launch>
+
+  <arg name="distance" default="1.0"
+       doc="nominal distance to the wall in metres (1, 2, 5, 10 or 15)"/>
+
+  <!-- The ACTUAL tape-measured distance, from the LEFT imager's lens plane.
+       Defaults to `distance`, but measure it: at 1 m the manufacturer's whole
+       acceptable error is 4 mm (0.4% of 1 m), which is narrower than the
+       difference between the lens plane and the front of the housing.
+
+       That bound, and the acceptance curve built from it, can be checked
+       without any hardware by running the script directly with its self-test
+       flag (see `rosrun sidewalk_evaluation depth_characterization.py
+       [dash][dash]help`; XML comments cannot contain two hyphens in a row,
+       hence the spelling). Worth doing once before the first real
+       measurement: it reproduces the two figures the ZED X datasheet actually
+       publishes (under 0.4% out to 2 m, under 7% at 20 m) and prints the
+       whole curve with each point labelled as quoted, interpolated or
+       extrapolated. -->
+  <arg name="truth" default="$(arg distance)"
+       doc="tape-measured distance from the LEFT imager's lens plane"/>
+
+  <arg name="frames" default="200"
+       doc="frames to average (200 is about 7 s at 30 FPS)"/>
+
+  <arg name="note" default=""
+       doc="conditions, e.g. 'outdoor overcast, brick wall, poster taped on'"/>
+
+  <arg name="timeout" default="20.0"
+       doc="seconds to wait for the camera before giving up"/>
+
+  <arg name="config"
+       default="$(find sidewalk_evaluation)/config/depth_targets.yaml"/>
+
+  <!-- required="true": if the camera is absent the node exits non-zero with a
+       specific diagnosis, and there is nothing useful to keep running for. -->
+  <node pkg="sidewalk_evaluation" type="depth_characterization.py"
+        name="depth_characterization" output="screen" required="true"
+        args="--distance $(arg distance)
+              --truth $(arg truth)
+              --frames $(arg frames)
+              --timeout $(arg timeout)
+              --config $(arg config)
+              --note '$(arg note)'"/>
+
+</launch>

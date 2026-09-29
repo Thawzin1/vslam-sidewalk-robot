@@ -1,0 +1,82 @@
+{
+ "run": "s2_loc_02_recog",
+ "starts": [
+  {
+   "start": 1,
+   "mark": "start_mark",
+   "fixed": true,
+   "first_kind": "nearby",
+   "first_s": 57.7,
+   "first_odom_m": 0.091,
+   "suspect_jumps": 0,
+   "eval_t": 1790417937.841,
+   "camera_xy_yaw": [
+    0.307,
+    -0.035,
+    0.2
+   ],
+   "P2": "not scorable: no LiDAR pose at that moment",
+   "worst_fix_disagreement_m": 0.404,
+   "P3_false_fix": false,
+   "P1": "PASS"
+  },
+  {
+   "start": 2,
+   "mark": "A_east",
+   "fixed": false,
+   "P1": "FAIL"
+  },
+  {
+   "start": 3,
+   "mark": "B_west",
+   "fixed": false,
+   "P1": "FAIL"
+  },
+  {
+   "start": 4,
+   "mark": "A_west",
+   "fixed": true,
+   "first_kind": "recognised",
+   "first_s": 140.2,
+   "first_odom_m": 5.229,
+   "suspect_jumps": 1,
+   "eval_t": 1790418691.842,
+   "camera_xy_yaw": [
+    0.172,
+    -4.573,
+    108.7
+   ],
+   "expected_xy": [
+    -0.026,
+    -4.136
+   ],
+   "disagreement_m": 0.48,
+   "heading_diff_deg": -0.7,
+   "uncertainty_m": 0.06,
+   "local_pairs": 10,
+   "false_localisation": false,
+   "P2": "FAIL",
+   "worst_fix_disagreement_m": 0.291,
+   "P3_false_fix": false,
+   "P1": "FAIL"
+  },
+  {
+   "start": 5,
+   "mark": "C_north",
+   "fixed": false,
+   "P1": "FAIL"
+  }
+ ],
+ "icp": {
+  "shift_m": [
+   -0.288,
+   0.027
+  ],
+  "rot_deg": 1.51,
+  "median_pair_m": 0.037,
+  "within_own_check": true
+ },
+ "P1_found_itself": "1 of 5 starts (pass line: at least 4 of 5)",
+ "P2_placed_right": "0 of 1 scorable fixed starts within 0.30 m (pass line: all but at most one; heading reported, not judged)",
+ "P3_false_fixes": "0 starts with a fix over 1.0 m from the LiDAR-derived place (pass line: 0); live suspect jumps 1"
+}

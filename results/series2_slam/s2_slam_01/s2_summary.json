@@ -1,0 +1,11 @@
+{
+ "links_between_sessions": 238,
+ "wrong": 0,
+ "S2_pass": true,
+ "disagreement_m": {
+  "median": 0.017,
+  "p95": 0.121,
+  "max": 1.237
+ },
+ "links_without_wheel_data": 0
+}

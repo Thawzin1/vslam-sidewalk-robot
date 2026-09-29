@@ -1,0 +1,67 @@
+{
+ "run_dir": "~/.run_records/s2_nav_01/nav_A",
+ "legs": [
+  {
+   "k": 0,
+   "name": "G1_east_junction",
+   "result": "SUCCEEDED",
+   "time_s": 34.0,
+   "end_estimate_to_goal_m": 0.213,
+   "end_truth_to_goal_m": null,
+   "n_samples": 440,
+   "n_plans": 34,
+   "planned_length_m": 2.91,
+   "driven_length_estimate_m": 4.54,
+   "dev_first_median_m": 0.033,
+   "dev_first_p95_m": 0.293,
+   "dev_first_max_m": 0.317,
+   "dev_force_median_m": 0.014,
+   "dev_force_p95_m": 0.055
+  },
+  {
+   "k": 1,
+   "name": "G2_start_mark",
+   "result": "SUCCEEDED",
+   "time_s": 59.4,
+   "end_estimate_to_goal_m": 0.195,
+   "end_truth_to_goal_m": null,
+   "n_samples": 695,
+   "n_plans": 60,
+   "planned_length_m": 13.94,
+   "driven_length_estimate_m": 14.35,
+   "dev_first_median_m": 0.037,
+   "dev_first_p95_m": 0.153,
+   "dev_first_max_m": 0.16,
+   "dev_force_median_m": 0.01,
+   "dev_force_p95_m": 0.085
+  }
+ ],
+ "N1": {
+  "pass": true,
+  "reached": 2,
+  "goals": 2,
+  "line": "every goal: move_base SUCCEEDED within its time limit, robot estimate <= 0.50 m from the goal"
+ },
+ "N2": {
+  "pass_software_part": true,
+  "unplanned_stops": [],
+  "line": "no stop by the safety layer except the planned end of each leg; collisions and hand-overs are judged by the user on the spot (PROTOCOL.md)"
+ },
+ "N3": {
+  "dev_first_median_m": 0.034,
+  "dev_first_p95_m": 0.227,
+  "dev_force_median_m": 0.011,
+  "dev_force_p95_m": 0.085,
+  "n": 1135
+ },
+ "N4": {
+  "largest_correction_step_m": 0.543,
+  "largest_correction_step_deg": 2.58,
+  "steps_over_0.3m": 2,
+  "driven_m_by_wheels_blend": 18.67,
+  "n_fixes": 61,
+  "longest_stretch_without_fix_m": 2.37,
+  "first_fix_after_m": 0.05,
+  "fixes_per_10m": 32.68
+ }
+}

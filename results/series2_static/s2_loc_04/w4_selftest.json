@@ -1,0 +1,17 @@
+{
+ "selftest": "drive 10 camera_corrected vs its Force3DoF LiDAR estimate",
+ "got": {
+  "median_m": 0.685,
+  "p95_m": 1.151,
+  "max_m": 1.242,
+  "n_matched": 860
+ },
+ "want": {
+  "disagreement_median_m": 0.685,
+  "disagreement_p95_m": 1.151,
+  "disagreement_max_m": 1.242,
+  "n_matched": 860
+ },
+ "reference_valid": true,
+ "PASS": true
+}

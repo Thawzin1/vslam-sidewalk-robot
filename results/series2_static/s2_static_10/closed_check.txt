@@ -1,0 +1,5 @@
+  ~/slam_series2/s2_static_10.db: 1558 nodes, 199 loop closures
+    PASS  corrected positions saved (Admin.opt_poses)    18360 bytes
+    PASS  visual dictionary saved (Word table)           367323 words
+    PASS  neighbour links stored both ways               859 forward, 859 back (860 nodes in the saved graph)
+  CLOSED PROPERLY - safe to power off.

@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Computer status - sidewalk robot</title>
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<nav class="top" id="nav"></nav>
+<div id="drawerr" class="band"></div>
+<div id="fresh" class="grey">Connecting...<span class="sub">waiting for the first answer</span></div>
+<h1>Computer status</h1>
+<div class="s">The Jetson (the camera computer on the robot) and the robot's own computer: memory, processor, temperatures, every disk, and the robot's battery voltage. Sent from the Jetson every 2 s. Grey means normal; amber and red mean look now.</div>
+<div class="jet" id="jet"><h2>Jetson status</h2><div class="s">waiting for the first report</div></div>
+<div class="jet" id="rob"><h2>Robot computer</h2><div class="s">waiting for the first report</div></div>
+<footer>All times are Hamilton time (America/Toronto). This page asks for new data every 2 s and never downloads the map pictures.</footer>
+<script src="/common.js"></script>
+<script>
+'use strict'
+nav('status.html')
+window.stateQuery = () => '&only=status'
+// ---- the computers' health (sent inside every push as body.jetson) ------------------
+// EVERY value from the push goes through num() or esc() before it reaches the page: the robot's
+// figures travel over plain WiFi, so nothing may be trusted as HTML (review defect 2).
+const num = (v, d) => (typeof v === 'number' && isFinite(v)) ? String(d == null ? v : v.toFixed(d)) : '?'
+const arr = v => Array.isArray(v) ? v : []
+function gb(b){ return (typeof b === 'number' && isFinite(b)) ? (b / 1073741824).toFixed(1) + ' GB' : '?' }
+function clock(t){ return (typeof t === 'number' && isFinite(t)) ? hhmmss(t * 1000) : '?' }
+function barHtml(frac, cls, mark){
+  const w = (typeof frac === 'number' && isFinite(frac)) ? Math.max(0, Math.min(1, frac)) * 100 : 0
+  const m = (typeof mark === 'number' && isFinite(mark)) ? '<u style="left:' + (Math.max(0, Math.min(1, mark)) * 100).toFixed(1) + '%"></u>' : ''
+  return '<div class="bar ' + (cls || '') + '"><i style="width:' + w.toFixed(1) + '%"></i>' + m + '</div>'
+}
+// plain names for the temperature sensors this hardware reports
+const TEMP_NAMES = {'CPU-therm': 'processor', 'GPU-therm': 'graphics processor', 'SOC0-therm': 'chip, zone 0',
+  'SOC1-therm': 'chip, zone 1', 'SOC2-therm': 'chip, zone 2', 'Tdiode_tegra': 'chip diode', 'Tboard_tegra': 'board',
+  'tj-therm': 'hottest point on the chip', 'iwlwifi_1': 'WiFi card', 'CV0-therm': 'vision unit 0', 'CV1-therm': 'vision unit 1', 'CV2-therm': 'vision unit 2'}
+const STATE_WORDS = {retired_present: 'retired - still plugged in, not used', retired_absent: 'retired - removed',
+  retired_mounted: 'retired - but opened again', offline: 'not answering', unmounted: 'plugged in but not opened',
+  absent: 'not plugged in', missing: 'not found', pulled_out: 'pulled out', replugged: 'pulled out and put back',
+  other_card: 'a different card is in the slot', folder_taken: 'its folder is used by something else',
+  measuring: 'being measured', stuck: 'not answering - the disk may be stuck', mounted: ''}
+function machineHtml(H, guard){
+  // memory, processor (total + each core), graphics processor, hottest sensor, busiest programs
+  const out = []
+  const M = H.memory || {}
+  if (typeof M.total === 'number' && M.total > 0){
+    const ap = M.avail_pct
+    const cls = (typeof guard === 'number' && ap < guard + 3) ? 'bad' : (ap < 25 ? 'warn' : '')
+    const swap = (M.swap_used > 0) ? ' - compressed spare memory (swap, kept inside the memory itself) in use: ' + gb(M.swap_used) : ''
+    out.push('<div class="jrow"><b>Memory</b><div>' + barHtml(M.used / M.total, cls, typeof guard === 'number' ? 1 - guard / 100 : null) +
+      '<div class="jtxt ' + cls + '">' + gb(M.used) + ' used of ' + gb(M.total) + ' - ' + gb(M.avail) + ' free (' + num(ap) + ' %)' + swap +
+      (typeof guard === 'number' ? '. White tick: the memory guard stops the mapping program first once free memory falls below ' +
+        num(guard) + ' % (and the compressed spare memory (swap) is also below ' + num(guard) + ' % free).' : '') + '</div></div></div>')
+  } else out.push('<div class="jrow"><b>Memory</b><span class="off">' + esc(M.error || H.error || (H.measuring ? 'still measuring' : 'not reported')) + '</span></div>')
+  const C = H.cpu || {}, G = H.gpu || {}
+  if (typeof C.cores === 'number'){
+    const tot = C.total_pct
+    const cls = typeof tot === 'number' && tot > 97 ? 'warn' : ''
+    const cores = arr(C.per_core).map(v => '<i style="height:' + Math.max(4, Math.min(100, typeof v === 'number' ? v : 0)) + '%" title="' + num(v) + ' %"></i>').join('')
+    const temps = arr(H.temps).filter(t => t && typeof t.c === 'number')
+    const hot = temps.reduce((a, t) => (!a || t.c > a.c) ? t : a, null)
+    const hotCls = hot && hot.c >= 85 ? 'bad' : (hot && hot.c >= 75 ? 'warn' : '')
+    out.push('<div class="jrow"><b>Processor</b><div>' + barHtml((tot || 0) / 100, cls) +
+      '<div class="jtxt ' + cls + '">' + (typeof tot !== 'number' ? 'measuring...' : num(tot) + ' % of all ' + num(C.cores) + ' cores') +
+      ' - waiting work (load) ' + num(C.load1) + ' (' + num(C.cores) + ' = every core busy, more = work queuing)</div></div></div>')
+    if (cores) out.push('<div class="jrow"><b>each core</b><div class="cores" style="grid-template-columns:repeat(' + arr(C.per_core).length + ',1fr)">' + cores + '</div></div>')
+    out.push('<div class="jrow"><b>Graphics (GPU)</b><div>' + barHtml((G.pct || 0) / 100, '') +
+      '<div class="jtxt">' + (typeof G.pct !== 'number' ? 'not reported' : num(G.pct) + ' % busy') + '</div></div></div>')
+    if (hot) out.push('<div class="jrow"><b>Hottest part</b><div class="jtxt ' + hotCls + '">' + num(hot.c) + ' &deg;C (' +
+      esc(TEMP_NAMES[hot.name] || hot.name || '?') + ')' + (hotCls ? ' - the computer slows itself down when too hot' : '') + '</div></div>')
+  }
+  const T = H.top || {}
+  const li = (r, v) => '<li><span>' + esc(r && r.name) + '</span> ' + v + '</li>'
+  if (Array.isArray(T.by_mem)) out.push('<div class="jcols"><div>Most memory<ol>' + T.by_mem.map(r => li(r, gb(r && r.rss))).join('') +
+    '</ol></div><div>Most processor (100 % = one core)<ol>' + arr(T.by_cpu).map(r => li(r, num(r && r.cpu_pct) + ' %')).join('') + '</ol></div></div>')
+  else if (typeof T.count === 'number') out.push('<div class="jtxt">' + num(T.count) + ' programs running (their names are not shown: the robot is a colleague\'s computer)</div>')
+  return out.join('')
+}
+function diskHtml(d){
+  const lvl = d.level === 2 ? 'bad' : (d.level === 1 ? 'warn' : '')
+  const frac = (typeof d.total === 'number' && d.total > 0 && typeof d.used === 'number') ? d.used / d.total : null
+  const head = d.headline || (typeof d.avail === 'number' ? gb(d.avail) + ' free' : '')
+  const st = (d.state && d.state in STATE_WORDS) ? STATE_WORDS[d.state] : (d.state || '')
+  const cmds = arr(d.commands).filter(c => typeof c === 'string')
+  return '<div class="jrow"><b>' + esc(d.title || d.key) + '</b><div>' +
+    (frac != null && (!d.state || d.state === 'mounted') ? barHtml(frac, lvl) : '') +
+    '<div class="jtxt ' + lvl + '">' + esc(head) + (typeof d.total === 'number' ? ' of ' + gb(d.total) : '') +
+    (d.status ? ' - ' + esc(d.status) : '') + (st ? ' (' + esc(st) + ')' : '') +
+    (cmds.length ? '<code style="display:block;white-space:pre-wrap">' + esc(cmds.join('\n')) + '</code>' : '') + '</div></div></div>'
+}
+function jetsonPanels(J){
+  const el = document.getElementById('jet'), rel = document.getElementById('rob')
+  if (!J){
+    el.innerHTML = '<h2>Jetson status</h2><div class="s off">This sender does not report the computers\' health (it is an older version of slam_live_push.py).</div>'
+    rel.innerHTML = '<h2>Robot computer</h2><div class="s off">not reported</div>'
+    return
+  }
+  if (J.error && !J.memory){
+    el.innerHTML = '<h2>Jetson status</h2><div class="jtxt bad">The Jetson could not measure itself: ' + esc(J.error) + '</div>'
+    rel.innerHTML = ''
+    return
+  }
+  const S = J.storage || {}
+  const devs = arr(S.devices).filter(d => d && typeof d === 'object')
+  const M = J.memory || {}
+  const sAge = (typeof S.asked_at === 'number' && typeof J.at === 'number') ? J.at - S.asked_at : 0
+  el.innerHTML = '<h2>Jetson status <span class="x s">- ' + esc(J.host || '') + ', running for ' + ago(J.uptime_s) + '</span></h2>' +
+    machineHtml(J, M.earlyoom_pct) + '<h2 style="margin-top:10px">Jetson storage</h2>' +
+    devs.filter(d => d.machine !== 'robot').map(diskHtml).join('') +
+    (S.ok === false ? '<div class="jtxt warn">Storage read by ' + esc(S.source || S.error || 'a fallback') + '.</div>' : '') +
+    (sAge > 15 ? '<div class="jtxt warn">These disk figures are ' + ago(sAge) + ' old - the storage page is slow or stuck.</div>' : '')
+  // --- the robot: its computer (from its own reporter), then its own disk and its card (from the storage page)
+  try { robotPanel(J, S, devs) }
+  catch (e){ rel.innerHTML = '<h2>Robot computer</h2><div class="jtxt bad">This panel could not be drawn: ' + esc(e && e.message) + '</div>' }
+}
+// the robot's battery voltage: its value and age, or "robot offline - last seen HH:MM". Plain grey on
+// purpose - a voltage is a reading, not a charge level, so it is never coloured good or bad (added 2026-09-26)
+function batteryHtml(J){
+  let b
+  try { b = robotBattery(J) } catch (e){ b = {volts: null, text: 'could not be worked out (' + (e && e.message) + ')'} }
+  return '<div class="jrow"><b>Robot battery voltage</b><div>' +
+    (b.volts ? '<span class="volt">' + esc(b.volts) + '</span> <span class="jtxt">' + esc(b.text) + '</span>'
+             : '<div class="jtxt">' + esc(b.text) + '</div>') +
+    '<div class="jtxt">A reading, not a charge level: ask before a drive. Voltage (the battery\'s electrical push, in volts, V) ' +
+    'as the robot\'s own controller reports it once a second; it moves by a few tenths of a volt from second to second, even parked.</div></div></div>'
+}
+function robotPanel(J, S, devs){
+  const rel = document.getElementById('rob')
+  const R = J.robot || {}, RH = R.health
+  const good = RH && RH.memory
+  const askAge = (typeof R.asked_at === 'number' && typeof J.at === 'number') ? J.at - R.asked_at : 0
+  const per = (typeof R.period_s === 'number' && R.period_s > 0) ? R.period_s : 2
+  const stale = good && ((typeof RH.age_s === 'number' && RH.age_s > 3 * per) || askAge > 10)
+  let head
+  if (good) head = '<span class="x s">- ' + esc(R.host || '') + ', running for ' + ago(RH.uptime_s) + '</span>'
+  else head = '<span class="x s off">- ' + esc((RH && (RH.error || (RH.measuring ? 'its reporter is still measuring' : ''))) || R.why || 'no report') +
+    (askAge > 10 ? ' (asked ' + ago(askAge) + ' ago)' : '') +
+    (typeof R.last_ok === 'number' ? ' (last full report ' + clock(R.last_ok) + ')' : '') + '</span>'
+  const rs = S.robot || {}
+  const rcmds = arr(rs.commands).filter(c => typeof c === 'string')
+  rel.innerHTML = '<h2>Robot computer ' + head + '</h2>' +
+    batteryHtml(J) +
+    (stale ? '<div class="jtxt warn">These robot figures are old (' + ago(Math.max(RH.age_s || 0, askAge)) + ') - its reporter may be stuck.</div>' : '') +
+    (good ? machineHtml(RH, null) : '') +
+    '<h2 style="margin-top:10px">Robot storage <span class="x s">- ' + esc(rs.header || '') + '</span></h2>' +
+    devs.filter(d => d.machine === 'robot').map(diskHtml).join('') +
+    (rs.online === false && rs.status ? '<div class="jtxt">' + esc(rs.status) +
+      (rcmds.length ? '<code style="display:block;white-space:pre-wrap">' + esc(rcmds.join('\n')) + '</code>' : '') + '</div>' : '')
+}
+// a fault in drawing is shown IN the panel, never allowed to stop the page (review defect 1)
+function jetson(J){
+  try { jetsonPanels(J) }
+  catch (e){
+    document.getElementById('jet').innerHTML = '<h2>Jetson status</h2><div class="jtxt bad">This panel could not be drawn: ' + esc(e && e.message) + '</div>'
+    document.getElementById('rob').innerHTML = '<h2>Robot computer</h2><div class="jtxt bad">not drawn (see the fault above)</div>'
+  }
+}
+window.onBody = b => jetson(b.jetson)
+startPolling()
+</script>
+</body>
+</html>

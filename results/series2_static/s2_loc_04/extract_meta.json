@@ -1,0 +1,33 @@
+{
+ "source": "~/.run_records/s2_loc_04/fusion.bag",
+ "source_size_bytes": 3127788090,
+ "source_mtime_epoch": 1790510877.8739533,
+ "tool": "loc04_extract.py (project records)",
+ "starts": [
+  [
+   1,
+   1790509163.7501464
+  ],
+  [
+   2,
+   1790509392.3957405
+  ]
+ ],
+ "pictures": 1553,
+ "pictures_with_matching_pose": 1552,
+ "localisation_pose_messages": 1552,
+ "localised_tum_poses": 1229,
+ "start2_first_accepted_fix_t": 1790509604.464122,
+ "start2_unlocalised_messages_after_first_fix": 0,
+ "ekf_messages": 77653,
+ "ekf_kept_10hz": 15590,
+ "ekf_gaps_over_0.5s": 31,
+ "wheel_messages": 15525,
+ "gyro_messages": 30251,
+ "blend_bins_10hz": 16813,
+ "camera_gyro_bins_10hz": 16956,
+ "bridge_status_messages": 1693,
+ "unlocalised_rule": "covariance xx >= 4999.5 (RTAB-Map publishes 9999 when not localised)",
+ "written_hamilton": "2026-09-27 09:51:31 EDT",
+ "seconds": 33.4
+}

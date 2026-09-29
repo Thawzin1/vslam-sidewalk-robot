@@ -1,0 +1,56 @@
+{
+ "log": "~/.run_records/s2_static_09/tegrastats.log",
+ "window_hamilton": [
+  "2026-09-26 20:52:25",
+  "2026-09-26 21:21:00"
+ ],
+ "samples": 1665,
+ "power_total_W": {
+  "max": {
+   "value": 35.7,
+   "at_hamilton": "21:13:01"
+  },
+  "median": 29.9
+ },
+ "tj_C_max": {
+  "value": 62.1,
+  "at_hamilton": "21:08:47"
+ },
+ "cpu_temp_C_max": {
+  "value": 62.2,
+  "at_hamilton": "21:13:01"
+ },
+ "gpu_temp_C_max": {
+  "value": 55.9,
+  "at_hamilton": "21:10:40"
+ },
+ "gpu_load_pct": {
+  "max": {
+   "value": 99,
+   "at_hamilton": "21:02:01"
+  },
+  "median": 22.0
+ },
+ "cpu_mean_of_12_cores_pct": {
+  "max": {
+   "value": 98.5,
+   "at_hamilton": "21:12:55"
+  },
+  "median": 40.6
+ },
+ "tegrastats_skips_over_2s": [
+  [
+   "20:58:19",
+   3.0
+  ],
+  [
+   "21:05:38",
+   3.0
+  ]
+ ],
+ "ram_free_pct_lowest": {
+  "value": 54.1,
+  "used_GB": 13.7,
+  "at_hamilton": "21:20:57"
+ }
+}

@@ -1,0 +1,26 @@
+{
+ "source": "wheel.tum = the robot's own /odometry/filtered (wheels + gyroscope), recorded ON THE ROBOT in its LiDAR bag (lidar_ref_f3dof/, pulled from the robot); unaffected by the Jetson's WiFi link",
+ "tool": "03_methods/results_packs_2026-09-26/robot_wheels_from_robot_bag.py",
+ "wheel_tum_span_hamilton": [
+  "02:00:44",
+  "02:31:35"
+ ],
+ "same_window_as_jetson_copy": {
+  "from_hamilton": "02:02:27",
+  "to_hamilton": "02:31:20",
+  "end_to_start_m": 2.027,
+  "heading_deg": -14.94,
+  "path_m_every_message": 265.5,
+  "path_m_2hz": 263.4,
+  "messages": 86700
+ },
+ "whole_drive_to_parked": {
+  "from_hamilton": "02:02:27",
+  "to_hamilton": "02:31:35",
+  "end_to_start_m": 2.027,
+  "heading_deg": -15.01,
+  "path_m_every_message": 265.5,
+  "path_m_2hz": 263.4,
+  "messages": 87403
+ }
+}

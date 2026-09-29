@@ -1,0 +1,320 @@
+<?xml version="1.0"?>
+<!--
+  zedx_front.launch — bring up the front ZED X camera.
+
+  WHY start_driver IS AN ARGUMENT
+    roslaunch resolves $(find zed_wrapper) when it parses the file, and if the
+    wrapper is not built the whole launch dies before anything can explain why.
+    Wrapping the include in a conditional group means roslaunch never evaluates
+    it when start_driver:=false, so the validation tooling can run against a
+    bag or an SVO replay on a machine where zed-ros-wrapper was never built.
+
+    zed-ros-wrapper is deliberately NOT a declared dependency in package.xml
+    for the same reason — see the note there.
+-->
+<launch>
+
+  <!-- Per-camera identity. Everything namespaced from this one string, so the
+       rear camera can be added later by launching this file again with a
+       different value rather than by editing anything. -->
+  <arg name="camera_name"   default="zedx_front"/>
+  <arg name="camera_model"  default="zedx"/>
+
+  <!-- 0 = auto-detect. Set the real serial once two cameras are attached,
+       otherwise which driver grabs which unit is a race at boot. -->
+  <arg name="serial_number" default="0"/>
+
+  <arg name="start_driver"  default="true"
+       doc="false = configure topics only, for replaying a bag or SVO on a
+            machine with no ZED SDK"/>
+  <arg name="config_file"   default="$(find sidewalk_perception)/config/zedx_front.yaml"/>
+
+  <!-- Replay: point this at a .svo2 file and the wrapper reprocesses it as if
+       the camera were live, publishing the identical topic set. -->
+  <arg name="svo_file"      default=""/>
+
+  <!-- ==================== PHYSICAL MOUNTING ====================
+       MEASURED 2026-08-29. These were 0.0 until then, and that was not a
+       harmless default: the wrapper publishes its OWN frame tree
+       (zedx_front_base_link -> camera_center -> left/right_camera_frame ->
+       optical frames -> imu_link) positioned by exactly these arguments. With
+       them at zero the entire tree sat on base_link, so RTAB-Map — which uses
+       the wrapper's frames, not the robot URDF's — placed every observation
+       0.54 m too low. Runs 1 through 6 were all recorded that way.
+
+       z IS DERIVED FROM A TAPE MEASUREMENT, not tuned:
+           0.7112   measured, floor -> ZED X housing UPPER SURFACE
+         - 0.0159   half the 31.8 mm body height [datasheet Rev 1.6]
+         = 0.6953   camera_center above the floor
+         - 0.0160   camera base -> camera_center, from the live tree
+         = 0.6793   zedx_front_base_link above the floor
+         - 0.13228  base_link above the floor
+         = 0.547    <- cam_pos_z
+
+       y = -0.040 toward swiftnav_link (y = -0.426). Set 2026-08-29; it was
+       +0.070. That is a PHYSICAL RE-POSITION of the camera, not a corrected
+       calculation - do not "restore" the old value.
+
+       x = 0.081 unchanged, from the mount tuned live in simulation.
+
+       PRECISION CAVEAT: the datasheet gives the cross-section as 31.8 x 36.7 mm
+       but never says which is height. 31.8 is taken as height (slim bar; 36.7
+       is lens-barrel depth). Reversed, z would be 0.5446 - 2.5 mm lower. Every
+       other term is measured, so that 2.5 mm is the only assumption here.
+
+       MUST STAY IDENTICAL to zedx_base_joint in BOTH
+         sidewalk_bringup/urdf/husky_a200_real.urdf   (real robot, RViz)
+         sidewalk_sim/urdf/husky_real.urdf            (simulation)
+       Those define the same physical mount; if they drift apart, the driver's
+       frames and the robot model disagree and nothing warns you.
+       robot_frames.yaml holds the LEFT LENS, which is this plus the ZED's
+       internal (-0.010, +0.060, +0.016) - a different point, deliberately.
+
+       VERIFY after any change:
+           rosrun tf tf_echo zedx_base_frame zedx_front_base_link
+       must read ~[0, 0, 0] - the robot model's mount and the driver's root
+       landing on each other.
+
+       PITCH IS MEASURED, 2026-08-29: 0.0565 rad = 3.24 deg NOSE DOWN.
+       RANSAC plane fit to the floor in base_footprint over 5 frames, ~16500
+       inliers each: -3.24 deg (spread 0.28) before, -0.03 deg (spread 0.27)
+       after, against a +/-0.3 deg noise floor. Floor slope over 4 m of range
+       went from 226 mm to 2 mm.
+
+       CORRECTION, same day: an earlier version of this comment claimed
+       "atan(0.226/4) = 3.23 deg confirms the normal independently". IT DOES
+       NOT, and that sentence was circular. rise/4 is identically -n[0]/n[2] =
+       -tan(pitch) computed from the very same fitted normal, with the plane
+       offset cancelling out. It is the same number restated. This is the exact
+       failure mode as the withdrawn radius finding (commit a565d31) - two
+       statistics of one fit presented as two witnesses.
+
+       Re-measuring the plane AFTER applying the correction is also not
+       independent evidence. base_footprint is bolted to the robot body, not to
+       the world, so the fit constrains the SUM (camera-tilt + floor-patch
+       slope) both times; getting ~0 back is arithmetic confirming itself. It
+       does prove the edit reached the live tree with the right sign - a
+       flipped sign would have read -6.5 deg - and nothing more.
+
+       WHAT ACTUALLY ESTABLISHED CAUSE: gravity.
+           rosrun sidewalk_perception check_gravity.py _samples:=600
+       The ZED X accelerometer at rest measures true vertical, which owes
+       nothing to the transform tree. Through this model it lands 0.90 deg from
+       vertical. Camera-level-with-sloped-floor predicts ~3.2 deg; body-pitched-
+       on-its-wheels predicts ~6.5 deg. Both excluded.
+
+       Roll left at 0: the two methods read +0.24 and -1.37 deg and disagree by
+       more than either is worth. Yaw is unmeasurable by both and stays unset.
+
+       Re-measure the angle any time with:
+           rosrun sidewalk_perception measure_camera_tilt.py _frames:=5
+       ...but read the caveat above before calling a clean result a
+       confirmation of anything but deployment.
+
+       The same tilt must be on zedx_base_joint's rpy in BOTH URDFs, or the
+       robot model and the driver disagree again. THEY DO NOT SUM: the ZED
+       driver's chain hangs off base_link directly and does not descend from
+       zedx_base_frame, so the two 0.0565 values are parallel descriptions of
+       one mount, not a double rotation. Verify with
+           rosrun tf tf_echo zedx_base_frame zedx_front_base_link
+       which must read ~[0,0,0] translation AND ~[0,0,0] rotation.
+       ============================================================ -->
+  <arg name="cam_pos_x"     default="0.081"/>
+  <arg name="cam_pos_y"     default="-0.040"/>
+  <arg name="cam_pos_z"     default="0.547"/>
+  <arg name="cam_roll"      default="0.0"/>
+  <arg name="cam_pitch"     default="0.0565"/>
+  <arg name="cam_yaw"       default="0.0"/>
+
+  <!-- ==================== DEPTH MODE OVERRIDE ====================
+       Empty by default, which means "use whatever zedx_front.yaml says"
+       (currently ULTRA). Set it ONLY for a deliberate experiment:
+
+           roslaunch sidewalk_perception zedx_front.launch depth_mode:=NEURAL
+
+       WHY THIS IS AN OVERRIDE AND NOT A CONFIG EDIT. ENGINEERING_NOTES.md forbids NEURAL
+       as a standing setting - it costs roughly 80 % of the Orin's GPU, and this
+       project deliberately moved off it (docs/SOLVED.md, "Fix zedx_front.yaml
+       depth_mode NEURAL to ULTRA"). That constraint is about SUSTAINED compute
+       while driving and mapping. A stationary bench measurement has no
+       navigation and no SLAM at speed, so NEURAL can be evaluated there without
+       contradicting the rule - but only if the change dies with the run.
+
+       Editing the yaml instead would leave every later run silently on NEURAL,
+       which is exactly how a tuning value becomes a permanent accident. This
+       argument is applied AFTER the rosparam load below, so the file on disk is
+       never touched and the override appears in the run's own log.
+
+       WHATEVER IS SET HERE MUST BE RECORDED WITH THE RESULT. A depth mode that
+       nobody wrote down makes the numbers unreproducible.
+       ============================================================== -->
+  <arg name="depth_mode" default=""
+       doc="Leave empty for the configured default. NEURAL is for bench tests
+            only - see the note above before using it on a driving run."/>
+
+  <!-- ==================== EXPOSURE OVERRIDE ====================
+       Same mechanism as depth_mode above, and added for the same reason: an
+       experiment needs to change a setting for one run without editing a file
+       that every later run reads.
+
+       WHY IT HAS TO BE DONE HERE. Auto-exposure CANNOT be turned off at
+       runtime. zed_wrapper_nodelet.cpp:2801 overwrites the incoming dynamic
+       reconfigure request with the node's own internal state, and :2937 says
+       outright that "Reconfigure exposure has no effect if auto_exposure_gain
+       is enabled". The node reads the setting from the parameter server at
+       startup instead (:1212), and it reads the TOP-LEVEL name - the config
+       yaml writes video/auto_exposure_gain, which is a different parameter and
+       is silently ignored. Three attempts on 2026-09-07 failed on exactly that.
+
+       exposure and gain are percentages, 0-100, and have no effect unless
+       auto_exposure is set to false.
+
+           roslaunch sidewalk_perception zedx_front.launch                auto_exposure:=false exposure:=40 gain:=40
+
+       WHATEVER IS SET HERE MUST BE RECORDED WITH THE RESULT, for the same
+       reason as the depth mode.
+       ============================================================== -->
+  <arg name="auto_exposure" default=""
+       doc="Empty = leave as configured. 'false' to pin exposure/gain below."/>
+  <arg name="exposure" default="" doc="percent 0-100; needs auto_exposure:=false"/>
+  <arg name="gain"     default="" doc="percent 0-100; needs auto_exposure:=false"/>
+
+  <!-- ============= STEREO GEOMETRY: SELF-CALIBRATION AND STABILIZATION =====
+       Added 2026-09-09, after a measured incident. Same mechanism as the two
+       overrides above, and empty by default so an ordinary run is unchanged.
+
+       WHAT SELF-CALIBRATION DOES. At every startup the SDK re-estimates the
+       alignment between the two lenses and quietly adopts the result. That is
+       the right behaviour for a camera on a moving robot, where a knock can
+       shift the lenses - but it means the instrument can measure the same
+       object differently in two sessions with nothing else changed.
+
+       THE INCIDENT. The 4 m frame was measured at 07:47 and again at 00:29 the
+       same day, both in NEURAL, with the robot verified back in place to 3.0 mm
+       by the Helios. The distance between the two lower ball centres came out
+       1.1120 m in the morning and 1.1543 m at night - 42 mm apart, on an object
+       that had not moved and that the laser still measured at 1.0908 m. The
+       left camera's focal length was unchanged to 0.006 %, the scene was fully
+       lit, and the point count was within 5 %, so the change was in the stereo
+       geometry itself. The frozen detector rejects any frame whose base leaves
+       1.100 +/- 0.060, so 1.1543 sits 6 mm from the wall: frames were being
+       discarded, the run slowed 4.3x, and the surviving samples were a
+       CENSORED population whose spread would have flattered the result.
+
+       WHY IT MATTERS BEYOND ONE RUN. A distance series compares stations
+       against each other. If the instrument silently re-calibrates between
+       them, a change from station to station cannot be told from a change from
+       session to session. Pinning it costs nothing and makes the series
+       comparable.
+
+       depth_stabilization is here for the same reason: it averages depth over
+       recent frames, so a reading depends on what came before it. 0 makes each
+       frame independent. It is already pinned to 0 for offline replay, and
+       live work should match.
+
+           roslaunch sidewalk_perception zedx_front.launch \
+               self_calib:=false depth_stabilization:=0
+
+       WHATEVER IS SET HERE MUST BE RECORDED WITH THE RESULT.
+       ============================================================== -->
+  <arg name="self_calib" default=""
+       doc="Empty = leave as configured. 'false' freezes the lens-to-lens
+            geometry at the factory calibration so two sessions measure alike."/>
+  <arg name="depth_stabilization" default=""
+       doc="Empty = leave as configured. 0 = each frame independent."/>
+  <arg name="svo_compression" default=""
+       doc="Empty = leave as configured (yaml: 0 LOSSLESS, the depth study's setting - rule 16). SLAM drives: 2 = H265 lossy. Read at camera start only."/>
+
+  <!-- ==================== CAMERA'S OWN POSITION TRACKER (SLAM drives only) ==========
+       Added 2026-09-26 after three driver crashes (segmentation faults) in one night -
+       camera_segfault_2026-09-26/ (project records). Empty = leave as configured,
+       so the depth study's runs (rule 16) are byte-identical.
+         pos_tracking_mode:=GEN_1   the older tracker engine; Stereolabs made GEN_1 the
+                                    default for SDK 4.2.x "as a workaround for the random
+                                    crash issue caused by GEN_2" (zed-ros2-wrapper
+                                    Humble-v4.2.x release notes). The ROS 1 wrapper here
+                                    still defaults to GEN_2 (common.yaml:49).
+         pos_tracking:=false        tracker off. ONLY takes effect together with
+                                    depth_stabilization:=0 - depth smoothing switches the
+                                    tracker back on (Camera.hpp:7717; wrapper
+                                    mPosTrackingRequired). Costs noisier depth (SOLVED.md,
+                                    "Run 5's camera segfault": 1.73x jitter).
+       Nothing in the SLAM drive stack reads the tracker's output (/zed_node/odom, /pose);
+       the fused odometry uses only /zed_node/imu/data, which a separate thread publishes.
+       WHATEVER IS SET HERE MUST BE RECORDED WITH THE RESULT.
+       ============================================================== -->
+  <arg name="pos_tracking" default=""
+       doc="Empty = as configured (true). 'false' = tracker off (needs depth_stabilization:=0)."/>
+  <arg name="pos_tracking_mode" default=""
+       doc="Empty = as configured (wrapper default GEN_2). 'GEN_1' = older engine."/>
+
+  <!-- ns pushes the node to /<camera_name>/zed_node/… . This wrapper build does
+       NOT namespace by camera_name itself (it would publish bare /zed_node/…),
+       but every perception/SLAM node in this project subscribes under
+       /zedx_front/zed_node/…, so the namespace is applied here. -->
+  <group if="$(arg start_driver)" ns="$(arg camera_name)">
+    <include file="$(find zed_wrapper)/launch/include/zed_camera.launch.xml">
+      <arg name="camera_name"   value="$(arg camera_name)"/>
+      <arg name="camera_model"  value="$(arg camera_model)"/>
+      <!-- NOTE: this zed-ros-wrapper build selects a unit via camera_id / the
+           config yaml's general.serial_number, NOT a launch arg. Passing
+           serial_number here raises "unused args [serial_number]". For two
+           cameras (Phase 7), set the serial in zedx_front.yaml as
+           general/serial_number rather than reintroducing it here. -->
+      <arg name="svo_file"      value="$(arg svo_file)"/>
+      <arg name="cam_pos_x"     value="$(arg cam_pos_x)"/>
+      <arg name="cam_pos_y"     value="$(arg cam_pos_y)"/>
+      <arg name="cam_pos_z"     value="$(arg cam_pos_z)"/>
+      <arg name="cam_roll"      value="$(arg cam_roll)"/>
+      <arg name="cam_pitch"     value="$(arg cam_pitch)"/>
+      <arg name="cam_yaw"       value="$(arg cam_yaw)"/>
+    </include>
+
+    <!-- Our settings are loaded AFTER the wrapper's own defaults so they win.
+         Ordering matters here: rosparam load is last-write-wins. -->
+    <!-- ns="zed_node" so, inside the group ns=<camera_name>, the overrides land
+         at /<camera_name>/zed_node/… — exactly where the wrapper node reads them.
+         Without it the group puts them at /<camera_name>/… and the node never
+         sees them (its defaults, e.g. publish_tf:true, then fight RTAB-Map's TF). -->
+    <rosparam file="$(arg config_file)" command="load" ns="zed_node"/>
+
+    <!-- AFTER the rosparam load, so it wins. rosparam load is last-write-wins,
+         so ordering is the whole mechanism here. The if() keeps a normal run
+         byte-identical to before: with depth_mode empty, this line does nothing
+         and the yaml's value stands. -->
+    <param name="zed_node/depth/depth_mode" value="$(arg depth_mode)"
+           if="$(eval arg('depth_mode') != '')"/>
+
+    <!-- Top-level names, not under video/ - see the note above. Typed, because
+         an untyped "false" arrives as the STRING "false", which is truthy. -->
+    <param name="zed_node/auto_exposure_gain" type="bool"
+           value="$(arg auto_exposure)"
+           if="$(eval arg('auto_exposure') != '')"/>
+    <param name="zed_node/exposure" type="int" value="$(arg exposure)"
+           if="$(eval arg('exposure') != '')"/>
+    <param name="zed_node/gain" type="int" value="$(arg gain)"
+           if="$(eval arg('gain') != '')"/>
+
+    <!-- These two DO live under their config-file sections - general/ and
+         depth/ - unlike the exposure names above. Verified against the running
+         node with `rosparam get /zedx_front/zed_node/general/self_calib`, which
+         is where the wrapper reads them. Typed bool/int, because an untyped
+         "false" arrives as the STRING "false" and is truthy. -->
+    <param name="zed_node/general/self_calib" type="bool"
+           value="$(arg self_calib)"
+           if="$(eval arg('self_calib') != '')"/>
+    <param name="zed_node/depth/depth_stabilization" type="int"
+           value="$(arg depth_stabilization)"
+           if="$(eval arg('depth_stabilization') != '')"/>
+    <param name="zed_node/general/svo_compression" type="int"
+           value="$(arg svo_compression)"
+           if="$(eval arg('svo_compression') != '')"/>
+    <param name="zed_node/pos_tracking/pos_tracking_enabled" type="bool"
+           value="$(arg pos_tracking)"
+           if="$(eval arg('pos_tracking') != '')"/>
+    <param name="zed_node/pos_tracking/pos_tracking_mode" type="str"
+           value="$(arg pos_tracking_mode)"
+           if="$(eval arg('pos_tracking_mode') != '')"/>
+  </group>
+
+</launch>

@@ -1,0 +1,272 @@
+# =============================================================================
+# ekf_fused.yaml - drive 3: wheels + gyroscope + camera, fused on the JETSON
+# =============================================================================
+# Node:    robot_localization ekf_localization_node, version 2.7.7
+#          [VERIFIED - Jetson dpkg: ros-noetic-robot-localization 2.7.7-1focal.20250520;
+#           package.xml <version>2.7.7</version>]
+# Every parameter name below was checked against the strings compiled into the installed
+# library (/opt/ros/noetic/lib/libros_filter.so) and against the 2.7.7 source
+# (src/ros_filter.cpp loadParams, lines 743-1750). robot_localization does NOT warn about
+# a misspelled parameter - it silently uses the default - so check_param_names.py in this
+# folder re-checks every key, and the probe's debug dump shows the values actually loaded.
+#
+# Plain terms: an EKF (extended Kalman filter - a program that keeps one best guess of the
+# robot's position and blends each new sensor reading into it, weighted by how much it trusts
+# that sensor) takes three inputs here:
+#   odom0  the robot's wheels            (relayed from the robot's computer, ~10 Hz)
+#   imu0   the robot's turn sensor (gyroscope, the UM7), turn RATE only (relayed, 19.5 Hz)
+#   odom1  the camera's motion estimate  (rtabmap rgbd_odometry, on the Jetson itself, ~14 Hz)
+#   imu1   the CAMERA's own gyroscope (ZED X IMU, on the Jetson, no WiFi), turn RATE only, ~50 Hz
+#          (drive 4, camera fix 1 - staged 2026-09-25 in zed_gyro_blend_2026-09-25/ (project records))
+# and it becomes the ONLY publisher of odom -> base_link on the Jetson's ROS network.
+# All three pass through ekf_input_conditioner.py (Jetson, this folder) first:
+#   /robot/wheel_odom -> /ekf_in/wheel_odom   /robot/imu -> /ekf_in/imu   /rtabmap/odom -> /ekf_in/vo_odom
+#   /zedx_front/zed_node/imu/data -> /ekf_in/zed_imu
+# FALLBACK if the conditioner is not running: remap the three /ekf_in/* names to the raw
+# topics on the node, e.g. <remap from="/ekf_in/wheel_odom" to="/robot/wheel_odom"/>.
+# The filter still works (probe variant B, ekf_design.md section 8) but loses the parked
+# zero-velocity update, the gyro-offset removal and the calibrated camera weights.
+#
+# Launch-level requirements this file cannot express (see ekf_design.md, section 3):
+#   * remap odometry/filtered -> /fused/odometry   (so it can never be confused with the
+#     robot's own /odometry/filtered in a recording)
+#   * rgbd_odometry: publish_tf=false, odom_frame_id=odom, guess_frame_id=""
+#     (rtabmap_common.launch line 284 hardcodes publish_tf=true today - needs an argument)
+#   * rtabmap node unchanged: odom_frame_id=odom, so it READS the EKF's odom->base_link
+#     from TF (rtabmap_sync CommonDataSubscriber.cpp:547 - it does not subscribe to any
+#     odometry topic when odom_frame_id is set)
+#   * the bridge (bridge_design.md, this folder) delivers /robot/wheel_odom and /robot/imu on
+#     the Jetson's clock; ekf_input_conditioner.py turns them into the inputs below
+# =============================================================================
+
+# ----------------------------------------------------------------------------- timing
+frequency: 50
+# How often (per second) the filter publishes its answer.  Faster than every input (wheels ~10,
+# gyro 19.5, camera ~14 per second) so no reading waits long; the robot's own EKF also runs
+# at 50.  Cost measured in the probe: 3.4 % of one core, 15 MB of memory.
+# Plain terms: every 20 ms it folds in whatever readings arrived and publishes a position.
+
+sensor_timeout: 0.5
+# Seconds with NO reading from ANY input before the filter starts coasting (predicting
+# forward on its own, constant-velocity model).  There is NO per-sensor timeout in 2.7.7
+# [VERIFIED - ros_filter.cpp:684-692 uses the time since the last measurement of any kind].
+# Plain terms: if the bridge drops, nothing "times out" - the wheel and gyro readings simply
+# stop arriving and the filter carries on with the camera alone.  Coasting only starts when
+# EVERYTHING is silent (bridge down AND camera lost at the same time).
+# Why 0.5 and not the template's 0.1: the camera's readings arrive 0.18-0.25 s late (worst
+# 0.50 s).  With 0.1, a camera-only filter (bridge down) coasts ahead on every cycle and
+# publishes guessed positions that the late camera reading then contradicts; with 0.5 it
+# waits for the camera instead.  Probe run 4 (ekf_design.md section 8) checks this.
+
+predict_to_current_time: false
+# false = publish the position at the time of the newest reading, not "now".
+# Plain terms: mapping looks positions up at each camera image's time (about 0.2 s in the
+# past), so there is no need to guess ahead to "now".  (The robot's own EKF sets this true
+# because it drives the navigation stack; mapping does not need it.)
+
+smooth_lagged_data: true
+history_length: 1.0
+# Late readings are put back in their proper place in time.  The filter keeps 1.0 s of its
+# own history; a reading stamped up to 1.0 s in the past rewinds the filter to that moment and
+# replays everything after it.  [VERIFIED - ros_filter.cpp:616-635 revertTo()].
+# Plain terms: the camera's answer for an image arrives 0.18-0.25 s after the image was taken
+# (measured: median 0.20-0.21 s, worst 0.50 s, drives 1-2 logs), and a relayed wheel reading
+# arrives after the WiFi delay.  Without this they would be applied as if they had just
+# happened.  A reading older than 1.0 s logs "history interval is insufficiently sized" and
+# is then applied as if current (not dropped) - see ekf_design.md section 5.
+
+# ----------------------------------------------------------------------------- shape
+two_d_mode: true
+# Height, roll and pitch are held at zero.  Matches Reg/Force3DoF=true used by the mapping.
+
+# ----------------------------------------------------------------------------- frames
+map_frame: map
+odom_frame: odom
+base_link_frame: base_link
+world_frame: odom
+# The filter works in "odom" and publishes odom -> base_link.  rtabmap publishes map -> odom.
+# Plain terms: odom is the smooth, slowly drifting frame; map is the one loop closures snap
+# back into place.  One publisher per link - two publishers of the same link make the robot
+# flicker between two answers (this project lost a day to that on 2026-08-24).
+
+publish_tf: true
+publish_acceleration: false
+permit_corrected_publication: false
+# false = never re-publish an older time after a late reading rewinds the filter
+# (a transform going backwards in time confuses every consumer).
+
+transform_time_offset: 0.0
+transform_timeout: 0.0
+# No transform lookups are needed: all three inputs arrive already in base_link
+# (input contract, ekf_design.md section 4).
+
+print_diagnostics: true
+# Publishes /diagnostics: rejected readings, bad timestamps, "this reading is older than the
+# last one" - the page to watch if the filter misbehaves.
+debug: false
+
+dynamic_process_noise_covariance: false
+
+# ============================================================================= INPUT 0
+# The robot's WHEELS.  /husky_velocity_controller/odom -> bridge -> /robot/wheel_odom ->
+# conditioner -> /ekf_in/wheel_odom.  About 10 Hz: the Husky's control loop runs at 10 Hz
+# (etc_ros/noetic/ros.d/base.launch control_frequency: 10.0; /joint_states measured 10.0 Hz).
+# Fused: forward speed (vx), sideways speed (vy, always 0 for this robot) and turn rate (vyaw).
+# Never its position: that is a running total whose error only grows, and the filter
+# assumes each reading's error is fresh and independent.
+# Trust comes from the message itself: Husky stock twist covariance
+#   vx, vy: 0.001  (sigma 0.032 m/s)      vyaw: 0.03  (sigma 0.17 rad/s)
+#   [VERIFIED - Jetson /opt/ros/noetic/share/husky_control/config/control.yaml:11, and the
+#    robot's live sample message of 2026-08-26 (07_SAMPLE_MESSAGES.txt) carries exactly these]
+#   These are fixed placeholders, not measurements - but at 10 Hz they are about right: they
+#   predict a 1-second camera-vs-wheels speed spread of 0.015 m/s; drives 1-2 measured 0.011
+#   (robust) to 0.023 (from the 95th percentile).  So they are passed through unchanged.
+# Plain terms: the wheels are trusted for speed and hardly at all for turning - a skid-steer
+# robot's wheels scrub sideways in every turn, so their turn estimate is poor.
+# EXCEPTION (the conditioner's job): when the wheels read EXACTLY zero, it sets the variance
+# to 1e-6 - a "zero-velocity update" (the robot is certainly not moving or turning, so the
+# gyroscope's false turn is overruled while parked).
+odom0: /ekf_in/wheel_odom
+odom0_config: [false, false, false,
+               false, false, false,
+               true,  true,  false,
+               false, false, true,
+               false, false, false]
+odom0_differential: false
+odom0_relative: false
+odom0_queue_size: 20
+# 20 = two seconds of wheel readings, so a WiFi stall that releases a burst loses nothing.
+odom0_nodelay: true
+# true = send each small message at once instead of letting the network batch them.
+# No rejection threshold: the wheels are the fall-back when the camera is lost.
+
+# ============================================================================= INPUT 1
+# The robot's GYROSCOPE, turn rate only.  /imu/data -> bridge -> /robot/imu -> conditioner
+# -> /ekf_in/imu.  19.5 Hz measured (08_topic_rates.txt, 2026-08-26; 2348 samples in 119.9 s
+# on 2026-09-24).
+#   * /imu/data (or /imu/data_raw) is already in base_link: the robot's imu_transformer
+#     converts it.  NEVER relay /imu_um7/data: the UM7 is mounted upside down
+#     (HUSKY_IMU_RPY='3.1415 0 0', mcm07_husky/scripts/environment) and its turn rate has the
+#     OPPOSITE SIGN - measured 2026-09-24 while parked: /imu_um7/data +0.629 deg/min,
+#     /imu/data_raw -0.629 deg/min (gyro_rezero_20260924_073408.json).
+#   * Orientation is NOT fused.  With no compass it is only the gyro's own running total, so
+#     it carries the whole drift as an absolute heading, and /imu/data's orientation drifted
+#     FASTER than the raw gyro (1.15 vs 0.63 deg/min, same file).  The robot's own EKF fuses
+#     it (husky_control localization.yaml imu0_config) - that is why the robot's heading
+#     follows the gyro's drift.
+#   * The conditioner REPLACES angular_velocity_covariance with 2.5e-5 (sigma 0.005 rad/s;
+#     the robot claims 1.1e-6, sigma 0.001) and subtracts the gyro offset it measured while
+#     the wheels read exactly zero.
+#     ekf_design.md section 6 explains the 0.005 and what it does to the heading.
+imu0: /ekf_in/imu
+imu0_config: [false, false, false,
+              false, false, false,
+              false, false, false,
+              false, false, true,
+              false, false, false]
+imu0_differential: false
+imu0_relative: false
+imu0_queue_size: 20
+imu0_nodelay: true
+# No rejection threshold: the gyro carries the heading whenever the camera is lost.
+
+# ============================================================================= INPUT 1b
+# The CAMERA's own GYROSCOPE (ZED X IMU), turn rate only.  /zedx_front/zed_node/imu/data (Jetson,
+# ~252 Hz measured in drive 3: 422,591 readings in 1,673 s) -> conditioner -> /ekf_in/zed_imu (~50 Hz).
+# robot_localization numbers inputs of one kind imu0, imu1, ... (the library builds each key as
+# "imu" + number + "_config" / "_queue_size" / ...; the strings "_config", "_queue_size", "_differential",
+# "_relative" are in /opt/ros/noetic/lib/libros_filter.so).  CHECKED LIVE in the drive-3 replay:
+# `rosnode info /ekf_fused` lists /ekf_in/zed_imu as a subscription (results/*_ekf_node_info.txt).
+#   * The conditioner rotates the ZED's turn rate from zedx_front_imu_link into base_link (the chain is
+#     on /tf_static; the camera is pitched ~3.2 deg) and publishes it in base_link: no transform lookup
+#     is needed here (transform_timeout 0 above stays right).
+#   * It averages every 0.02 s of readings into one message (same total turn, a fifth of the messages),
+#     subtracts the ZED offset measured while parked, and REPLACES the ZED's claimed turn-rate variance
+#     (6.65e-10, sigma 0.0015 deg/s - far too sure) with 2.5e-5, the robot gyroscope's value.
+#   * The hold and the parked drop guard stop claiming "not turning" while this input is live, so it
+#     is never overruled while the robot turns (drive 3, 04:36:46-52: blend 0.0 deg, LiDAR 6.1, ZED 6.3).
+# Plain terms: a second turn-rate sensor on the Jetson itself, so the blend keeps turning with the robot
+# when the WiFi link to the robot drops - and so do the camera tracker's restarts, which copy its heading.
+imu1: /ekf_in/zed_imu
+imu1_config: [false, false, false,
+              false, false, false,
+              false, false, false,
+              false, false, true,
+              false, false, false]
+imu1_differential: false
+imu1_relative: false
+imu1_queue_size: 100
+# 100 = two seconds of 50 Hz messages, so a burst after a stall is not dropped.
+imu1_nodelay: true
+# No rejection threshold: like imu0, it carries the heading whenever the others are missing.
+
+# ============================================================================= INPUT 2
+# The CAMERA's motion estimate: rtabmap rgbd_odometry, /rtabmap/odom on the Jetson
+# (rtabmap_common.launch: group ns=rtabmap line 211, remap odom->odom line 273) -> conditioner
+# -> /ekf_in/vo_odom.
+# Fused: its SPEEDS (vx, vy, vyaw), never its position, and NOT differential mode:
+#   * differential mode turns positions into speeds with covariance (C_now + C_prev) * dt
+#     [VERIFIED - ros_filter.cpp preparePose step 7e] - multiplied by dt instead of divided
+#     by dt squared, i.e. several thousand times too confident at 14 frames per second;
+#   * rtabmap publishes a "lost" message with pose (0,0,0) whenever tracking fails
+#     (OdometryROS.cpp:861-884); differential mode would read that as a jump to the origin.
+#   Its twist part is safe on both counts: a lost frame carries twist variance 9999.
+# Trust: the conditioner rescales rtabmap's own per-frame numbers to what drives 1-2 measured -
+#   forward/sideways sigma about 0.04 m/s, turn-rate sigma about 0.005 rad/s per frame.
+odom1: /ekf_in/vo_odom
+odom1_config: [false, false, false,
+               false, false, false,
+               true,  true,  false,
+               false, false, true,
+               false, false, false]
+odom1_differential: false
+odom1_relative: false
+odom1_queue_size: 10
+odom1_nodelay: true
+odom1_twist_rejection_threshold: 6.0
+# A camera reading more than 6 combined standard deviations away from what the filter expects
+# is thrown away (a "Mahalanobis gate" - distance measured in units of the expected spread).
+# Plain terms: throw away only camera answers that are wildly wrong (a bad image match),
+# never ones that just disagree a little.  Evidence it will not throw away good turns: on
+# intervals where the camera kept tracking, its turn size matched the gyro's to 0.1-0.3 %
+# (drives 1-2, vo_vs_wheel_rates.json "slope_camera_over_robot_clean" 0.999 / 0.997).
+
+# ============================================================================= PROCESS NOISE
+# How much the true motion may change between readings that the filter's constant-velocity
+# model cannot foresee.  These are robot_localization's own defaults, written out so they are
+# pinned rather than inferred [VERIFIED - filter_base.cpp:117-131].  Applied as P += dt * Q
+# (ekf.cpp:383).
+# Order: x, y, z, roll, pitch, yaw, vx, vy, vz, vroll, vpitch, vyaw, ax, ay, az
+process_noise_covariance: [0.05, 0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
+                           0,    0.05, 0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
+                           0,    0,    0.06, 0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
+                           0,    0,    0,    0.03, 0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
+                           0,    0,    0,    0,    0.03, 0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
+                           0,    0,    0,    0,    0,    0.06, 0,     0,     0,    0,    0,    0,    0,    0,    0,
+                           0,    0,    0,    0,    0,    0,    0.025, 0,     0,    0,    0,    0,    0,    0,    0,
+                           0,    0,    0,    0,    0,    0,    0,     0.025, 0,    0,    0,    0,    0,    0,    0,
+                           0,    0,    0,    0,    0,    0,    0,     0,     0.04, 0,    0,    0,    0,    0,    0,
+                           0,    0,    0,    0,    0,    0,    0,     0,     0,    0.01, 0,    0,    0,    0,    0,
+                           0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0.01, 0,    0,    0,    0,
+                           0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0.02, 0,    0,    0,
+                           0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0.01, 0,    0,
+                           0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0.01, 0,
+                           0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0.015]
+
+# Starting uncertainty: tiny, because the odom frame is DEFINED as where the robot starts.
+# Default value, pinned [VERIFIED - filter_base.cpp:97-98 setIdentity() * 1e-9].
+initial_estimate_covariance: [1e-9, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+                              0,    1e-9, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+                              0,    0,    1e-9, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+                              0,    0,    0,    1e-9, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+                              0,    0,    0,    0,    1e-9, 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+                              0,    0,    0,    0,    0,    1e-9, 0,    0,    0,    0,    0,    0,    0,    0,    0,
+                              0,    0,    0,    0,    0,    0,    1e-9, 0,    0,    0,    0,    0,    0,    0,    0,
+                              0,    0,    0,    0,    0,    0,    0,    1e-9, 0,    0,    0,    0,    0,    0,    0,
+                              0,    0,    0,    0,    0,    0,    0,    0,    1e-9, 0,    0,    0,    0,    0,    0,
+                              0,    0,    0,    0,    0,    0,    0,    0,    0,    1e-9, 0,    0,    0,    0,    0,
+                              0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    1e-9, 0,    0,    0,    0,
+                              0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    1e-9, 0,    0,    0,
+                              0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    1e-9, 0,    0,
+                              0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    1e-9, 0,
+                              0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    1e-9]

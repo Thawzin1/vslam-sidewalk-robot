@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<!--
+  display_real_robot.launch — the real Husky (cpr-a200-0985), not a stand-in.
+
+  Loads the actual robot's URDF (mcm07_husky/config/husky_full.urdf, mirrored
+  from the lab robot) into robot_description, publishes its TF tree from
+  joint_state_publisher_gui, and opens RViz. No simulation, no hardware -
+  just the real model, so it can be seen and measured before anything else
+  touches it.
+
+  Requires mcm07_husky and ouster_description on ROS_PACKAGE_PATH: the URDF
+  references their meshes as package:// URIs, resolved by RViz's mesh loader
+  at display time via rospack, regardless of how robot_description was
+  loaded.
+-->
+<launch>
+
+  <param name="robot_description"
+         textfile="$(find mcm07_husky)/config/husky_full.urdf"/>
+
+  <node pkg="robot_state_publisher" type="robot_state_publisher"
+        name="robot_state_publisher"/>
+
+  <node pkg="joint_state_publisher_gui" type="joint_state_publisher_gui"
+        name="joint_state_publisher_gui"/>
+
+  <node pkg="rviz" type="rviz" name="rviz"
+        args="-d $(find sidewalk_bringup)/config/real_robot.rviz"
+        required="true"/>
+
+</launch>

@@ -1,0 +1,30 @@
+{
+ "median_m": 0.877,
+ "p95_m": 1.397,
+ "max_m": 1.605,
+ "rmse_m": 0.856,
+ "n_matched": 495,
+ "matched_pct_of_estimate": 100.0,
+ "alignment": "SE(3), no scale",
+ "sim3_scale_for_information": 1.0541,
+ "time_offset_applied_s": 0.0,
+ "time_offset_best_from_data_s": 0.14,
+ "fit_at_0_s_m": 0.856,
+ "fit_at_best_shift_m": 0.856,
+ "reference_nodes": 699,
+ "reference_loop_closures": 62,
+ "reference_end_gap_m": 0.52,
+ "reference_end_gap_ok": false,
+ "reference_tilt_max_deg": 0.0,
+ "reference_height_range_m": 0.0,
+ "reference_flat_ok": true,
+ "reference_valid": false,
+ "reference_kind": "cross_stack - agreement with an independent LiDAR estimate, NOT error against ground truth",
+ "registered_line": "median <= 0.50 m (SE(3), no scale)",
+ "verdict": "NOT SCORABLE - the LiDAR estimate failed its own check (end gap 0.52 m, ok=False; tilt 0.0 deg, height range 0.00 m, flat=True); the median is for information only (session-3 precedent)",
+ "inputs": [
+  "localised.tum",
+  "../../../../../..<repo>/results/series2_slam/s2_slam_01/lidar_ref_f3dof/lidar.tum",
+  "../../../../../..<repo>/results/series2_slam/s2_slam_01/lidar_ref_f3dof/wheel.tum"
+ ]
+}

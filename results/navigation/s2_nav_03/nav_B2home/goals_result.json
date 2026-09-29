@@ -1,0 +1,42 @@
+{
+ "run": "s2_nav_03",
+ "goals_file": "<repo>/catkin_ws/src/sidewalk_navigation/goals_d10_route_B2home.yaml",
+ "results": [
+  {
+   "k": 0,
+   "name": "B3_SW_widest",
+   "goal": [
+    1.62,
+    -14.9,
+    90
+   ],
+   "result": "SUCCEEDED",
+   "time_s": 36.8,
+   "t_send_rel": 0.338,
+   "end_estimate": [
+    1.797,
+    -14.752,
+    1.78
+   ],
+   "dist_estimate_to_goal_m": 0.23
+  },
+  {
+   "k": 1,
+   "name": "B4_start_mark",
+   "goal": [
+    0.25,
+    0.0,
+    0
+   ],
+   "result": "SUCCEEDED",
+   "time_s": 93.2,
+   "t_send_rel": 47.184,
+   "end_estimate": [
+    0.304,
+    -0.182,
+    0.186
+   ],
+   "dist_estimate_to_goal_m": 0.19
+  }
+ ]
+}

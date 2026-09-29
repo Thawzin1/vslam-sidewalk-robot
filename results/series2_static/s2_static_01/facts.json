@@ -1,0 +1,16 @@
+{
+  "database": "~/slam_series2/s2_static_01.db",
+  "positions": "odometry",
+  "positions_source": "odometry (Node.pose) - the camera's tracking, NOT corrected by loop closures",
+  "graph_nodes_corrected": null,
+  "nodes": 769,
+  "nodes_with_grids": 768,
+  "duration_s": 1001.0,
+  "path_m_nodes": 240.16,
+  "closed_loop_gap_m": 39.648,
+  "cells_solid": 19292,
+  "cells_free": 270686,
+  "cell_size_m": 0.05000000074505806,
+  "map_width_m": 49.9,
+  "map_height_m": 75.9
+}

@@ -1,0 +1,98 @@
+{
+  "master": "http://127.0.0.1:11311",
+  "seconds": 5.0,
+  "verdict": "PASS",
+  "fail": [],
+  "warn": [],
+  "odom_parents": [],
+  "edges": [
+    {
+      "parent": "base_link",
+      "child": "zedx_front_base_link",
+      "msgs": 1,
+      "topics": [
+        "/tf_static"
+      ],
+      "publishers": [
+        "/zedx_front/zedx_front_state_publisher"
+      ]
+    },
+    {
+      "parent": "odom",
+      "child": "base_link",
+      "msgs": 205,
+      "topics": [
+        "/tf"
+      ],
+      "publishers": [
+        "/ekf_fused"
+      ]
+    },
+    {
+      "parent": "zedx_front_base_link",
+      "child": "zedx_front_camera_center",
+      "msgs": 1,
+      "topics": [
+        "/tf_static"
+      ],
+      "publishers": [
+        "/zedx_front/zedx_front_state_publisher"
+      ]
+    },
+    {
+      "parent": "zedx_front_camera_center",
+      "child": "zedx_front_left_camera_frame",
+      "msgs": 1,
+      "topics": [
+        "/tf_static"
+      ],
+      "publishers": [
+        "/zedx_front/zedx_front_state_publisher"
+      ]
+    },
+    {
+      "parent": "zedx_front_camera_center",
+      "child": "zedx_front_right_camera_frame",
+      "msgs": 1,
+      "topics": [
+        "/tf_static"
+      ],
+      "publishers": [
+        "/zedx_front/zedx_front_state_publisher"
+      ]
+    },
+    {
+      "parent": "zedx_front_left_camera_frame",
+      "child": "zedx_front_imu_link",
+      "msgs": 1,
+      "topics": [
+        "/tf_static"
+      ],
+      "publishers": [
+        "/zedx_front/zed_node"
+      ]
+    },
+    {
+      "parent": "zedx_front_left_camera_frame",
+      "child": "zedx_front_left_camera_optical_frame",
+      "msgs": 1,
+      "topics": [
+        "/tf_static"
+      ],
+      "publishers": [
+        "/zedx_front/zedx_front_state_publisher"
+      ]
+    },
+    {
+      "parent": "zedx_front_right_camera_frame",
+      "child": "zedx_front_right_camera_optical_frame",
+      "msgs": 1,
+      "topics": [
+        "/tf_static"
+      ],
+      "publishers": [
+        "/zedx_front/zedx_front_state_publisher"
+      ]
+    }
+  ]
+}

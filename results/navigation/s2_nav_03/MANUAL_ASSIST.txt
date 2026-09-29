@@ -1,0 +1,1 @@
+19:00 Hamilton: manual assist - robot driven straight 1.50 m at 0.10 m/s through the south doorway by the Jetson operator publishing /nav/cmd_vel (sender guards active, user holding R2), after goal 3 W2_south_line aborted twice at 0.10 m clearance (nav_B2, nav_B2rest).

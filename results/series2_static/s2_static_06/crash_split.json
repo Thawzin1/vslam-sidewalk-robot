@@ -1,0 +1,98 @@
+{
+ "camera_down_hamilton": "04:24:49.5",
+ "camera_back_hamilton": "04:25:02.2",
+ "outage_s": 12.7,
+ "outage_cause": "camera process gone",
+ "outage_outcome": "restarted (1); camera positions back after 0.4 s",
+ "outage_source": "~/.run_records/s2_static_06/camera_outages.csv",
+ "longest_rtabmap_odom_silence_near_outage_s": 12.87,
+ "longest_rtabmap_odom_silence_from_to_hamilton": [
+  "04:24:48",
+  "04:25:01"
+ ],
+ "bag_hamilton": [
+  "04:20:28",
+  "04:45:29"
+ ],
+ "park_received_hamilton": "04:44:45",
+ "start_used": "bag's first message (ready ~60 s after start; not in a timed line)",
+ "distance_method": "positions every 0.5 s, straight steps summed",
+ "distance_m": {
+  "blend": {
+   "start_to_down": 37.72,
+   "during_outage": 0.01,
+   "back_to_end": 203.24,
+   "whole": 240.96,
+   "first_last_hamilton": [
+    "04:20:28",
+    "04:45:29"
+   ]
+  },
+  "robot": {
+   "start_to_down": 38.18,
+   "during_outage": 0.0,
+   "back_to_end": 200.19,
+   "whole": 238.38,
+   "first_last_hamilton": [
+    "04:20:28",
+    "04:45:29"
+   ]
+  },
+  "robot_lidar_bag_wheel_tum": {
+   "start_to_down": 38.18,
+   "during_outage": 0.0,
+   "back_to_end": 200.23,
+   "whole": 238.41,
+   "first_last_hamilton": [
+    "04:19:14",
+    "04:45:55"
+   ]
+  }
+ },
+ "map_nodes": {
+  "total": 1314,
+  "first_hamilton": "04:20:11",
+  "last_hamilton": "04:45:23",
+  "before_down": 264,
+  "during_outage": 2,
+  "after_back": 1048
+ },
+ "loop_closures_db_types_1_2": {
+  "pairs": 135,
+  "note": "Link stores each closure both ways; counted once per node pair",
+  "newer_node_after_camera_back": 135,
+  "joining_a_node_from_before_the_outage": 0,
+  "joining_node_1": 0,
+  "first_node_after_camera_back": 267
+ },
+ "live_page_frames": {
+  "total": 496,
+  "during_outage": [
+   [
+    "83",
+    "04:24:50",
+    "ok (122 matched features)"
+   ],
+   [
+    "84",
+    "04:24:53",
+    "NO DATA for 5 s - the odometry node may have stopped"
+   ],
+   [
+    "85",
+    "04:24:56",
+    "NO DATA for 8 s - the odometry node may have stopped"
+   ],
+   [
+    "86",
+    "04:24:59",
+    "NO DATA for 11 s - the odometry node may have stopped"
+   ],
+   [
+    "87",
+    "04:25:02",
+    "ok (163 matched features)"
+   ]
+  ]
+ }
+}

@@ -1,0 +1,100 @@
+{
+ "run_dir": "~/.run_records/s2_nav_01/nav_B",
+ "legs": [
+  {
+   "k": 0,
+   "name": "B1_east_junction",
+   "result": "SUCCEEDED",
+   "time_s": 53.7,
+   "end_estimate_to_goal_m": 0.197,
+   "end_truth_to_goal_m": null,
+   "n_samples": 637,
+   "n_plans": 54,
+   "planned_length_m": 14.12,
+   "driven_length_estimate_m": 13.87,
+   "dev_first_median_m": 0.064,
+   "dev_first_p95_m": 0.132,
+   "dev_first_max_m": 0.139,
+   "dev_force_median_m": 0.009,
+   "dev_force_p95_m": 0.043
+  },
+  {
+   "k": 1,
+   "name": "B2_SE_corner",
+   "result": "SUCCEEDED",
+   "time_s": 78.1,
+   "end_estimate_to_goal_m": 0.224,
+   "end_truth_to_goal_m": null,
+   "n_samples": 882,
+   "n_plans": 80,
+   "planned_length_m": 14.78,
+   "driven_length_estimate_m": 15.39,
+   "dev_first_median_m": 0.063,
+   "dev_first_p95_m": 0.134,
+   "dev_first_max_m": 0.291,
+   "dev_force_median_m": 0.014,
+   "dev_force_p95_m": 0.061
+  },
+  {
+   "k": 2,
+   "name": "B3_SW_corner",
+   "result": "None",
+   "time_s": 51.1,
+   "end_estimate_to_goal_m": 14.614,
+   "end_truth_to_goal_m": null,
+   "n_samples": 506,
+   "n_plans": 52,
+   "planned_length_m": 14.79,
+   "driven_length_estimate_m": 2.67,
+   "dev_first_median_m": 1.327,
+   "dev_first_p95_m": 1.343,
+   "dev_first_max_m": 1.344,
+   "dev_force_median_m": 0.001,
+   "dev_force_p95_m": 0.139
+  }
+ ],
+ "N1": {
+  "pass": false,
+  "reached": 2,
+  "goals": 3,
+  "line": "every goal: move_base SUCCEEDED within its time limit, robot estimate <= 0.50 m from the goal"
+ },
+ "N2": {
+  "pass_software_part": false,
+  "unplanned_stops": [
+   {
+    "t": 64.928,
+    "goal": 1,
+    "why": "deadman button released"
+   },
+   {
+    "t": 101.028,
+    "goal": 1,
+    "why": "Jetson: camera obstacles stale"
+   },
+   {
+    "t": 165.034,
+    "goal": 2,
+    "why": "Jetson: off route"
+   }
+  ],
+  "line": "no stop by the safety layer except the planned end of each leg; collisions and hand-overs are judged by the user on the spot (PROTOCOL.md)"
+ },
+ "N3": {
+  "dev_first_median_m": 0.077,
+  "dev_first_p95_m": 1.339,
+  "dev_force_median_m": 0.008,
+  "dev_force_p95_m": 0.057,
+  "n": 2025
+ },
+ "N4": {
+  "largest_correction_step_m": 0.475,
+  "largest_correction_step_deg": 2.1,
+  "steps_over_0.3m": 1,
+  "driven_m_by_wheels_blend": 31.58,
+  "n_fixes": 54,
+  "longest_stretch_without_fix_m": 13.45,
+  "first_fix_after_m": 0.11,
+  "fixes_per_10m": 17.1
+ }
+}

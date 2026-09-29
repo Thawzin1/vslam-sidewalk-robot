@@ -1,0 +1,317 @@
+package: sidewalk_slam
+phase: 3
+title: "Visual SLAM — Teaching the Robot to Draw Its Own Map"
+status: ready
+one_liner: "The robot builds a map of a place it has never seen, works out where it is on that map, and three different methods are made to compete on exactly the same data."
+
+audience_summary: |
+  Imagine being led blindfolded into an unfamiliar building, then told to draw a
+  floor plan and mark where you are standing. You cannot do one without the
+  other. To draw the plan you need to know where you were when you saw each
+  wall; to know where you are you need a plan to be somewhere on. This
+  chicken-and-egg problem is the whole of what this package solves, and it has a
+  name in robotics — SLAM, Simultaneous Localisation And Mapping.
+
+  The robot's only real sense is a stereo camera, a pair of eyes 12 centimetres
+  apart. From those two slightly different views it works out how far away
+  things are, exactly the way your own two eyes do. As it drives, it stitches
+  those measurements together into a map, and by watching how the view shifts it
+  works out how far it has moved.
+
+  The catch is that this stitching is never perfect. Each small error joins onto
+  the last one, so after a few hundred metres the robot's idea of where it is
+  has quietly slid away from the truth. The cure is recognition. When the robot
+  comes back to a place it has been before and recognises it, it knows that two
+  points it thought were far apart are actually the same point, and it can pull
+  the whole map back into shape. That moment of recognition is called a **loop
+  closure**, and watching one happen on screen is the single most satisfying
+  thing in this project.
+
+  This package does that job three different ways and makes them race. One is
+  the open research tool this project is built on, one is the commercial
+  software that came with the camera, and one is a well-known academic system.
+  All three are fed exactly the same recording, so any difference in their
+  answers is a difference in the methods and not in the conditions. Comparing
+  them fairly is the actual research contribution here.
+
+why_it_exists: |
+  A delivery robot on a sidewalk has to answer one question continuously and
+  correctly — *where am I?* GPS is not good enough. In a city it bounces off
+  buildings and can be wrong by five to ten metres, which on a two-metre-wide
+  sidewalk is the difference between the pavement and the road. Under a bridge
+  or beside a tall building it can be wrong by much more, or simply absent.
+
+  So the robot has to work it out from what it can see. That is what this
+  package is for.
+
+  There is a second reason, and for a research project it is the more important
+  one. Claiming that a method works is cheap. Showing that it works *better
+  than the alternatives, on identical data, measured the same way* is what makes
+  a result. This package is built so that the comparison is structurally fair:
+  one recording, replayed three times, one output format, one validation
+  standard. Everything else in the package exists to protect that fairness from
+  the many small ways it can be quietly lost.
+
+physical_intuition: |
+  **Loop closure is closing a surveying traverse.**
+
+  A surveyor running a traverse measures from station to station around a
+  circuit and comes back to the start. The final measurement almost never lands
+  exactly on the starting peg. The gap is the **misclosure**, and it is the
+  accumulated total of every small angular and distance error around the loop.
+  The surveyor does not throw the survey away. They distribute the misclosure
+  back through the legs — proportionally to length, or by a least-squares
+  adjustment — so the circuit closes and every station moves a little.
+
+  That is precisely what happens when a SLAM system closes a loop. The robot
+  drives a circuit, recognises the place it started from, and discovers that its
+  own dead reckoning says it is four metres away from where it obviously is.
+  That four metres is the misclosure. The pose graph optimiser then redistributes
+  the error backwards through every pose in the loop, weighted by how confident
+  each measurement was. The map visibly snaps into shape. Same idea, same
+  mathematics, done sixty times a minute by a computer.
+
+  This is also why driving in a straight line and stopping produces a bad map no
+  matter how good the algorithm is. A traverse that never closes has no
+  misclosure to distribute, and therefore no way to correct itself.
+
+  **Why two eyes give real distances and one eye cannot.**
+
+  The two ZED X sensors are 120 mm apart. That separation is a physical ruler
+  machined into the camera body. A point in the world projects into slightly
+  different places in the two images, and that difference — the disparity — is
+  linked to distance by simple similar triangles: distance equals focal length
+  times baseline, divided by disparity. Because the baseline is a known length
+  in millimetres, the answer comes out in millimetres. The system has **metric
+  scale**, for free, from geometry.
+
+  A single camera cannot do this, ever, and not for want of cleverness. A
+  photograph of a small object nearby and a large object far away can be
+  pixel-for-pixel identical. Scale information is simply not present in the
+  image. A monocular system recovers the *shape* of a trajectory correctly but
+  can only guess its size, and that guess drifts. This is why every serious
+  ground robot uses stereo, a depth sensor, an IMU, or wheel odometry — anything
+  that puts a real length into the problem.
+
+  **Where the accuracy goes as things get further away.**
+
+  Depth uncertainty for a stereo pair grows as the square of range — roughly
+  z² divided by focal length times baseline. The ZED X datasheet says the same
+  thing in plain numbers: error under 0.4% out to 2 metres, and under 7% at
+  20 metres. (Until 2026-08-29 this page said "about 0.2% at 1 metre, about
+  3.1% at 15 metres" and attributed that to the datasheet. Those two figures
+  appear nowhere in it; they had been written from memory and then repeated
+  across several files as though the manufacturer had stated them.)
+  Doubling the distance roughly quadruples the uncertainty. That single fact
+  drives several settings in this package: features beyond about 15 metres are
+  not trusted for pose estimation, and the occupancy grid is built only from
+  points within 8 metres. Far-away points do not add information; they add
+  smooth, plausible-looking error.
+
+  And there is a floor as well as a ceiling. This camera returns **nothing valid
+  closer than 1 metre**. There is a metre-deep blind shell around the robot at
+  all times. That is a mechanical design constraint, not a software one: it
+  means a curb the robot is about to touch is invisible, and any close-quarters
+  obstacle avoidance will need another sensor.
+
+  **Why the camera bracket is a SLAM component.**
+
+  Everything above assumes the two lenses stay exactly 120 mm apart and exactly
+  parallel. A bracket that flexes by a tenth of a degree under vibration changes
+  the epipolar geometry, and every disparity measured while it is flexed is
+  wrong. The same applies to the IMU, which sits a few centimetres from the
+  lens: rotating about a point offset by a lever arm produces a centripetal
+  acceleration the accelerometer feels and the camera does not. Get that offset
+  wrong by two centimetres and, at a modest one radian per second of turn, you
+  have injected a constant 0.02 m/s² error that is integrated twice into
+  position. Stiffness and accurate mounting measurements are not tidiness here.
+  They are accuracy.
+
+what_it_does:
+  - Runs RTAB-Map as the primary mapping system, fed with the ZED X depth images, rectified colour and the camera's 200 Hz IMU
+  - Produces both a flat 2D occupancy grid for navigation and a full 3D point cloud map, from the same run
+  - Saves everything into one reloadable database file, and offers a separate mode that localises on an existing map without changing it
+  - Detects the RTAB-Map core library already installed on the Jetson and builds only the missing ROS layer against it, instead of installing a second conflicting copy
+  - Records the ZED SDK's own built-in position tracking as a commercial baseline
+  - Generates the ORB-SLAM3 configuration file from the camera's live calibration, so the numbers in it can never be out of date
+  - Runs all three systems one after another over the same recording, and writes all three answers in one common trajectory format
+  - Checks every result for physical impossibility before anyone is allowed to treat it as evidence
+  - Refuses to touch the live robot until a recorded run has passed those checks
+
+key_concepts:
+  - term: "SLAM"
+    plain: "Building a map of somewhere you have never been while simultaneously working out where you are on the map you are still building. Each half depends on the other, which is why it is hard."
+    technical: "Simultaneous Localisation and Mapping. Joint estimation of a sensor trajectory and an environment representation, usually posed as maximum a posteriori inference over a factor graph."
+  - term: "Odometry"
+    plain: "Estimating how far you have moved by comparing what you can see now to what you saw a moment ago. It works well over short distances and drifts steadily over long ones, because every estimate is measured from the previous estimate."
+    technical: "Incremental ego-motion estimation. Error is compounded rather than bounded, so uncertainty grows monotonically with distance travelled."
+  - term: "Drift"
+    plain: "The slow, invisible accumulation of small errors. Nothing looks wrong at any moment; after two hundred metres the robot is confidently in the wrong place."
+    technical: "Unbounded growth of pose covariance in the absence of loop closures or absolute measurements."
+  - term: "Loop closure"
+    plain: "Recognising somewhere you have already been, realising your accumulated error, and correcting the whole path backwards to fit. Exactly like closing a surveying traverse and distributing the misclosure."
+    technical: "Detection of a revisit, insertion of a constraint between non-consecutive poses, and global pose-graph optimisation to redistribute the residual."
+  - term: "Pose graph"
+    plain: "A skeleton of the journey where each joint is somewhere the robot was and each bone is a measured movement between two of them. Correcting the map means gently reshaping the skeleton until all the bones fit at once."
+    technical: "A graph whose vertices are SE(3) or SE(2) poses and whose edges are relative transform constraints with information matrices, solved by nonlinear least squares (g2o, GTSAM, Ceres)."
+  - term: "Metric scale"
+    plain: "Knowing that a distance in the map is really that many metres, and not just that many arbitrary units. Two cameras a known distance apart give you this for free. One camera never can."
+    technical: "Observability of absolute scale. Recovered from a calibrated stereo baseline, a depth sensor, or from IMU accelerations after sufficient excitation. Unobservable in a pure monocular system."
+  - term: "Occupancy grid"
+    plain: "The map as graph paper. Every square is marked free, blocked, or unknown. This is the simple flat map the navigation system actually plans routes on."
+    technical: "A discretised 2D probabilistic map, published as nav_msgs/OccupancyGrid, with cell values as occupancy probability in the range 0 to 100 and -1 for unknown."
+  - term: "TUM trajectory format"
+    plain: "One line per position, listing the time, three numbers for where, and four for which way it was facing. Chosen because everything can read it and because the earlier work on this project already used it."
+    technical: "timestamp tx ty tz qx qy qz qw, whitespace separated, quaternion scalar-last. Directly consumable by evo and by the standard ATE/RPE tooling."
+  - term: "Localisation mode"
+    plain: "Using a map you already have without adding to it. The robot answers only where am I, and the map is left untouched, so two runs over the same route are properly comparable."
+    technical: "RTAB-Map with Mem/IncrementalMemory disabled and the working memory pre-loaded, performing appearance-based relocalisation against a fixed graph."
+  - term: "Simulated time"
+    plain: "When replaying a recording, every program is told to use the clock from the recording instead of the real clock. Without this, two replays of the same file produce results with different timestamps that cannot be lined up."
+    technical: "use_sim_time with /clock published by rosbag play --clock; all node time queries resolve to recorded time."
+
+inputs:
+  - "Rectified colour images from the ZED X, on the camera's `rgb/image_rect_color` topic"
+  - "Registered depth images, aligned to the colour camera, in metres"
+  - "Camera calibration on `camera_info` — the intrinsics, read live and never hardcoded"
+  - "IMU data at 200 Hz from inside the camera, used to hold roll and pitch level against gravity (this was recorded as 400 Hz until 2026-08-29; 400 Hz is the older ZED 2's figure, and the ZED X datasheet states 200 Hz in two separate tables)"
+  - "The transform tree from `sidewalk_bringup`, which says where the camera sits relative to the robot base"
+  - "Recorded SVO2 files or rosbags from `sidewalk_perception`, for offline runs"
+  - "`config/rtabmap_zedx.yaml` — every tuning decision, in one commented file"
+
+outputs:
+  - "A 2D occupancy grid on `/rtabmap/grid_map`, saveable as the pgm and yaml pair that navigation loads"
+  - "A 3D point cloud map on `/rtabmap/cloud_map`, exportable to a `.ply` file"
+  - "One RTAB-Map database per session holding the entire map, reloadable for localisation"
+  - "The corrected `map` to `odom` transform, which is the robot's live position estimate"
+  - "Three trajectories per comparison run, in the common TUM format, ready for the evaluation package"
+  - "A run manifest recording what was run over what, with which settings"
+  - "A validation verdict that fails the run if anything is physically impossible"
+  - "A timestamped log per execution in `logs/sidewalk_slam/`"
+
+how_to_run:
+  - cmd: "python3 catkin_ws/src/sidewalk_slam/scripts/slam_common.py"
+    explain: "Start here. Prints what this machine actually has installed — ROS, the RTAB-Map core and its version, which rtabmap_ros packages exist, the ZED SDK, ORB-SLAM3. It only reads; it launches nothing. Safe to run anywhere, including on a computer without ROS."
+  - cmd: "rosrun sidewalk_slam build_rtabmap_ros.py"
+    explain: "Works out how to build the missing ROS layer of RTAB-Map against the core library already installed on the Jetson, and writes the plan out as a commented shell script. It does NOT build anything until you add `--execute`. Read the plan first — it explains why installing rtabmap-ros from apt would break things."
+  - cmd: "roslaunch sidewalk_slam rtabmap_mapping.launch rtabmap_viz:=true"
+    explain: "Build a new map. The camera must already be running. Turn the GUI on the first few times and watch the pose graph: the moment a loop closes and the map snaps into alignment is worth seeing before you read any more theory. Drive slowly and revisit places, or no loop will ever close."
+  - cmd: "rosrun sidewalk_slam map_manager.py save-grid --name lab_floor2"
+    explain: "Save the live 2D grid as the pgm and yaml pair that the navigation package will load in Phase 5-6. Run it while mapping is still going; it captures the grid as it stands."
+  - cmd: "rosrun sidewalk_slam map_manager.py export --db ~/rtabmap_maps/sidewalk_front.db"
+    explain: "Turn a finished map database into a 3D point cloud file you can open in MeshLab or CloudCompare. This is the map you put in a report."
+  - cmd: "rosrun sidewalk_slam map_manager.py prepare --db ~/rtabmap_maps/sidewalk_front.db --name lab_floor2"
+    explain: "Make a protected copy of a map for localisation, so no mistyped argument can ever destroy the original. Making a map takes an afternoon; copying it takes a second."
+  - cmd: "roslaunch sidewalk_slam rtabmap_localization.launch database_path:=/home/USER/rtabmap_maps/lab_floor2_localization.db"
+    explain: "Find yourself on a map you already have, without changing it. Start the robot somewhere it definitely mapped — until it recognises a place, it believes it is at the map origin, which looks deceptively like working."
+  - cmd: "rosrun sidewalk_slam make_orbslam3_config.py --from-topic --camera-name zedx_front --out ~/orbslam3_zedx.yaml --dump-json ~/zedx_calib.json"
+    explain: "Write the ORB-SLAM3 settings file from the camera's live calibration. It measures the real stereo baseline from the calibration and checks it against the ZED X nominal 120 mm, refusing to continue if they disagree. The JSON dump lets you regenerate the file later on a machine with no camera attached."
+  - cmd: "roslaunch sidewalk_slam orbslam3_baseline.launch dry_run:=true"
+    explain: "Check the ORB-SLAM3 baseline is actually runnable before you drive anywhere. Two seconds now, instead of finding out after the experiment that the vocabulary file was never extracted."
+  - cmd: "roslaunch sidewalk_slam slam_from_recording.launch bag:=/path/to/indoor_loop.bag"
+    explain: "Replay a recording through RTAB-Map with the GUI on. This is the tuning loop — change a parameter, replay, compare, repeat, on data that never changes underneath you."
+  - cmd: "rosrun sidewalk_slam slam_runner.py --input /path/to/indoor_loop.bag --dry-run"
+    explain: "Print exactly what the full three-way comparison would run, without running it. Works on any machine, including one with no ROS. Read this before the real thing."
+  - cmd: "rosrun sidewalk_slam slam_runner.py --input /path/to/indoor_loop.bag --settings ~/orbslam3_zedx.yaml --execute"
+    explain: "The real experiment. Runs RTAB-Map, then the ZED SDK tracker, then ORB-SLAM3, one at a time, over the same recording with the recorded clock, and writes three trajectories plus a manifest. Takes about three times the length of the recording."
+  - cmd: "rosrun sidewalk_slam validate_slam_run.py --run-id 20260720-140322_compare --closed-loop"
+    explain: "The gate. Checks every trajectory for backwards timestamps, NaNs, non-unit rotations, impossible speeds, tracking dropouts and short coverage, and compares the stacks for gross disagreement. Fails the run if anything is impossible. Nothing goes onto live hardware until this passes."
+
+failure_modes:
+  - symptom: "`roslaunch` says it cannot locate node of type `rtabmap` in package `rtabmap_slam`"
+    cause: "Only `rtabmap_msgs` is built on the Jetson. The rest of the ROS layer has never been compiled."
+    fix: "Run `rosrun sidewalk_slam build_rtabmap_ros.py`, read the plan it writes, then rerun it with `--execute`. Do NOT run `apt install ros-noetic-rtabmap-ros` — that installs a second copy of the core library alongside the existing 0.21.10 and the resulting version clash produces silent corruption hours later."
+  - symptom: "RTAB-Map starts, prints that it did not receive data, and nothing else happens"
+    cause: "It is subscribed to topics nobody is publishing, usually because the camera stack was not started first, or the camera namespace differs."
+    fix: "These launch files never start the camera on purpose. Start `sidewalk_perception` first, then check with `rostopic hz /zedx_front/zed_node/rgb/image_rect_color`. If the topic name is different, pass `camera_name:=` to match."
+  - symptom: "The robot model shakes or flickers in RViz and navigation behaves erratically"
+    cause: "Two nodes are publishing the same edge of the transform tree — almost always the ZED wrapper and RTAB-Map both publishing `map` to `odom`."
+    fix: "TF allows exactly one publisher per edge and does not warn when that rule is broken. Set the wrapper's `publish_tf` and `publish_map_tf` to false whenever RTAB-Map is running. `config/zed_positional_tracking.yaml` already has them false."
+  - symptom: "Yesterday's map is gone after starting a mapping run"
+    cause: "`delete_db_on_start` was true. Most RTAB-Map example launch files ship it that way."
+    fix: "It defaults to false in `rtabmap_mapping.launch` here. Better still, give every session its own `database_path:=` so nothing can ever be overwritten, and use `map_manager.py prepare` before any localisation work."
+  - symptom: "A long mapping run produces no loop closures at all"
+    cause: "The route never returned to a previously seen place from a similar viewpoint, or the environment is too visually repetitive for place recognition to be confident."
+    fix: "Check with `map_manager.py info --db <path>`. Loop closure is appearance-based — the same corridor entered from the opposite end genuinely looks like a different corridor. Plan routes that revisit places facing the same way, and prefer a figure of eight over an out-and-back."
+  - symptom: "The occupancy grid is empty or nearly empty even though mapping is clearly working"
+    cause: "The height and angle limits classified everything as neither ground nor obstacle, or the depth range limits excluded the whole scene."
+    fix: "Check `Grid/MaxGroundAngle`, `Grid/MaxGroundHeight` and `Grid/MaxObstacleHeight` in `config/rtabmap_zedx.yaml` against the actual camera mounting height. Also remember the ZED X sees nothing closer than 1 metre, so a camera pointed down at the floor a metre in front of the robot may be looking entirely into the blind zone."
+  - symptom: "The 3D map cannot be exported from a database that mapped fine"
+    cause: "The run was made with `Mem/BinDataKept` false, so the raw depth and colour were discarded and only the pose graph survives."
+    fix: "That parameter is true in this package's config for exactly this reason. If you turned it off to save disk, the 3D map cannot be rebuilt and the run must be repeated."
+  - symptom: "ORB-SLAM3 prints `Loading ORB Vocabulary` and then hangs or dies"
+    cause: "The vocabulary is still a compressed archive. Nobody extracted `ORBvoc.txt.tar.gz`."
+    fix: "`cd ~/Developer/ORB_SLAM3/Vocabulary && tar -xzf ORBvoc.txt.tar.gz`. It expands to about 145 MB. `run_orbslam3.py` checks for this before launching and says so explicitly."
+  - symptom: "ORB-SLAM3 produces a smooth trajectory that is the wrong size compared to the others"
+    cause: "Stale intrinsics. `Camera.bf` in its settings file does not match the camera and resolution actually in use."
+    fix: "Never copy a settings file between cameras or resolutions. Regenerate it with `make_orbslam3_config.py`, which reads the calibration live and cross-checks the recovered baseline against the ZED X nominal 120 mm. `validate_slam_run.py` also flags this as a path-length disagreement between stacks."
+  - symptom: "ORB-SLAM3 exits without writing any trajectory file"
+    cause: "Either it never initialised, or it was killed with SIGKILL rather than interrupted."
+    fix: "The trajectory is written in the shutdown handler, so `kill -9` loses the whole run. Always stop it with Ctrl-C. If it genuinely never initialised, look at its console for repeated matching failures — it needs texture, light and some parallax before it will start at all."
+  - symptom: "The ZED SDK baseline records nothing, or records poses from an unexpected configuration"
+    cause: "The tracking parameters were loaded after the wrapper node had already started."
+    fix: "A ROS node reads its parameters once, at construction. Load `config/zed_positional_tracking.yaml` before the camera launches, or let `slam_runner.py` handle the ordering. Confirm with `rosparam get /zedx_front/zed_node/pos_tracking/pos_tracking_enabled` after startup."
+  - symptom: "Two replays of the same recording give trajectories with completely different timestamps"
+    cause: "Simulated time was not enabled, so nodes stamped their output with wall-clock time."
+    fix: "Play with `rosbag play --clock` and launch with `use_sim_time:=true`. The launch files and `slam_runner.py` both do this; a manual `rosbag play` without `--clock` will not."
+  - symptom: "`validate_slam_run.py` reports an implausible peak speed"
+    cause: "The estimator relocalised into the wrong place, producing an instantaneous jump."
+    fix: "This is a genuine SLAM failure, not a threshold problem — do not simply raise `--max-speed`. Open the trajectory at the reported timestamp and look at what the camera was seeing. A repetitive corridor or a large moving object in front of the camera are the usual causes."
+  - symptom: "Any LiDAR option appears to do nothing"
+    cause: "There is no LiDAR on this robot. Every LiDAR path in this package is scaffolding, disabled on purpose."
+    fix: "Nothing to fix yet. When a LiDAR is fitted, set `subscribe_scan` true in `rtabmap_common.launch`, remap the `scan` topic, and change `Reg/Strategy` in the config from 0 (vision only) to 1 or 2. Until then it is not presented as working."
+  - symptom: "RTAB-Map prints a warning that a parameter was not recognised, naming `Grid/FromDepth` or `Grid/Sensor`"
+    cause: "RTAB-Map renamed this parameter across the 0.20 to 0.21 series and it was not possible to confirm which spelling 0.21.10 accepts without the Jetson in hand."
+    fix: "Expected, and harmless — RTAB-Map ignores parameters it does not recognise, and `config/rtabmap_zedx.yaml` deliberately sets BOTH spellings so the correct one always lands. On the first real run, check with `rtabmap --params | grep Grid`, then delete whichever line was rejected and this warning goes away."
+  - symptom: "ORB-SLAM3 rejects the generated settings file, or reads zeros out of it"
+    cause: "The settings-file schema is a genuine unknown. `make_orbslam3_config.py` emits the flat legacy `Camera.fx` layout by default because that is what the known-working `~/oak-d-params.yaml` on this Jetson uses. ORB-SLAM3 master instead expects `Camera1.*` keys plus a `File.version` of 1.0. Which one the installed checkout wants has not been tested against the real binary."
+    fix: "Rerun `make_orbslam3_config.py` with `--schema v1` to emit the newer layout. That path converts the baseline from `fx * baseline` to plain metres and refuses to write a file if that conversion fails, but it has NOT been validated against the installed build — it prints a warning saying so. Treat the first ORB-SLAM3 run as a test of the schema, not as a result."
+  - symptom: "The ORB-SLAM3 stereo-inertial result looks plausible but you are asked how much to trust it"
+    cause: "The IMU noise densities and random-walk terms in the generated settings are conservative estimates for a consumer-grade MEMS part, not measurements. This entry used to add that Stereolabs publishes the sensor's ranges and resolution but not its noise density — that was wrong, and it was corrected on 2026-08-29. The datasheet does publish both noise densities (accelerometer 2.3 mg, gyroscope 0.20 dps) and a sensitivity error of plus or minus 0.5 per cent, in the same small table as the resolution figures that were being quoted. What it does not publish is the bias instability or the random-walk terms. The published densities are still not used directly, for one specific reason: a noise density is normally quoted per square root of a hertz, and this datasheet prints no such denominator, so the figures could mean either the density itself or the total noise across the sensor's whole bandwidth — readings that differ by about a factor of ten. Putting a number of uncertain units into a setting whose units are fixed would be a worse error than the honest estimate it replaced."
+    fix: "Say so in the report, but do not treat the characterisation as a blocker any more — the wrong version of this note made it one. Two things would settle it. The quick one: ask Stereolabs support which reading of the two density figures is intended; that is a short question with a short answer. The thorough one: leave the camera absolutely still on a solid bench for three or more hours, record the IMU topic, and run an Allan variance analysis (`allan_variance_ros` or `kalibr_allan`). The Allan variance run is still worth doing because it also delivers the bias instability and random-walk terms, which genuinely are unpublished — but a stereo-inertial result produced before it is indicative, not invalid. Separately, note that the IMU frequency written into the settings was itself wrong until 2026-08-29 (400 Hz declared for a 200 Hz sensor), and ORB-SLAM3 scales all four noise terms by the square root of that number, so any settings file generated before that date must be regenerated rather than believed. The stereo-only ORB-SLAM3 result does not depend on any of these values and is unaffected."
+
+files:
+  - path: "launch/rtabmap_common.launch"
+    role: "The shared RTAB-Map node graph — synchroniser, odometry, SLAM. Both modes include it so they cannot drift apart."
+  - path: "launch/rtabmap_mapping.launch"
+    role: "Build a new map. The primary mapping entry point."
+  - path: "launch/rtabmap_localization.launch"
+    role: "Find yourself on an existing map without modifying it."
+  - path: "launch/zed_baseline.launch"
+    role: "Baseline 1 — record the ZED SDK's own positional tracking."
+  - path: "launch/orbslam3_baseline.launch"
+    role: "Baseline 2 — run ORB-SLAM3 through its safety wrapper."
+  - path: "launch/slam_from_recording.launch"
+    role: "Replay a rosbag through one SLAM stack offline. The tuning loop."
+  - path: "config/rtabmap_zedx.yaml"
+    role: "Every RTAB-Map tuning decision, with the reason for each one written next to it."
+  - path: "config/rtabmap_localization.yaml"
+    role: "The small set of overrides that turn the mapper into a localiser."
+  - path: "config/zed_positional_tracking.yaml"
+    role: "ZED wrapper settings for the commercial baseline, including the transform publishing that must stay off."
+  - path: "config/orbslam3_zedx_stereo.template.yaml"
+    role: "ORB-SLAM3 stereo settings template, mirroring the OAK-D file that already worked on this Jetson. Filled in at runtime, never used directly."
+  - path: "config/orbslam3_zedx_stereo_inertial.template.yaml"
+    role: "The same, plus the IMU block for stereo-inertial mode."
+  - path: "config/slam_runner.yaml"
+    role: "How each stack is driven over a recording, in plain text, so the experiment can be read without opening any code."
+  - path: "config/slam.rviz"
+    role: "A viewing layout built around watching the map-to-odom correction jump when a loop closes."
+  - path: "scripts/slam_common.py"
+    role: "Shared helpers — trajectory writing, path conventions, and the environment probes that let every tool fail with a sentence instead of a traceback."
+  - path: "scripts/build_rtabmap_ros.py"
+    role: "Detects the installed RTAB-Map core and plans a build of only the missing ROS layer against it."
+  - path: "scripts/make_orbslam3_config.py"
+    role: "Writes the ORB-SLAM3 settings file from live calibration, so the intrinsics can never be stale."
+  - path: "scripts/run_orbslam3.py"
+    role: "Launches ORB-SLAM3 safely and normalises its output into the common trajectory format."
+  - path: "scripts/trajectory_recorder.py"
+    role: "One recorder for every stack, so the comparison is not measuring the recording code."
+  - path: "scripts/slam_runner.py"
+    role: "Runs all three stacks sequentially over identical input and writes the run manifest."
+  - path: "scripts/validate_slam_run.py"
+    role: "The gate. Checks each result for physical impossibility before it may be called evidence."
+  - path: "scripts/map_manager.py"
+    role: "List, inspect, export and protect maps."
+
+logs: "logs/sidewalk_slam/"

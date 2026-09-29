@@ -1,0 +1,26 @@
+# private machine values and keys
+env.sh
+*.env
+.env*
+# build products
+catkin_ws/build/
+catkin_ws/devel/
+catkin_ws/install/
+catkin_ws/.catkin_workspace
+__pycache__/
+*.pyc
+# recordings and big outputs never belong here (see data/DATA_INDEX.md)
+*.svo2
+*.svo
+*.bag
+*.bag.active
+*.db
+*.db-journal
+*.mp4
+*.ply
+*.npz
+*.stl
+# scratch
+*.before_*
+*.tmp
+node_modules/

@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+<!--
+  rtabmap_localization.launch — LOCALISE on a map that already exists.
+
+  The map is opened effectively read-only: RTAB-Map answers "where am I on this
+  map?" and adds nothing to it. This is the mode navigation uses in Phase 5-6,
+  and it is the mode that makes repeated experiments comparable, because the map
+  is identical on every run.
+
+  BEFORE YOU RUN THIS
+      Make a protected copy of the map first, so a mistyped argument can never
+      harm the original. Use the `prepare` subcommand of map_manager.py (the
+      exact command is in README.md), then point this launch at the
+      *_localization.db it produces.
+
+  WHAT "LOCALISED" LOOKS LIKE
+      The map -> odom transform stops being identity and starts tracking. Until
+      the robot recognises somewhere, that transform is identity and the robot
+      believes it is at the map origin - which is not the same thing as being
+      lost, and is easy to mistake for success. Watch /rtabmap/localization_pose
+      or the info topic, and start the robot somewhere it has definitely mapped.
+
+  WHY IT CAN FAIL TO LOCALISE IN A PLACE IT HAS MAPPED
+      Appearance. A corridor mapped at 10:00 with sunlight through one window
+      is a measurably different-looking corridor at 16:00. The visual words
+      change, and RTAB-Map's place recognition can miss. This is a real
+      limitation of appearance-based SLAM, not a misconfiguration, and it is
+      worth writing about in the report.
+-->
+<launch>
+
+  <arg name="camera_name" default="zedx_front"/>
+  <arg name="node_name"   default="zed_node"/>
+
+  <arg name="database_path"
+       default="/media/sidewalk/SIDEWALK128/rtabmap_maps/sidewalk_front_localization.db"
+       doc="An EXISTING map. This launch never creates one - if the file is
+            missing, RTAB-Map starts with an empty memory and localises against
+            nothing, which looks exactly like a robot that cannot find itself.
+            Lives on the 128GB SD card, not the Jetson's own root disk."/>
+
+  <arg name="visual_odometry" default="true"/>
+  <arg name="force_3dof"      default="true"/>
+  <arg name="rtabmap_viz"     default="false"/>
+  <arg name="rviz"            default="false"/>
+  <arg name="use_sim_time"    default="false"/>
+  <arg name="frame_id"        default="base_link"/>
+  <arg name="approx_sync"     default="false"/>
+  <arg name="rtabmap_ns"      default="rtabmap"/>
+  <arg name="output"          default="screen"/>
+
+  <include file="$(find sidewalk_slam)/launch/rtabmap_common.launch">
+    <arg name="camera_name"     value="$(arg camera_name)"/>
+    <arg name="node_name"       value="$(arg node_name)"/>
+    <arg name="localization"    value="true"/>
+    <arg name="database_path"   value="$(arg database_path)"/>
+
+    <!-- Hard-wired false. In localisation mode, deleting the database means
+         deleting the map you were about to localise against; there is no
+         legitimate reason to do it, so the option is not exposed here. -->
+    <arg name="delete_db_on_start" value="false"/>
+
+    <arg name="visual_odometry" value="$(arg visual_odometry)"/>
+    <arg name="force_3dof"      value="$(arg force_3dof)"/>
+    <arg name="rtabmap_viz"     value="$(arg rtabmap_viz)"/>
+    <arg name="rviz"            value="$(arg rviz)"/>
+    <arg name="use_sim_time"    value="$(arg use_sim_time)"/>
+    <arg name="frame_id"        value="$(arg frame_id)"/>
+    <arg name="approx_sync"     value="$(arg approx_sync)"/>
+    <arg name="rtabmap_ns"      value="$(arg rtabmap_ns)"/>
+    <arg name="output"          value="$(arg output)"/>
+  </include>
+
+</launch>

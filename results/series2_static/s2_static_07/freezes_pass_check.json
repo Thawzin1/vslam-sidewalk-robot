@@ -1,0 +1,51 @@
+{
+ "P1_camera_silences_over_1p5s": [
+  3.43,
+  3.23,
+  6.3,
+  2.83,
+  5.77,
+  2.7,
+  3.77,
+  3.87,
+  5.67,
+  5.43,
+  2.7,
+  2.3,
+  3.83,
+  2.03,
+  2.47,
+  5.73
+ ],
+ "P2_wheel_silences_inbound_held": [],
+ "P3_camera_gyro_max_gap_s": 0.037,
+ "P4_zed_diagnostic_pauses_over_2s": [
+  4.05,
+  4.03,
+  7.09,
+  3.78,
+  6.63,
+  3.42,
+  4.43,
+  4.0,
+  5.8,
+  5.64,
+  3.56,
+  3.23,
+  4.25,
+  3.05,
+  3.03,
+  6.5
+ ],
+ "P5_parsed_iterations": 707,
+ "P5_db_nodes": 729,
+ "saves_over_5p5s": 0,
+ "other_wheel_silences_over_1p5s": [
+  [
+   5.19,
+   0.04,
+   0.03
+  ]
+ ],
+ "verdict": "FAIL"
+}

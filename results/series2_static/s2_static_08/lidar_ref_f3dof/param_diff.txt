@@ -1,0 +1,2 @@
+Info.parameters (first session) colleague-mode rtab_helios.db vs lidar_ref_f3dof/rtab_helios.db, 565 params compared
+Reg/Force3DoF: colleague=false f3dof=true

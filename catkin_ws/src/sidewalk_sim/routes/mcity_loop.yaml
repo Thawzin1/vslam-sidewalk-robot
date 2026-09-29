@@ -1,0 +1,50 @@
+# mcity_loop.yaml — the Phase-1 A/B route: a 5-lap out-and-back on the
+# car-free eastern stretch of Mcity's south street, driven with in-place
+# turns (encoder-servoed primitives — see route_player.py).
+#
+# LESSON FROM SHAKEDOWN #1 (2026-08-22): the original racetrack of open-loop
+# arcs under-rotated on the skid-steer platform and walked the robot ~2 m
+# wide, wedging it against parked car_1 (which spans x[-18.2,-13.8]). This
+# version keeps 4.8 m of margin from that car and lets the wheel-odometry
+# servo hold the line.
+#
+# GEOMETRY
+#   * Entirely on the roadway (z=0): kerbs (0.158 m, near a full wheel
+#     radius) are never crossed.
+#   * Track line y = -60.5, x from 0 to -9: east of every parked car, inside
+#     the road corridor (roughly y[-58.4,-63.7]).
+#   * Out-and-back with in-place 180s: every westbound leg repeats the exact
+#     westbound viewpoint of the lap before (same for eastbound) — a genuine
+#     same-viewpoint loop-closure opportunity every lap.
+#   * 5 laps x 18 m = 90 m of straights + 10 turns; ~4 min sim at 0.6 m/s.
+#
+# SPAWN FOR THIS ROUTE (pass to husky_mcity_gazebo.launch):
+#   spawn_x:=0.0  spawn_y:=-60.5  spawn_z:=0.3  spawn_yaw:=3.1416
+#   (road surface z=0; robot settles ~0.132; facing west along the street)
+
+# ---- lap 1 ----
+- {forward: 9.0}      # west leg
+- {turn: 180}         # about-face (CCW)
+- {forward: 9.0}      # east leg, back to start
+- {turn: -180}        # about-face (CW — alternating direction cancels any
+                      #  residual encoder turn bias instead of accumulating it)
+# ---- lap 2 ----
+- {forward: 9.0}
+- {turn: 180}
+- {forward: 9.0}
+- {turn: -180}
+# ---- lap 3 ----
+- {forward: 9.0}
+- {turn: 180}
+- {forward: 9.0}
+- {turn: -180}
+# ---- lap 4 ----
+- {forward: 9.0}
+- {turn: 180}
+- {forward: 9.0}
+- {turn: -180}
+# ---- lap 5 ----
+- {forward: 9.0}
+- {turn: 180}
+- {forward: 9.0}
+- {turn: -180}

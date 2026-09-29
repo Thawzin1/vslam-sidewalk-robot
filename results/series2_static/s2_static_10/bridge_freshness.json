@@ -1,0 +1,173 @@
+{
+  "window": [
+    "02:02:42",
+    "02:31:15"
+  ],
+  "window_s": 1713.0,
+  "rule": "no fresh robot data = newest robot message received more than 0.5 s ago (EKF sensor_timeout 0.5, ekf_fused.yaml:49)",
+  "inputs": {
+    "wheels (/ekf_in/wheel_odom)": {
+      "over_0.5s": {
+        "seconds": 200.6,
+        "percent_of_drive": 11.71,
+        "stretches": 48
+      },
+      "over_2s": {
+        "seconds": 158.1,
+        "percent_of_drive": 9.23,
+        "stretches": 18
+      },
+      "over_5s": {
+        "seconds": 110.7,
+        "percent_of_drive": 6.46,
+        "stretches": 15
+      },
+      "longest_stretch_s": 25.8,
+      "longest_stretches": [
+        {
+          "from": "02:23:35",
+          "seconds": 25.8
+        },
+        {
+          "from": "02:13:53",
+          "seconds": 23.0
+        },
+        {
+          "from": "02:16:36",
+          "seconds": 17.15
+        },
+        {
+          "from": "02:25:57",
+          "seconds": 16.05
+        },
+        {
+          "from": "02:18:43",
+          "seconds": 15.55
+        },
+        {
+          "from": "02:09:57",
+          "seconds": 13.8
+        },
+        {
+          "from": "02:14:36",
+          "seconds": 12.5
+        },
+        {
+          "from": "02:23:10",
+          "seconds": 10.0
+        }
+      ]
+    },
+    "gyroscope (/ekf_in/imu)": {
+      "over_0.5s": {
+        "seconds": 224.9,
+        "percent_of_drive": 13.13,
+        "stretches": 59
+      },
+      "over_2s": {
+        "seconds": 170.9,
+        "percent_of_drive": 9.98,
+        "stretches": 23
+      },
+      "over_5s": {
+        "seconds": 114.8,
+        "percent_of_drive": 6.7,
+        "stretches": 17
+      },
+      "longest_stretch_s": 26.35,
+      "longest_stretches": [
+        {
+          "from": "02:23:35",
+          "seconds": 26.35
+        },
+        {
+          "from": "02:13:53",
+          "seconds": 17.2
+        },
+        {
+          "from": "02:16:36",
+          "seconds": 17.15
+        },
+        {
+          "from": "02:25:57",
+          "seconds": 16.0
+        },
+        {
+          "from": "02:18:43",
+          "seconds": 15.0
+        },
+        {
+          "from": "02:14:34",
+          "seconds": 14.05
+        },
+        {
+          "from": "02:09:57",
+          "seconds": 13.7
+        },
+        {
+          "from": "02:11:17",
+          "seconds": 12.55
+        }
+      ]
+    },
+    "neither wheels nor gyroscope": {
+      "over_0.5s": {
+        "seconds": 196.8,
+        "percent_of_drive": 11.49,
+        "stretches": 46
+      },
+      "over_2s": {
+        "seconds": 154.6,
+        "percent_of_drive": 9.02,
+        "stretches": 19
+      },
+      "over_5s": {
+        "seconds": 104.4,
+        "percent_of_drive": 6.09,
+        "stretches": 16
+      },
+      "longest_stretch_s": 25.8,
+      "longest_stretches": [
+        {
+          "from": "02:23:35",
+          "seconds": 25.8
+        },
+        {
+          "from": "02:13:53",
+          "seconds": 17.2
+        },
+        {
+          "from": "02:16:36",
+          "seconds": 17.15
+        },
+        {
+          "from": "02:25:57",
+          "seconds": 16.0
+        },
+        {
+          "from": "02:18:43",
+          "seconds": 15.0
+        },
+        {
+          "from": "02:09:57",
+          "seconds": 13.7
+        },
+        {
+          "from": "02:14:36",
+          "seconds": 12.5
+        },
+        {
+          "from": "02:23:10",
+          "seconds": 10.0
+        }
+      ]
+    }
+  },
+  "wheel_rate_per_10s": {
+    "median_hz": 10.0,
+    "lowest_hz": 0.0,
+    "windows_below_2hz": 9,
+    "windows_below_1hz": 6,
+    "windows_total": 172
+  }
+}

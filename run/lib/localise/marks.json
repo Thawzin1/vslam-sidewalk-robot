@@ -1,0 +1,9 @@
+{
+ "_what": "Each taped spot's expected place on drive 4's camera map: [x m, y m, camera heading deg]. PROVISIONAL = the taped distances (PROTOCOL.md) in map axes; drive 4's map is about 6 % stretched, so up to ~0.6 m off at B. To be replaced by the LiDAR-derived places after session 2 is scored.",
+ "_source": "provisional_taped",
+ "start_mark": [0.0, 0.0, 0.0],
+ "A_east": [6.0, 0.0, 0.0],
+ "B_west": [10.5, 0.0, 180.0],
+ "A_west": [6.0, 0.0, 180.0],
+ "C_north": [0.0, -4.0, 90.0]
+}

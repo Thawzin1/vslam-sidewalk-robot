@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<!--
+  husky_marc_gazebo.launch - the Husky on the MARC / Longwood Rd S sidewalk.
+
+  A thin wrapper around husky_real_gazebo.launch, changing only what this world
+  requires. Two launch files describing the same robot would drift apart the
+  first time either was edited, so nothing else is duplicated.
+
+  WHY THE SPAWN POSE IS OVERRIDDEN
+    This world measures +Y from the BUILDING FRONTAGE, not from the walkway
+    centreline: the 2.0 m walkway spans y = 0 to 2, so its centre is y = 1.0.
+    Spawning at the default y = 0 would drop the robot straddling the frontage
+    edge. x = 2.0 starts it just inside the west end of the 26 m route, facing
+    +X, which is the direction of travel.
+
+  WHAT THIS WORLD IS AND IS NOT FOR
+    IS: the real deployment route. A driveway crossing, correct walkway and
+    buffer widths from the Hamilton Complete Streets Design Guidelines (2022),
+    and a genuine place-signature (the driveway cut and its flanking signs) for
+    loop closure to recognise on a return pass.
+
+    IS NOT: a test of Reg/Force3DoF. This world is geometrically FLAT - walkway
+    and roadway are coplanar and there is no cross-slope - so nothing in it
+    violates the flat-ground assumption. sidewalk.world exists for that
+    experiment; it carries a deliberate 2% camber, 1:12 kerb ramps and a
+    driveway dip. Keep the two separate and neither result is confounded.
+
+  USAGE
+    roslaunch sidewalk_sim husky_marc_gazebo.launch gui:=false rviz:=true zedx:=true
+
+  BEFORE DRIVING, measure the feature count (see ENGINEERING_NOTES.md). The source version
+  of this world referenced Gazebo/Concrete and Gazebo/Asphalt, neither of which
+  exists on this install; three surfaces would have rendered untextured, which
+  is the documented cause of odometry failing on every frame.
+-->
+<launch>
+
+  <arg name="gui"   default="true"/>
+  <arg name="rviz"  default="true"/>
+  <arg name="zedx"  default="false"/>
+  <arg name="zedx_parent" default="zedx_base_frame"/>
+  <arg name="zedx_xyz"    default="0 0 0"/>
+  <arg name="zedx_rpy"    default="0 0 0"/>
+
+  <include file="$(find sidewalk_sim)/launch/husky_real_gazebo.launch">
+    <arg name="world"   value="$(find sidewalk_sim)/worlds/marc_sidewalk_driveway.world"/>
+    <arg name="spawn_x" value="2.0"/>
+    <arg name="spawn_y" value="1.0"/>
+    <arg name="spawn_z" value="0.2"/>
+    <arg name="spawn_yaw" value="0.0"/>
+
+    <arg name="gui"         value="$(arg gui)"/>
+    <arg name="rviz"        value="$(arg rviz)"/>
+    <arg name="zedx"        value="$(arg zedx)"/>
+    <arg name="zedx_parent" value="$(arg zedx_parent)"/>
+    <arg name="zedx_xyz"    value="$(arg zedx_xyz)"/>
+    <arg name="zedx_rpy"    value="$(arg zedx_rpy)"/>
+  </include>
+
+</launch>

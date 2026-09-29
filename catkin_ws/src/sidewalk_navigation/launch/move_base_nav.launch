@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<!--
+  move_base_nav.launch - move_base with this folder's settings. Shared by the sim dry run and the real run.
+  move_base = the ROS navigation stack's goal-driving program (Marder-Eppstein et al. 2010, "The Office
+  Marathon", ICRA). Its wheel commands go to /nav/cmd_vel, NOT to the wheels: only nav_cmd_sender.py reads
+  them, and only nav_cmd_recv.py on the robot can pass them on. If either is missing, nothing moves.
+-->
+<launch>
+  <arg name="here" default="$(find sidewalk_navigation)"/>
+  <arg name="odom_topic" default="/fused/odometry"/>
+  <node pkg="move_base" type="move_base" name="move_base" output="screen" respawn="false">
+    <rosparam file="$(arg here)/config/costmap_common.yaml" command="load" ns="global_costmap"/>
+    <rosparam file="$(arg here)/config/costmap_common.yaml" command="load" ns="local_costmap"/>
+    <rosparam file="$(arg here)/config/costmap_global.yaml" command="load"/>
+    <rosparam file="$(arg here)/config/costmap_local.yaml"  command="load"/>
+    <rosparam file="$(arg here)/config/move_base.yaml"      command="load"/>
+    <rosparam file="$(arg here)/config/global_planner.yaml" command="load"/>
+    <rosparam file="$(arg here)/config/dwa.yaml"            command="load"/>
+    <remap from="cmd_vel" to="/nav/cmd_vel"/>
+    <remap from="odom"    to="$(arg odom_topic)"/>
+  </node>
+</launch>

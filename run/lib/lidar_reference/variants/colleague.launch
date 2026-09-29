@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<!--
+  variants/colleague.launch - the colleague's LiDAR replay with NO parameter changed (the robot's
+  "replay_lidar.sh <run> colleague" mode), for the Jetson. Kept for comparison only: the yardstick is f3dof.
+  Same one Jetson-only line as variants/f3dof.launch (the decoder reads robot_replay_config.yaml).
+-->
+<launch>
+  <arg name="db_dir"/>
+  <arg name="rslidar_config" default="$(dirname)/../robot_replay_config.yaml"/>
+  <include file="$(find self_navigation)/launch/3dreplay_pipeline.launch">
+    <arg name="sensor" value="helios"/>
+    <arg name="db_dir" value="$(arg db_dir)"/>
+  </include>
+  <param name="/helios_driver/config_path" value="$(arg rslidar_config)"/>
+</launch>

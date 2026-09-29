@@ -1,0 +1,172 @@
+{
+ "run": "s2_fusion_T4b",
+ "sources": {
+  "paths": "~/.run_records/s2_fusion_T4b/fusion.bag (/fused/odometry, /robot/ekf_odom, /rtabmap/odom, /robot/wheel_odom)",
+  "link": "~/.run_records/s2_fusion_T4b/bridge_recv.log",
+  "score": "~/.run_records/s2_fusion_T4b/t4_score.json",
+  "cpu": "~/.run_records/s2_fusion_T4b/cpu_jetson.json"
+ },
+ "tracking_alone_gaps": {
+  "blend": {
+   "end_to_start_m": 0.075,
+   "heading_deg": -7.23,
+   "path_m": 3.7,
+   "first": "03:58:47",
+   "last": "04:14:29"
+  },
+  "robot": {
+   "end_to_start_m": 0.003,
+   "heading_deg": -1.69,
+   "path_m": 0.2,
+   "first": "03:58:47",
+   "last": "04:14:30"
+  },
+  "camera": {
+   "end_to_start_m": 0.085,
+   "heading_deg": -4.7,
+   "path_m": 18.2,
+   "first": "03:58:47",
+   "last": "04:14:29"
+  }
+ },
+ "camera_tracking_lost": {
+  "stretches": 4,
+  "seconds_total": 197.7,
+  "longest_s": 103.2,
+  "share_of_messages_pct": 31.1,
+  "rule": "/rtabmap/odom message with covariance >= 9998 or an all-zero pose (RTAB-Map's lost signal)"
+ },
+ "blend_heading_while_still": {
+  "stops": 18,
+  "seconds_still": 880.3,
+  "signed_sum_deg": -0.82,
+  "sum_abs_net_per_stop_deg": 1.398,
+  "sum_abs_steps_deg": 44.594,
+  "largest_stop_net_deg": -0.293,
+  "rule": "robot wheel odometry speed and turn rate both zero, below 1e-6 - the log holds 1e-16 float noise, not 0.0 (nearest wheel message within 0.3 s)"
+ },
+ "link": {
+  "down_events": 0,
+  "down_lines_hamilton": [],
+  "receiver_sessions": 2,
+  "connects": 2,
+  "sessions": [
+   {
+    "elapsed_s": 900.9,
+    "per_topic": {
+     "/husky_velocity_controller/odom": {
+      "robot_read": 9100,
+      "robot_sent": 8972,
+      "published_on_jetson": 8902,
+      "pct_of_sent": 99.22,
+      "pct_of_robot_read": 97.82,
+      "missed_while_down": 0,
+      "stale": 74,
+      "lost": 0
+     },
+     "/imu/data": {
+      "robot_read": 17753,
+      "robot_sent": 17503,
+      "published_on_jetson": 17360,
+      "pct_of_sent": 99.18,
+      "pct_of_robot_read": 97.79,
+      "missed_while_down": 0,
+      "stale": 149,
+      "lost": 0
+     },
+     "/imu/data_raw": {
+      "robot_read": 17752,
+      "robot_sent": 17503,
+      "published_on_jetson": 17360,
+      "pct_of_sent": 99.18,
+      "pct_of_robot_read": 97.79,
+      "missed_while_down": 0,
+      "stale": 149,
+      "lost": 0
+     },
+     "/odometry/filtered": {
+      "robot_read": 45504,
+      "robot_sent": 44866,
+      "published_on_jetson": 44507,
+      "pct_of_sent": 99.2,
+      "pct_of_robot_read": 97.81,
+      "missed_while_down": 0,
+      "stale": 376,
+      "lost": 0
+     }
+    }
+   },
+   {
+    "elapsed_s": 68.8,
+    "per_topic": {
+     "/husky_velocity_controller/odom": {
+      "robot_read": 801,
+      "robot_sent": 688,
+      "published_on_jetson": 605,
+      "pct_of_sent": 87.94,
+      "pct_of_robot_read": 75.53,
+      "missed_while_down": 0,
+      "stale": 52,
+      "lost": 0
+     },
+     "/imu/data": {
+      "robot_read": 1564,
+      "robot_sent": 1343,
+      "published_on_jetson": 1180,
+      "pct_of_sent": 87.86,
+      "pct_of_robot_read": 75.45,
+      "missed_while_down": 0,
+      "stale": 103,
+      "lost": 0
+     },
+     "/imu/data_raw": {
+      "robot_read": 1564,
+      "robot_sent": 1343,
+      "published_on_jetson": 1181,
+      "pct_of_sent": 87.94,
+      "pct_of_robot_read": 75.51,
+      "missed_while_down": 0,
+      "stale": 102,
+      "lost": 0
+     },
+     "/odometry/filtered": {
+      "robot_read": 4006,
+      "robot_sent": 3441,
+      "published_on_jetson": 3020,
+      "pct_of_sent": 87.77,
+      "pct_of_robot_read": 75.39,
+      "missed_while_down": 0,
+      "stale": 264,
+      "lost": 0
+     }
+    }
+   }
+  ]
+ },
+ "processor_fusion": {
+  "total": {
+   "seconds": 892,
+   "median_cores": 0.11,
+   "p99_cores": 0.15,
+   "max_cores": 0.44
+  },
+  "gate": "PASS",
+  "per_process": {
+   "robot_bridge_recv": {
+    "median_cores": 0.05,
+    "p99_cores": 0.07,
+    "max_cores": 0.07
+   },
+   "ekf_input_conditioner": {
+    "median_cores": 0.04,
+    "p99_cores": 0.05,
+    "max_cores": 0.18
+   },
+   "ekf_fused": {
+    "median_cores": 0.03,
+    "p99_cores": 0.04,
+    "max_cores": 0.23
+   }
+  }
+ }
+}

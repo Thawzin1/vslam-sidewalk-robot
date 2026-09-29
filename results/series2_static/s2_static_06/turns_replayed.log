@@ -1,0 +1,139 @@
+08:20:28 WATCH START (replayed after the drive from fusion.bag by turns_replay.py)
+08:22:21 TURN 1 LEFT started (driven 11.5 m)
+08:22:26 TURN 1 LEFT ended after 3.9 s: blend +86.9 deg, robot +86.1 deg, camera +46.8 deg (camera lost 71% of it); blend - robot +0.8 deg
+08:22:28 TURN 2 LEFT started (driven 11.6 m) - camera LOST
+08:22:31 TURN 2 LEFT ended after 1.6 s: blend +38.7 deg, robot +37.9 deg, camera +96.8 deg (camera lost 61% of it); blend - robot +0.8 deg
+08:22:32 TURN 3 LEFT started (driven 11.6 m)
+08:22:34 TURN 3 LEFT ended after 0.9 s: blend +19.3 deg, robot +18.4 deg, camera +24.1 deg (camera lost 0% of it); blend - robot +0.9 deg
+08:23:27 TURN 4 LEFT started (driven 22.6 m)
+08:23:34 TURN 4 LEFT ended after 5.9 s: blend +73.5 deg, robot +73.4 deg, camera +72.0 deg (camera lost 0% of it); blend - robot +0.1 deg
+08:23:51 TURN 5 LEFT started (driven 24.4 m)
+08:23:54 TURN 5 LEFT ended after 2.1 s: blend +0.4 deg, robot +0.6 deg, camera +2.1 deg (camera lost 0% of it); blend - robot -0.2 deg
+08:24:42 TURN 6 LEFT started (driven 38.2 m)
+08:24:46 TURN 6 LEFT ended after 2.9 s: blend +61.2 deg, robot +63.1 deg, camera +69.4 deg (camera lost 0% of it); blend - robot -1.9 deg
+08:24:46 TURN 7 LEFT started (driven 38.2 m)
+08:24:49 TURN 7 LEFT ended after 1.5 s: blend +41.3 deg, robot +40.7 deg, camera +55.3 deg (camera lost 0% of it); blend - robot +0.6 deg
+08:24:53 TURN 8 LEFT started (driven 38.3 m)
+08:24:54 TURN 8 LEFT ended after 0.6 s: blend +10.7 deg, robot +9.9 deg, camera - deg (camera lost 100% of it); blend - robot +0.8 deg
+08:25:17 TURN 9 RIGHT started (driven 38.3 m)
+08:25:18 TURN 9 RIGHT ended after 0.5 s: blend -6.9 deg, robot -6.4 deg, camera -10.6 deg (camera lost 0% of it); blend - robot -0.5 deg
+08:25:20 TURN 10 RIGHT started (driven 38.3 m)
+08:25:22 TURN 10 RIGHT ended after 0.3 s: blend -2.9 deg, robot -2.9 deg, camera -8.2 deg (camera lost 0% of it); blend - robot +0.1 deg
+08:25:23 TURN 11 RIGHT started (driven 38.3 m)
+08:25:25 TURN 11 RIGHT ended after 0.6 s: blend -11.2 deg, robot -10.8 deg, camera -15.2 deg (camera lost 0% of it); blend - robot -0.4 deg
+08:25:28 TURN 12 RIGHT started (driven 38.3 m)
+08:25:29 TURN 12 RIGHT ended after 0.1 s: blend +0.0 deg, robot -0.2 deg, camera -1.8 deg (camera lost 0% of it); blend - robot +0.2 deg
+08:25:31 TURN 13 RIGHT started (driven 38.3 m)
+08:25:33 TURN 13 RIGHT ended after 0.5 s: blend -4.0 deg, robot -4.7 deg, camera -7.1 deg (camera lost 0% of it); blend - robot +0.7 deg
+08:25:35 TURN 14 RIGHT started (driven 38.3 m)
+08:25:36 TURN 14 RIGHT ended after 0.2 s: blend -0.0 deg, robot -0.1 deg, camera -4.8 deg (camera lost 0% of it); blend - robot +0.1 deg
+08:25:56 TURN 15 LEFT started (driven 39.7 m)
+08:25:58 TURN 15 LEFT ended after 0.5 s: blend +4.7 deg, robot +4.6 deg, camera +10.5 deg (camera lost 0% of it); blend - robot +0.0 deg
+08:26:33 DIRECTION CHANGE #1: now BACKWARD (driven 44.0 m)
+08:26:56 TURN 16 RIGHT started (driven 46.7 m)
+08:26:57 TURN 16 RIGHT ended after 0.2 s: blend -0.6 deg, robot -0.4 deg, camera -5.5 deg (camera lost 0% of it); blend - robot -0.2 deg
+08:27:00 TURN 17 RIGHT started (driven 46.7 m)
+08:27:01 TURN 17 RIGHT ended after 0.1 s: blend +0.6 deg, robot +0.3 deg, camera -4.0 deg (camera lost 0% of it); blend - robot +0.2 deg
+08:27:03 TURN 18 LEFT started (driven 46.7 m)
+08:27:03 DIRECTION CHANGE #2: now FORWARD (driven 46.7 m)
+08:27:06 TURN 18 LEFT ended after 1.2 s: blend +3.8 deg, robot +3.7 deg, camera +4.8 deg (camera lost 0% of it); blend - robot +0.1 deg
+08:27:07 TURN 19 LEFT started (driven 47.1 m)
+08:27:09 TURN 19 LEFT ended after 0.2 s: blend +0.1 deg, robot +0.5 deg, camera +10.2 deg (camera lost 0% of it); blend - robot -0.4 deg
+08:27:13 TURN 20 LEFT started (driven 47.1 m)
+08:27:14 TURN 20 LEFT ended after 0.4 s: blend +7.5 deg, robot +7.6 deg, camera +17.0 deg (camera lost 0% of it); blend - robot -0.1 deg
+08:27:21 TURN 21 LEFT started (driven 47.1 m)
+08:27:23 TURN 21 LEFT ended after 0.6 s: blend +17.6 deg, robot +16.9 deg, camera +19.5 deg (camera lost 81% of it); blend - robot +0.7 deg
+08:27:24 TURN 22 LEFT started (driven 47.1 m)
+08:27:25 TURN 22 LEFT ended after 0.2 s: blend +1.9 deg, robot +0.6 deg, camera +9.1 deg (camera lost 0% of it); blend - robot +1.2 deg
+08:27:49 DIRECTION CHANGE #3: now BACKWARD (driven 48.7 m)
+08:28:05 TURN 23 LEFT started (driven 49.3 m)
+08:28:06 TURN 23 LEFT ended after 0.3 s: blend +6.9 deg, robot +4.7 deg, camera +11.9 deg (camera lost 0% of it); blend - robot +2.2 deg
+08:28:09 DIRECTION CHANGE #4: now FORWARD (driven 49.3 m)
+08:29:25 TURN 24 RIGHT started (driven 59.0 m)
+08:29:38 TURN 24 RIGHT ended after 12.3 s: blend -107.2 deg, robot -106.9 deg, camera -115.5 deg (camera lost 14% of it); blend - robot -0.3 deg
+08:29:39 DIRECTION CHANGE #5: now BACKWARD (driven 59.1 m)
+08:29:39 TURN 25 RIGHT started (driven 59.1 m) - camera LOST
+08:29:43 TURN 25 RIGHT ended after 2.3 s: blend -22.5 deg, robot -21.7 deg, camera -26.1 deg (camera lost 14% of it); blend - robot -0.7 deg
+08:29:43 TURN 26 RIGHT started (driven 59.1 m)
+08:29:46 TURN 26 RIGHT ended after 1.5 s: blend -24.4 deg, robot -23.7 deg, camera -27.3 deg (camera lost 0% of it); blend - robot -0.8 deg
+08:29:47 DIRECTION CHANGE #6: now FORWARD (driven 59.1 m)
+08:30:20 TURN 27 LEFT started (driven 66.0 m)
+08:30:21 TURN 27 LEFT ended after 0.7 s: blend +8.4 deg, robot +8.9 deg, camera +11.4 deg (camera lost 0% of it); blend - robot -0.5 deg
+08:30:23 TURN 28 LEFT started (driven 66.3 m)
+08:30:25 TURN 28 LEFT ended after 0.9 s: blend +11.6 deg, robot +11.5 deg, camera +15.5 deg (camera lost 0% of it); blend - robot +0.1 deg
+08:30:27 TURN 29 LEFT started (driven 66.3 m)
+08:30:28 TURN 29 LEFT ended after 0.2 s: blend +0.5 deg, robot +0.8 deg, camera +5.0 deg (camera lost 0% of it); blend - robot -0.3 deg
+08:30:30 TURN 30 LEFT started (driven 67.2 m)
+08:30:36 TURN 30 LEFT ended after 4.5 s: blend +19.8 deg, robot +19.5 deg, camera +24.2 deg (camera lost 0% of it); blend - robot +0.3 deg
+08:31:11 TURN 31 RIGHT started (driven 79.1 m)
+08:31:15 TURN 31 RIGHT ended after 3.0 s: blend -85.0 deg, robot -84.0 deg, camera -89.9 deg (camera lost 0% of it); blend - robot -1.0 deg
+08:31:39 TURN 32 LEFT started (driven 81.9 m)
+08:31:40 TURN 32 LEFT ended after 0.3 s: blend +1.9 deg, robot +1.6 deg, camera +3.6 deg (camera lost 0% of it); blend - robot +0.3 deg
+08:32:15 TURN 33 LEFT started (driven 87.6 m)
+08:32:18 TURN 33 LEFT ended after 1.7 s: blend +66.6 deg, robot +64.9 deg, camera +44.0 deg (camera lost 53% of it); blend - robot +1.7 deg
+08:32:19 TURN 34 LEFT started (driven 87.6 m) - camera LOST
+08:32:20 TURN 34 LEFT ended after 0.6 s: blend +13.6 deg, robot +13.4 deg, camera +53.1 deg (camera lost 56% of it); blend - robot +0.2 deg
+08:32:21 TURN 35 LEFT started (driven 87.6 m)
+08:32:26 TURN 35 LEFT ended after 4.1 s: blend +62.0 deg, robot +62.0 deg, camera +68.7 deg (camera lost 0% of it); blend - robot -0.0 deg
+08:33:08 TURN 36 LEFT started (driven 94.4 m)
+08:33:11 TURN 36 LEFT ended after 1.8 s: blend +20.4 deg, robot +20.5 deg, camera +22.6 deg (camera lost 0% of it); blend - robot -0.2 deg
+08:33:19 TURN 37 LEFT started (driven 96.2 m)
+08:33:23 TURN 37 LEFT ended after 3.3 s: blend +59.7 deg, robot +60.0 deg, camera +62.6 deg (camera lost 0% of it); blend - robot -0.2 deg
+08:34:06 TURN 38 LEFT started (driven 110.4 m)
+08:34:10 TURN 38 LEFT ended after 2.3 s: blend +77.4 deg, robot +76.8 deg, camera +84.5 deg (camera lost 0% of it); blend - robot +0.6 deg
+08:34:38 TURN 39 RIGHT started (driven 119.9 m)
+08:34:45 TURN 39 RIGHT ended after 6.4 s: blend -85.3 deg, robot -85.0 deg, camera -86.2 deg (camera lost 0% of it); blend - robot -0.2 deg
+08:34:51 TURN 40 RIGHT started (driven 120.6 m)
+08:34:54 TURN 40 RIGHT ended after 2.1 s: blend -34.3 deg, robot -37.1 deg, camera -37.5 deg (camera lost 0% of it); blend - robot +2.8 deg
+08:34:57 TURN 41 RIGHT started (driven 121.0 m)
+08:35:02 TURN 41 RIGHT ended after 3.9 s: blend -19.1 deg, robot -19.0 deg, camera -20.2 deg (camera lost 0% of it); blend - robot -0.1 deg
+08:35:05 TURN 42 RIGHT started (driven 123.0 m)
+08:35:07 TURN 42 RIGHT ended after 1.4 s: blend -4.8 deg, robot -4.3 deg, camera -7.4 deg (camera lost 0% of it); blend - robot -0.5 deg
+08:35:25 TURN 43 LEFT started (driven 129.0 m)
+08:35:34 TURN 43 LEFT ended after 8.0 s: blend +77.2 deg, robot +77.0 deg, camera +57.8 deg (camera lost 8% of it); blend - robot +0.3 deg
+08:37:30 TURN 44 LEFT started (driven 133.5 m)
+08:37:31 TURN 44 LEFT ended after 0.4 s: blend +6.9 deg, robot +5.7 deg, camera +11.7 deg (camera lost 0% of it); blend - robot +1.2 deg
+08:37:33 TURN 45 LEFT started (driven 133.5 m)
+08:37:34 TURN 45 LEFT ended after 0.4 s: blend +6.1 deg, robot +5.3 deg, camera +11.0 deg (camera lost 0% of it); blend - robot +0.8 deg
+08:37:35 TURN 46 LEFT started (driven 133.5 m)
+08:37:37 TURN 46 LEFT ended after 0.3 s: blend +2.0 deg, robot +2.0 deg, camera +5.6 deg (camera lost 0% of it); blend - robot -0.0 deg
+08:37:37 TURN 47 LEFT started (driven 133.5 m)
+08:37:42 TURN 47 LEFT ended after 3.9 s: blend +32.9 deg, robot +32.7 deg, camera +36.3 deg (camera lost 0% of it); blend - robot +0.2 deg
+08:38:17 TURN 48 LEFT started (driven 143.5 m) - camera LOST
+08:38:23 TURN 48 LEFT ended after 5.1 s: blend +81.8 deg, robot +81.9 deg, camera +84.0 deg (camera lost 1% of it); blend - robot -0.0 deg
+08:38:52 TURN 49 RIGHT started (driven 154.2 m)
+08:38:56 TURN 49 RIGHT ended after 2.7 s: blend -79.7 deg, robot -79.6 deg, camera -84.2 deg (camera lost 0% of it); blend - robot -0.1 deg
+08:39:03 TURN 50 RIGHT started (driven 154.2 m)
+08:39:08 TURN 50 RIGHT ended after 4.1 s: blend -72.8 deg, robot -72.4 deg, camera -77.2 deg (camera lost 0% of it); blend - robot -0.4 deg
+08:39:32 TURN 51 LEFT started (driven 162.7 m)
+08:39:35 TURN 51 LEFT ended after 2.7 s: blend +75.4 deg, robot +75.7 deg, camera +80.0 deg (camera lost 0% of it); blend - robot -0.3 deg
+08:39:38 TURN 52 RIGHT started (driven 162.9 m)
+08:39:42 TURN 52 RIGHT ended after 2.5 s: blend +3.5 deg, robot +3.7 deg, camera +1.9 deg (camera lost 0% of it); blend - robot -0.2 deg
+08:39:48 TURN 53 RIGHT started (driven 166.6 m)
+08:39:51 TURN 53 RIGHT ended after 2.3 s: blend -1.5 deg, robot -1.0 deg, camera -3.6 deg (camera lost 0% of it); blend - robot -0.5 deg
+08:40:18 TURN 54 LEFT started (driven 177.5 m)
+08:40:23 TURN 54 LEFT ended after 3.9 s: blend +79.9 deg, robot +79.9 deg, camera +84.6 deg (camera lost 0% of it); blend - robot +0.1 deg
+08:40:25 TURN 55 LEFT started (driven 177.5 m)
+08:40:31 TURN 55 LEFT ended after 4.7 s: blend +89.1 deg, robot +89.9 deg, camera +91.1 deg (camera lost 0% of it); blend - robot -0.8 deg
+08:40:35 TURN 56 LEFT started (driven 177.5 m)
+08:40:40 TURN 56 LEFT ended after 3.7 s: blend +82.8 deg, robot +81.6 deg, camera +82.3 deg (camera lost 16% of it); blend - robot +1.3 deg
+08:40:45 TURN 57 LEFT started (driven 177.5 m)
+08:41:00 TURN 57 LEFT ended after 14.4 s: blend +351.9 deg, robot +351.3 deg, camera +354.8 deg (camera lost 5% of it); blend - robot +0.5 deg
+08:41:58 TURN 58 LEFT started (driven 185.7 m)
+08:42:02 TURN 58 LEFT ended after 3.7 s: blend +4.0 deg, robot +5.6 deg, camera +5.4 deg (camera lost 0% of it); blend - robot -1.6 deg
+08:42:09 TURN 59 RIGHT started (driven 189.2 m)
+08:42:10 TURN 59 RIGHT ended after 0.2 s: blend -2.1 deg, robot -0.5 deg, camera -7.2 deg (camera lost 0% of it); blend - robot -1.6 deg
+08:42:20 TURN 60 LEFT started (driven 193.1 m)
+08:42:25 TURN 60 LEFT ended after 3.9 s: blend +81.1 deg, robot +81.8 deg, camera +81.2 deg (camera lost 22% of it); blend - robot -0.7 deg
+08:43:04 TURN 61 LEFT started (driven 203.9 m)
+08:43:09 TURN 61 LEFT ended after 3.9 s: blend +79.4 deg, robot +79.1 deg, camera +86.5 deg (camera lost 0% of it); blend - robot +0.3 deg
+08:43:16 TURN 62 LEFT started (driven 203.9 m)
+08:43:20 TURN 62 LEFT ended after 3.2 s: blend +65.2 deg, robot +65.5 deg, camera +75.4 deg (camera lost 0% of it); blend - robot -0.2 deg
+08:43:33 TURN 63 LEFT started (driven 207.7 m)
+08:43:35 TURN 63 LEFT ended after 0.5 s: blend +4.1 deg, robot +3.9 deg, camera +5.0 deg (camera lost 0% of it); blend - robot +0.2 deg
+08:44:01 TURN 64 RIGHT started (driven 217.5 m)
+08:44:06 TURN 64 RIGHT ended after 4.1 s: blend -81.2 deg, robot -79.6 deg, camera -86.5 deg (camera lost 0% of it); blend - robot -1.6 deg
+08:44:10 TURN 65 LEFT started (driven 219.3 m)
+08:44:14 DIRECTION CHANGE #7: now BACKWARD (driven 219.3 m)
+08:44:15 TURN 65 LEFT ended after 3.5 s: blend -4.3 deg, robot -4.5 deg, camera -0.3 deg (camera lost 0% of it); blend - robot +0.2 deg
+08:45:29 WATCH END (end of fusion.bag): 65 turns, 7 direction changes, 220.6 m by the wheels

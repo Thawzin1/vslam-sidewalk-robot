@@ -1,0 +1,109 @@
+<launch>
+  <!-- ===================================================================
+       Sphere-frame centroid capture for the ZED X camera.
+
+       This is a MIRROR of Nicolas's launch/sphere_centroid.launch from
+       matt_self_navigation, which recorded the Ouster and Helios LiDARs.
+       Every detector value below is copied from his params_used.txt so the
+       camera and the LiDARs are measured by the SAME detector with the SAME
+       settings. Only the sensor differs.
+
+       DO NOT CHANGE A DETECTOR VALUE FOR ONE DISTANCE AND NOT THE OTHERS.
+       His file carries the same warning and it is the whole basis of the
+       comparison: change one number and the series stops being a series.
+
+         roslaunch sidewalk_evaluation sphere_centroid_zedx.launch \
+             roi_x:=4.0 run_id:=4m
+
+       ROI is a box given as CENTRE (roi_x, roi_y, roi_z) + SIZE. roi_z is
+       measured ABOVE THE FLOOR so it is sensor-independent; the launch turns
+       it into camera coordinates using the measured camera height, exactly as
+       his does for the two LiDARs.
+       =================================================================== -->
+
+  <arg name="run_id"  default="4m"/>
+  <!-- Series of 2026-09-04: Jetson INTERNAL disk. The microSD was primary for
+       exactly one morning - then lost the whole freshly-made folder tree across a
+       single clean power cycle (created mounted, synced, clean shutdown; its fifth
+       loss event). CSVs are ~100 KB; the internal disk has never lost one. Copy to
+       a USB stick after every run. -->
+  <arg name="csv_dir" default="~/zedx_vs_lidar_data/static_spheres"/>
+
+  <!-- The camera's point cloud. Verified against
+       catkin_ws/src/sidewalk_perception/launch/zedx_front.launch, which pushes
+       the wrapper into ns=<camera_name>. -->
+  <arg name="camera_name" default="zedx_front"/>
+  <arg name="topic"
+       default="/$(arg camera_name)/zed_node/point_cloud/cloud_registered"/>
+
+  <!-- MEASURED, not guessed. Run camera_pose_from_floor.py first and paste its
+       answer here. A tape to the housing top is NOT this number - the optical
+       centre sits inside the housing. Nicolas's equivalents: Ouster 0.79 m,
+       Helios 0.97 m. -->
+  <!-- Measured 2026-09-04 for the fresh series (camera was remounted): height
+       0.6794 m (5th-95th spread 4.0 mm), pitch -2.75 deg nose-up, roll -0.02 deg,
+       verdict STABLE, 99/100 frames. Passes the tape cross-check (below 0.686 m). -->
+  <arg name="sensor_h" default="0.6794"/>
+
+  <!-- ROI centre. roi_x = distance to the frame : THE USUAL ONE TO CHANGE.
+       roi_z 1.45 m is the frame's vertical mid-point, confirmed two ways: it is
+       what his LiDAR runs used, and it matches the tape reading of the lower
+       sphere centres at ~0.90 m plus the 1.10 m rise. -->
+  <arg name="roi_x"  default="4.0"/>
+  <arg name="roi_y"  default="0.0"/>
+  <arg name="roi_z"  default="1.45"/>          <!-- metres ABOVE THE FLOOR -->
+  <arg name="roi_sx" default="1.2"/>
+  <arg name="roi_sy" default="1.9"/>
+  <arg name="roi_sz" default="1.8"/>
+
+  <!-- = detector: Nicolas's exact values, from params_used.txt =
+       ARM A (the fair comparison) uses these untouched.
+       ARM B (what the camera can do at all) may raise inlier_thresh ONLY, and
+       must be recorded under a different run_id so the two never mix. -->
+  <!-- 200, not 1000: measured pilot pace was 29-44 s per accepted sample (the
+       detector's search grows with point count and the camera fills the box with
+       ~95k points). 200 samples ≈ +/-5% uncertainty on the wobble figure - far
+       tighter than the 9x gap being measured - and matches Nicolas's early runs. -->
+  <arg name="n_samples"      default="200"/>
+  <arg name="min_inliers"    default="10"/>
+  <arg name="ransac_iters"   default="1500"/>
+  <arg name="max_candidates" default="7"/>
+  <arg name="inlier_thresh"  default="0.03"/>
+  <arg name="side_tol"       default="0.06"/>
+  <arg name="radius_tol"     default="0.07"/>
+
+  <node pkg="sidewalk_evaluation" type="sphere_centroid.py"
+        name="sphere_centroid" output="screen">
+    <param name="cloud_topic" value="$(arg topic)"/>
+
+    <param name="sphere_radius"  value="0.20"/>
+    <param name="radius_tol"     value="$(arg radius_tol)"/>
+    <param name="inlier_thresh"  value="$(arg inlier_thresh)"/>
+    <param name="ransac_iters"   value="$(arg ransac_iters)"/>
+    <param name="max_candidates" value="$(arg max_candidates)"/>
+    <param name="min_inliers"    value="$(arg min_inliers)"/>
+    <param name="triangle_base"  value="1.10"/>
+    <param name="triangle_rise"  value="1.10"/>
+    <param name="side_tol"       value="$(arg side_tol)"/>
+    <param name="apex_z_tol"     value="0.08"/>
+
+    <!-- THIS MAPPING ASSUMES THE CLOUD IS IN THE ROS BODY CONVENTION
+         (x forward, y left, z up), which is what Nicolas's two LiDARs publish.
+         If the ZED wrapper publishes in the OPTICAL convention instead
+         (x right, y DOWN, z forward), these three lines are wrong and the box
+         would be placed off to the side rather than in front.
+         camera_pose_from_floor.py reports which convention this camera uses -
+         run it first and check its "cloud frame convention" line. Do not
+         assume; the config file does not say. -->
+    <param name="roi_xmin" value="$(eval arg('roi_x') - arg('roi_sx')/2.0)"/>
+    <param name="roi_xmax" value="$(eval arg('roi_x') + arg('roi_sx')/2.0)"/>
+    <param name="roi_ymin" value="$(eval arg('roi_y') - arg('roi_sy')/2.0)"/>
+    <param name="roi_ymax" value="$(eval arg('roi_y') + arg('roi_sy')/2.0)"/>
+    <param name="roi_zmin" value="$(eval arg('roi_z') - arg('roi_sz')/2.0 - arg('sensor_h'))"/>
+    <param name="roi_zmax" value="$(eval arg('roi_z') + arg('roi_sz')/2.0 - arg('sensor_h'))"/>
+
+    <param name="report_every"   value="25"/>
+    <param name="target_samples" value="$(arg n_samples)"/>
+    <param name="csv_path" value="$(arg csv_dir)/$(arg run_id)_zedx.csv"/>
+  </node>
+</launch>

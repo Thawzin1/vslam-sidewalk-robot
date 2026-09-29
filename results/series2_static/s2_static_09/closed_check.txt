@@ -1,0 +1,7 @@
+  ~/slam_series2/s2_static_09.db: 1334 nodes, 305 loop closures
+    FAIL  corrected positions saved (Admin.opt_poses)    0 bytes
+    FAIL  visual dictionary saved (Word table)           0 words
+    FAIL  neighbour links stored both ways               0 forward, 892 back (0 nodes in the saved graph)
+  NOT CLOSED PROPERLY. Do not reboot or power off yet if the mapping
+  might still be running; if it is not, the missing parts are lost and
+  the corrected positions can be rebuilt with optimize_graph_se2.py.

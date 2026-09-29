@@ -1,0 +1,10 @@
+{
+ "alignment_fit_max_residual_m": 0.0,
+ "rotation_deg": -21.53,
+ "camera_points_used": 2503352,
+ "camera_points_total": 4517220,
+ "floor_z": -0.183,
+ "cell_m": 0.05,
+ "wall_cell_min_points": 5,
+ "live_frame": "~/.run_records/s2_static_10/media/lidar/000568.png"
+}

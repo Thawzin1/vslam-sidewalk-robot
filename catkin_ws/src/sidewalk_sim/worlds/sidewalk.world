@@ -1,0 +1,337 @@
+<?xml version="1.0"?>
+<!--
+  sidewalk.world  ==  the outdoor target domain, fully OFFLINE.
+
+  Design spec: docs/superpowers/specs/2026-08-21-sidewalk-world-design.md
+
+  WHY THIS WORLD EXISTS
+  =====================
+  office.world proved the pipeline works (0.141 m ATE over 235 m). But an office
+  floor is flat, and flat is exactly the assumption this project has written down
+  as WRONG without ever measuring it. From rtabmap_zedx.yaml, on Reg/Force3DoF:
+
+      "It is WRONG on a real sidewalk. Kerb ramps, driveway crossings and camber
+       all violate the flat-ground assumption, and forcing 3DoF there will fight
+       the IMU and bend the map."
+
+  So this world is built to break flat ground on purpose, in the three ways a
+  real sidewalk does:
+
+    * CAMBER   a continuous 2% cross-slope toward the road. This is the important
+               one: the robot is NEVER level, so the 3DoF constraint is violated
+               every single frame rather than at a few discrete points.
+    * KERB RAMPS  two of them, at a crossing, about 1:12.
+    * DRIVEWAY DIP  a sharper, shorter pitch event at x = +8 to +12.
+
+  Drive the same route with force_3dof:=true and force_3dof:=false and the
+  difference in ATE is the number that replaces that comment.
+
+  LAYOUT (plan view, +X east along the sidewalk, +Y north away from the road)
+  ==========================================================================
+
+      y=+3.5  ################ building facades (5 distinct textures) #########
+      y=+0.9  ................ grass verge ....................................
+              [============ SIDEWALK, 1.8 m wide, top z=0.15, 2% camber =======]
+      y=-0.9   |  plain  |ramp|  CROSSING  |ramp|  plain  |__driveway__| plain |
+              x=-20    -8.0 -6.2         -3.2 -1.4       8.0        12.0     +20
+      y=-0.9  ................ roadway, z=0 ................................
+      y=-6.0  ################ far boundary wall ############################
+
+  The robot spawns at the origin, on the sidewalk, mid-block. An out-and-back
+  route revisits known ground, which is what gives loop closure something to
+  close on: a single straight pass would never revisit anything.
+
+  TEXTURE RULES CARRIED FORWARD FROM office.world
+  ===============================================
+  Both were learned the hard way on 2026-08-20 and are recorded in ENGINEERING_NOTES.md:
+
+    1. EVERY surface must be textured. A flat colour yields no features, and
+       without features visual odometry cannot tell that the camera moved at all.
+       The untextured office world produced 13 ORB keypoints in a 1920x1200
+       image against the 20 that RTAB-Map needs, and mapping was impossible.
+    2. Large surfaces must be TILED. Gazebo paints one copy of a texture across
+       each face, so a single 40 m slab would stretch one image over the whole
+       block and wash out the detail. Hence the sidewalk, road and grass are all
+       built from segments.
+    3. Do not let the tiling become PERIODIC. Identical tiles repeating at a
+       fixed pitch caused ambiguous feature matching in run #3 (many matches,
+       almost no geometrically consistent ones). Here the paving alternates
+       irregularly and the street furniture is deliberately unevenly spaced.
+-->
+<sdf version="1.6">
+  <world name="sidewalk">
+    <include><uri>model://sun</uri></include>
+    <include><uri>model://ground_plane</uri></include>
+
+    <!-- ==== ROADWAY ====================================================
+         Visual only. The ground_plane above still provides all collision at
+         z=0, so vehicle physics is untouched; this is a textured skin 4 mm
+         over it purely so the camera has something to see. Tiled in 4 m
+         lengths for texture detail. The tile spanning the crossing uses a
+         striped material so the crossing reads as a crossing.
+    -->
+    <model name="roadway">
+      <static>true</static>
+      <link name="l">
+        <visual name="r01"><pose>-20 -3.45 0.004 0 0 0</pose><geometry><box><size>4 5.1 0.004</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Motorway</name></script></material></visual>
+        <visual name="r02"><pose>-16 -3.45 0.004 0 0 0</pose><geometry><box><size>4 5.1 0.004</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual>
+        <visual name="r03"><pose>-12 -3.45 0.004 0 0 0</pose><geometry><box><size>4 5.1 0.004</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Motorway</name></script></material></visual>
+        <visual name="r04"><pose>-8.2 -3.45 0.004 0 0 0</pose><geometry><box><size>3.6 5.1 0.004</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual>
+        <!-- the crossing itself, striped -->
+        <visual name="r05_crossing"><pose>-4.7 -3.45 0.004 0 0 0</pose><geometry><box><size>3.4 5.1 0.004</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Runway</name></script></material></visual>
+        <visual name="r06"><pose>-1 -3.45 0.004 0 0 0</pose><geometry><box><size>4 5.1 0.004</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual>
+        <visual name="r07"><pose>3 -3.45 0.004 0 0 0</pose><geometry><box><size>4 5.1 0.004</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Motorway</name></script></material></visual>
+        <visual name="r08"><pose>7 -3.45 0.004 0 0 0</pose><geometry><box><size>4 5.1 0.004</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual>
+        <visual name="r09"><pose>11 -3.45 0.004 0 0 0</pose><geometry><box><size>4 5.1 0.004</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Motorway</name></script></material></visual>
+        <visual name="r10"><pose>15 -3.45 0.004 0 0 0</pose><geometry><box><size>4 5.1 0.004</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual>
+        <visual name="r11"><pose>19 -3.45 0.004 0 0 0</pose><geometry><box><size>4 5.1 0.004</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual>
+      </link>
+    </model>
+
+    <!-- ==== SIDEWALK ===================================================
+         Collision AND visual: this is the surface the robot actually drives
+         on, and its 0.15 m thickness sitting on the roadway IS the kerb.
+
+         Every plain segment carries roll = 0.02 rad, the 2% cross-slope
+         falling toward the road (-Y). Positive roll about X drops the -Y
+         edge, which is the road side. That tilt is the whole experiment.
+
+         Paving alternates Pedestrian / Steps / CeilingTiled irregularly so the
+         run of segments never becomes a repeating pattern.
+    -->
+    <model name="sidewalk">
+      <static>true</static>
+      <link name="l">
+
+        <!-- ==== west plain run, x -20 to -8 ==== -->
+        <collision name="w1_c"><pose>-19 0 0.075 0.02 0 0</pose><geometry><box><size>2 1.8 0.15</size></box></geometry></collision>
+        <visual name="w1_v"><pose>-19 0 0.075 0.02 0 0</pose><geometry><box><size>2 1.8 0.15</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual>
+        <collision name="w2_c"><pose>-17 0 0.075 0.02 0 0</pose><geometry><box><size>2 1.8 0.15</size></box></geometry></collision>
+        <visual name="w2_v"><pose>-17 0 0.075 0.02 0 0</pose><geometry><box><size>2 1.8 0.15</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Steps</name></script></material></visual>
+        <collision name="w3_c"><pose>-15 0 0.075 0.02 0 0</pose><geometry><box><size>2 1.8 0.15</size></box></geometry></collision>
+        <visual name="w3_v"><pose>-15 0 0.075 0.02 0 0</pose><geometry><box><size>2 1.8 0.15</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual>
+        <collision name="w4_c"><pose>-13 0 0.075 0.02 0 0</pose><geometry><box><size>2 1.8 0.15</size></box></geometry></collision>
+        <visual name="w4_v"><pose>-13 0 0.075 0.02 0 0</pose><geometry><box><size>2 1.8 0.15</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+        <collision name="w5_c"><pose>-11 0 0.075 0.02 0 0</pose><geometry><box><size>2 1.8 0.15</size></box></geometry></collision>
+        <visual name="w5_v"><pose>-11 0 0.075 0.02 0 0</pose><geometry><box><size>2 1.8 0.15</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual>
+        <collision name="w6_c"><pose>-9 0 0.075 0.02 0 0</pose><geometry><box><size>2 1.8 0.15</size></box></geometry></collision>
+        <visual name="w6_v"><pose>-9 0 0.075 0.02 0 0</pose><geometry><box><size>2 1.8 0.15</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Steps</name></script></material></visual>
+
+        <!-- ==== kerb ramp DOWN to the crossing, x -8.0 to -6.2, about 1:12 ====
+             pitch +0.0831 rad = atan(0.15 / 1.8). Top surface runs from z=0.15
+             at the high end to z=0 at the road. No camber on the ramps: a real
+             kerb ramp is built square to the crossing. -->
+        <collision name="ramp_a_c"><pose>-7.1 0 0.0003 0 0.0831 0</pose><geometry><box><size>1.8 1.8 0.15</size></box></geometry></collision>
+        <visual name="ramp_a_v"><pose>-7.1 0 0.0003 0 0.0831 0</pose><geometry><box><size>1.8 1.8 0.15</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodPallet</name></script></material></visual>
+
+        <!-- ==== crossing, x -6.2 to -3.2: deliberately NO slab.
+             The robot drops to road level and drives on the ground_plane. ==-->
+
+        <!-- ==== kerb ramp UP, x -3.2 to -1.4 ==== -->
+        <collision name="ramp_b_c"><pose>-2.3 0 0.0003 0 -0.0831 0</pose><geometry><box><size>1.8 1.8 0.15</size></box></geometry></collision>
+        <visual name="ramp_b_v"><pose>-2.3 0 0.0003 0 -0.0831 0</pose><geometry><box><size>1.8 1.8 0.15</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodPallet</name></script></material></visual>
+
+        <!-- ==== central plain run, x -1.4 to +8.0. Robot spawns at x=0. ==== -->
+        <collision name="c1_c"><pose>-0.46 0 0.075 0.02 0 0</pose><geometry><box><size>1.88 1.8 0.15</size></box></geometry></collision>
+        <visual name="c1_v"><pose>-0.46 0 0.075 0.02 0 0</pose><geometry><box><size>1.88 1.8 0.15</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual>
+        <collision name="c2_c"><pose>1.42 0 0.075 0.02 0 0</pose><geometry><box><size>1.88 1.8 0.15</size></box></geometry></collision>
+        <visual name="c2_v"><pose>1.42 0 0.075 0.02 0 0</pose><geometry><box><size>1.88 1.8 0.15</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+        <collision name="c3_c"><pose>3.30 0 0.075 0.02 0 0</pose><geometry><box><size>1.88 1.8 0.15</size></box></geometry></collision>
+        <visual name="c3_v"><pose>3.30 0 0.075 0.02 0 0</pose><geometry><box><size>1.88 1.8 0.15</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual>
+        <collision name="c4_c"><pose>5.18 0 0.075 0.02 0 0</pose><geometry><box><size>1.88 1.8 0.15</size></box></geometry></collision>
+        <visual name="c4_v"><pose>5.18 0 0.075 0.02 0 0</pose><geometry><box><size>1.88 1.8 0.15</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Steps</name></script></material></visual>
+        <collision name="c5_c"><pose>7.06 0 0.075 0.02 0 0</pose><geometry><box><size>1.88 1.8 0.15</size></box></geometry></collision>
+        <visual name="c5_v"><pose>7.06 0 0.075 0.02 0 0</pose><geometry><box><size>1.88 1.8 0.15</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual>
+
+        <!-- ==== DRIVEWAY DIP, x +8 to +12 ====================================
+             Sharper than the kerb ramps and in the middle of a run, so it is
+             the pitch event the robot meets at speed rather than while lining
+             up for a crossing. Top drops 0.15 to 0.05 over 1 m, holds for 2 m,
+             then climbs back. pitch = atan(0.10 / 1.0) = 0.0997 rad.
+             The apron's underside sits below grade; that is harmless, it is
+             buried under the road surface. -->
+        <collision name="dw_down_c"><pose>8.5 0 0.0254 0 0.0997 0</pose><geometry><box><size>1.0 1.8 0.15</size></box></geometry></collision>
+        <visual name="dw_down_v"><pose>8.5 0 0.0254 0 0.0997 0</pose><geometry><box><size>1.0 1.8 0.15</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Residential</name></script></material></visual>
+        <collision name="dw_flat_c"><pose>10 0 -0.025 0 0 0</pose><geometry><box><size>2.0 1.8 0.15</size></box></geometry></collision>
+        <visual name="dw_flat_v"><pose>10 0 -0.025 0 0 0</pose><geometry><box><size>2.0 1.8 0.15</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Residential</name></script></material></visual>
+        <collision name="dw_up_c"><pose>11.5 0 0.0254 0 -0.0997 0</pose><geometry><box><size>1.0 1.8 0.15</size></box></geometry></collision>
+        <visual name="dw_up_v"><pose>11.5 0 0.0254 0 -0.0997 0</pose><geometry><box><size>1.0 1.8 0.15</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Residential</name></script></material></visual>
+
+        <!-- ==== east plain run, x +12 to +20 ==== -->
+        <collision name="e1_c"><pose>13 0 0.075 0.02 0 0</pose><geometry><box><size>2 1.8 0.15</size></box></geometry></collision>
+        <visual name="e1_v"><pose>13 0 0.075 0.02 0 0</pose><geometry><box><size>2 1.8 0.15</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual>
+        <collision name="e2_c"><pose>15 0 0.075 0.02 0 0</pose><geometry><box><size>2 1.8 0.15</size></box></geometry></collision>
+        <visual name="e2_v"><pose>15 0 0.075 0.02 0 0</pose><geometry><box><size>2 1.8 0.15</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+        <collision name="e3_c"><pose>17 0 0.075 0.02 0 0</pose><geometry><box><size>2 1.8 0.15</size></box></geometry></collision>
+        <visual name="e3_v"><pose>17 0 0.075 0.02 0 0</pose><geometry><box><size>2 1.8 0.15</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual>
+        <collision name="e4_c"><pose>19 0 0.075 0.02 0 0</pose><geometry><box><size>2 1.8 0.15</size></box></geometry></collision>
+        <visual name="e4_v"><pose>19 0 0.075 0.02 0 0</pose><geometry><box><size>2 1.8 0.15</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Steps</name></script></material></visual>
+
+      </link>
+    </model>
+
+    <!-- ==== GRASS VERGE, y +0.9 to +3.5 ==============================
+         Visual only, so it can never trap a wheel. Tiled in 5 m lengths. -->
+    <model name="verge">
+      <static>true</static>
+      <link name="l">
+        <visual name="g1"><pose>-17.5 2.2 0.145 0 0 0</pose><geometry><box><size>5 2.6 0.01</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Grass</name></script></material></visual>
+        <visual name="g2"><pose>-12.5 2.2 0.145 0 0 0</pose><geometry><box><size>5 2.6 0.01</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Grass</name></script></material></visual>
+        <visual name="g3"><pose>-7.5 2.2 0.145 0 0 0</pose><geometry><box><size>5 2.6 0.01</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Grass</name></script></material></visual>
+        <visual name="g4"><pose>-2.5 2.2 0.145 0 0 0</pose><geometry><box><size>5 2.6 0.01</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Grass</name></script></material></visual>
+        <visual name="g5"><pose>2.5 2.2 0.145 0 0 0</pose><geometry><box><size>5 2.6 0.01</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Grass</name></script></material></visual>
+        <visual name="g6"><pose>7.5 2.2 0.145 0 0 0</pose><geometry><box><size>5 2.6 0.01</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Grass</name></script></material></visual>
+        <visual name="g7"><pose>12.5 2.2 0.145 0 0 0</pose><geometry><box><size>5 2.6 0.01</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Grass</name></script></material></visual>
+        <visual name="g8"><pose>17.5 2.2 0.145 0 0 0</pose><geometry><box><size>5 2.6 0.01</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Grass</name></script></material></visual>
+      </link>
+    </model>
+
+    <!-- ==== BUILDING FACADES, y = +3.6 ================================
+         Five segments, five DIFFERENT textures. Same rule as the office walls:
+         distinct surfaces stop loop closure welding two places together. -->
+    <model name="facades">
+      <static>true</static>
+      <link name="l">
+        <collision name="f1_c"><pose>-16 3.6 1.5 0 0 0</pose><geometry><box><size>8 0.2 3</size></box></geometry></collision>
+        <visual name="f1_v"><pose>-16 3.6 1.5 0 0 0</pose><geometry><box><size>8 0.2 3</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Bricks</name></script></material></visual>
+        <collision name="f2_c"><pose>-8 3.6 1.5 0 0 0</pose><geometry><box><size>8 0.2 3</size></box></geometry></collision>
+        <visual name="f2_v"><pose>-8 3.6 1.5 0 0 0</pose><geometry><box><size>8 0.2 3</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Residential</name></script></material></visual>
+        <collision name="f3_c"><pose>0 3.6 1.5 0 0 0</pose><geometry><box><size>8 0.2 3</size></box></geometry></collision>
+        <visual name="f3_v"><pose>0 3.6 1.5 0 0 0</pose><geometry><box><size>8 0.2 3</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/PaintedWall</name></script></material></visual>
+        <collision name="f4_c"><pose>8 3.6 1.5 0 0 0</pose><geometry><box><size>8 0.2 3</size></box></geometry></collision>
+        <visual name="f4_v"><pose>8 3.6 1.5 0 0 0</pose><geometry><box><size>8 0.2 3</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/BuildingFrame</name></script></material></visual>
+        <collision name="f5_c"><pose>16 3.6 1.5 0 0 0</pose><geometry><box><size>8 0.2 3</size></box></geometry></collision>
+        <visual name="f5_v"><pose>16 3.6 1.5 0 0 0</pose><geometry><box><size>8 0.2 3</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Wood</name></script></material></visual>
+      </link>
+    </model>
+
+    <!-- ==== FAR BOUNDARY, y = -6.1 ====================================
+         Low wall across the road. Stops the camera staring into empty space
+         beyond its depth range, which is itself a documented cause of
+         odometry failure, and gives the far side of the street some geometry. -->
+    <model name="far_wall">
+      <static>true</static>
+      <link name="l">
+        <collision name="b1_c"><pose>-13 -6.1 0.75 0 0 0</pose><geometry><box><size>14 0.2 1.5</size></box></geometry></collision>
+        <visual name="b1_v"><pose>-13 -6.1 0.75 0 0 0</pose><geometry><box><size>14 0.2 1.5</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Trunk</name></script></material></visual>
+        <collision name="b2_c"><pose>0 -6.1 0.75 0 0 0</pose><geometry><box><size>12 0.2 1.5</size></box></geometry></collision>
+        <visual name="b2_v"><pose>0 -6.1 0.75 0 0 0</pose><geometry><box><size>12 0.2 1.5</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Primary</name></script></material></visual>
+        <collision name="b3_c"><pose>13 -6.1 0.75 0 0 0</pose><geometry><box><size>14 0.2 1.5</size></box></geometry></collision>
+        <visual name="b3_v"><pose>13 -6.1 0.75 0 0 0</pose><geometry><box><size>14 0.2 1.5</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Secondary</name></script></material></visual>
+      </link>
+    </model>
+
+    <!-- ==== STREET FURNITURE =========================================
+         Landmarks for loop closure. Spacing is deliberately IRREGULAR: evenly
+         spaced identical objects are the periodic pattern that caused ambiguous
+         matching in run #3. Each item has its own material and proportions, and
+         all sit clear of the 1.8 m sidewalk centreline so nothing blocks driving.
+    -->
+    <model name="pole_a"><static>true</static><pose>-14.3 0.72 1.35 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><cylinder><radius>0.06</radius><length>2.4</length></cylinder></geometry></collision>
+        <visual name="v"><geometry><cylinder><radius>0.06</radius><length>2.4</length></cylinder></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Trunk</name></script></material></visual></link></model>
+
+    <model name="bin_a"><static>true</static><pose>-9.6 -0.70 0.45 0 0 0.3</pose>
+      <link name="l"><collision name="c"><geometry><cylinder><radius>0.25</radius><length>0.7</length></cylinder></geometry></collision>
+        <visual name="v"><geometry><cylinder><radius>0.25</radius><length>0.7</length></cylinder></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Motorway</name></script></material></visual></link></model>
+
+    <model name="bollard_a"><static>true</static><pose>-6.5 0.7 0.55 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><cylinder><radius>0.08</radius><length>0.8</length></cylinder></geometry></collision>
+        <visual name="v"><geometry><cylinder><radius>0.08</radius><length>0.8</length></cylinder></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodPallet</name></script></material></visual></link></model>
+
+    <model name="sign_crossing"><static>true</static><pose>-1.9 0.74 1.1 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.08 0.5 2.0</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.08 0.5 2.0</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Runway</name></script></material></visual></link></model>
+
+    <model name="bench_a"><static>true</static><pose>2.1 0.74 0.37 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>1.6 0.45 0.45</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>1.6 0.45 0.45</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Wood</name></script></material></visual></link></model>
+
+    <model name="planter_a"><static>true</static><pose>4.8 -0.74 0.42 0 0 0.2</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.7 0.5 0.55</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.7 0.5 0.55</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Bricks</name></script></material></visual></link></model>
+
+    <model name="pole_b"><static>true</static><pose>9.9 0.71 1.35 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><cylinder><radius>0.06</radius><length>2.4</length></cylinder></geometry></collision>
+        <visual name="v"><geometry><cylinder><radius>0.06</radius><length>2.4</length></cylinder></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual></link></model>
+
+    <model name="hydrant_a"><static>true</static><pose>14.4 -0.68 0.4 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><cylinder><radius>0.14</radius><length>0.65</length></cylinder></geometry></collision>
+        <visual name="v"><geometry><cylinder><radius>0.14</radius><length>0.65</length></cylinder></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Steps</name></script></material></visual></link></model>
+
+    <model name="box_stack"><static>true</static><pose>17.8 1.15 0.3 0 0 0.45</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.6 0.6 0.6</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.6 0.6 0.6</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodFloor</name></script></material></visual></link></model>
+
+    <!-- parked vehicles on the roadway: big, distinctive, and only visible from
+         certain stretches, which makes them good place signatures -->
+    <model name="parked_a"><static>true</static><pose>-11.5 -2.4 0.75 0 0 0.02</pose>
+      <link name="l"><collision name="c"><geometry><box><size>4.4 1.8 1.5</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>4.4 1.8 1.5</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/PioneerBody</name></script></material></visual></link></model>
+
+    <model name="parked_b"><static>true</static><pose>6.2 -2.4 0.75 0 0 -0.03</pose>
+      <link name="l"><collision name="c"><geometry><box><size>4.4 1.8 1.5</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>4.4 1.8 1.5</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodPallet</name></script></material></visual></link></model>
+
+    <physics type="ode"><real_time_update_rate>1000</real_time_update_rate><max_step_size>0.001</max_step_size></physics>
+    <scene><ambient>0.5 0.5 0.5 1</ambient><background>0.7 0.75 0.8 1</background><shadows>false</shadows></scene>
+  </world>
+</sdf>

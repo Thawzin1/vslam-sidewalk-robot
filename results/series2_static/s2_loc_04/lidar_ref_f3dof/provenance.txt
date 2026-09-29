@@ -1,0 +1,49 @@
+run=s2_loc_04 mode=wrap variant=f3dof rate=1.0 machine=JETSON port=11350
+started 2026-09-27 11:45:18 EDT on jetson (Jetson AGX Orin Developer Kit)
+bag ~/lidar_bags/s2_loc_04_lidar.bag 9935538068 bytes
+bag sha256 (checked at copy): 63c3cf04a5688af5b631613d59f6e0e2bafa324648be46ee07e16a425f92e55e
+-- RTAB-Map on this machine (the robot's replays used 0.21.10-1focal.20250213)
+ros-noetic-rtabmap 0.21.13-1focal.20250520.073437
+ros-noetic-rtabmap-odom 0.21.13-1focal.20250521.035941
+ros-noetic-rtabmap-slam 0.21.13-1focal.20250521.050724
+ros-noetic-rtabmap-sync 0.21.13-1focal.20250520.090404
+ros-noetic-rtabmap-util 0.21.13-1focal.20250521.033807
+  RTAB-Map:              0.21.13
+  With g2o:                 true
+  With GTSAM:               true
+  With libpointmatcher:     true
+  With OctoMap:             true
+-- our files
+0c6b02234890744b4d56d4732cdb7226  <repo>/run/lib/lidar_reference/replay_colleague_variant_jetson.sh
+ce67502c369af38d90b02330646bd0de  <repo>/run/lib/lidar_reference/variants/f3dof.launch
+0767fc1e94e12573e77c56d5653336e4  <repo>/run/lib/lidar_reference/robot_copy/f3dof.launch
+d50d096a109ffcec30a0cb6782767387  <repo>/run/lib/lidar_reference/robot_copy/replay_colleague_variant.sh
+a53431888ae47edf73c78f4c82d792e9  <repo>/run/lib/lidar_reference/robot_replay_config.yaml
+8fc5388a278a7661e0c2b9f29a4aa524  ~/lidar_slam_ws/setup_lidar_slam.bash
+82065163d15dcf9742a7d4dbe4639429  <repo>/tools/db/check_closed.py
+404ed1a66079c8c9c937463d098e3908  <repo>/tools/db/db_corrected_tum.py
+bff0c478b6b92f8532823850486f3944  <repo>/tools/db/bag_to_tum.py
+a5b4f06e1f8dff92f101b066877ed8b6  <repo>/tools/db/render_map.py
+-- the colleague's files as found by this environment (robot's drive-10 provenance, for comparison:
+   3dreplay_pipeline 744381369c1af0049aae5b6f04c85201, rtabmap_3d 099b269839710d212eca59648c0a2758,
+   helios_body_filter 2ee62a3c3e405b856e3d8a69be880ac0, helios_restamp 07f5171db81d0559ac06d89f30900126,
+   box_crop 0568a9c6d92120274cab1a23bbd2dea3, rslidar replay_config cb9ca662ae093bf9763782b3da43ef5d)
+744381369c1af0049aae5b6f04c85201  ~/lidar_slam_ws/nobuild/matt_self_navigation/launch/3dreplay_pipeline.launch
+099b269839710d212eca59648c0a2758  ~/lidar_slam_ws/nobuild/matt_self_navigation/launch/rtabmap_3d.launch
+2ee62a3c3e405b856e3d8a69be880ac0  ~/lidar_slam_ws/nobuild/matt_self_navigation/launch/helios_body_filter.launch
+07f5171db81d0559ac06d89f30900126  ~/lidar_slam_ws/nobuild/matt_self_navigation/scripts/helios_restamp.py
+0568a9c6d92120274cab1a23bbd2dea3  ~/lidar_slam_ws/nobuild/matt_self_navigation/scripts/box_crop.py
+9f6f4809b47a56ca659125b79a0ae5a9  ~/lidar_slam_ws/nobuild/mcm07_husky/config/husky_full.urdf
+39fef6f725470e46adb5125862ae432c  ~/lidar_slam_ws/nobuild/mcm07_husky/config/robot_body_filter_helios.yaml
+rslidar_sdk ~/lidar_slam_ws/src/rslidar_sdk (rs_driver VERSION 3.5); node md5 06de65a5ec4bce9db2007a219b8f6882
+decoder config actually used: <repo>/run/lib/lidar_reference/robot_replay_config.yaml
+4:# (split_angle: 180). Why: the robot's own copy has md5 cb9ca662ae093bf9763782b3da43ef5d
+5:# (drive 10's provenance.txt), its line 32 is 'split_angle: 180', and the decoder's start-up dump in
+6:# drive 10's replay.log shows split_angle 180 with every other decoder/input value equal to what the
+31:      use_lidar_clock: true        #  true--Use the lidar clock as the message timestamp
+35:      ts_first_point: true         #  true: time-stamp point cloud with the first point; false: with the last point;   
+40:      split_angle: 180           #  Azimuth at which a revolution is cut.
+body filter: ~/lidar_slam_ws/deps/root/opt/ros/noetic/share/robot_body_filter (ros-noetic-robot-body-filter_1.3.2-1focal.20250521.023300_arm64.deb ros-noetic-sensor-filters_1.1.1-1focal.20250521.042326_arm64.deb )
+memory available at start: 27.4 GB; free on output disk: 5 GB
+config_path given to the decoder: <repo>/run/lib/lidar_reference/variants/../robot_replay_config.yaml
+Reg/Force3DoF on the map node: 'true'

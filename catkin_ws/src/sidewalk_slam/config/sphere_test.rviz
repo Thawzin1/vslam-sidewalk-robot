@@ -1,0 +1,173 @@
+# sphere_test.rviz - layout for the Schulte-Tigges sphere benchmark, camera half.
+#
+#   ./tools/open_rviz.sh jetson-home sphere_test
+#
+# WHAT IS DELIBERATELY NOT HERE
+#
+#   The full camera point cloud. At 1920x1200 that is 2.3 million points per
+#   frame, and displaying a cloud that size in RViz caused a documented ~11 GB
+#   memory stall on this Jetson (docs/OPERATIONS.md). lab_real.rviz excludes
+#   point clouds for the same reason and this layout keeps that rule.
+#
+#   What IS shown is /roi_viz/inside - only the points inside the search box,
+#   a few thousand at most, which is exactly what you need to judge the setup
+#   and is safe to draw.
+#
+#   No RobotModel and no occupancy grid either. Neither is running during this
+#   test, and a display pointed at a topic nobody publishes shows up as a red
+#   error that hides the ones that matter.
+#
+# FIXED FRAME is the camera's own frame. There is no map and no odometry here -
+# the robot is parked - so anything else would fail to resolve.
+Panels:
+  - Class: rviz/Displays
+    Help Height: 0
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /ROI box1
+        - /Points inside box1
+      Splitter Ratio: 0.5
+    Tree Height: 640
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Alpha: 0.5
+      Cell Size: 1
+      Class: rviz/Grid
+      Color: 160; 160; 164
+      Enabled: true
+      Line Style:
+        Line Width: 0.03
+        Value: Lines
+      Name: Grid (1 m)
+      Normal Cell Count: 0
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Plane: XY
+      Plane Cell Count: 20
+      Reference Frame: <Fixed Frame>
+      Value: true
+
+    # Green wireframe = the search box. Red spheres = a successful detection.
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /roi_viz/box
+      Name: ROI box
+      Namespaces: {}
+      Queue Size: 10
+      Value: true
+
+    # Only the points inside the box. Small and safe to draw.
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: AxisColor
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Min Color: 0; 0; 0
+      Name: Points inside box
+      Position Transformer: XYZ
+      Queue Size: 2
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.01
+      Style: Points
+      Topic: /roi_viz/inside
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
+
+    # Step 4: the recording node draws its own fitted spheres and centroid here.
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /sphere_centroid/markers
+      Name: Detected frame (step 4)
+      Namespaces: {}
+      Queue Size: 10
+      Value: true
+
+    # FULL CAMERA CLOUD - on by request, with the settings that make it safe.
+    #
+    # Queue Size 1 and Decay Time 0 are the load-bearing values. The documented
+    # ~11 GB stall on this Jetson was a QUEUE problem: RViz accumulating many
+    # clouds, not one large one. A single 1920x1200 cloud is about 37 MB, which
+    # is unremarkable. Holding a hundred of them is not.
+    #
+    # TURN THIS OFF BEFORE THE 1000-SAMPLE RECORDING. Not for memory - for the
+    # GPU. NEURAL depth already uses roughly 55 % of this Orin's graphics chip,
+    # and drawing 2.3 million points at 10 Hz competes with it. If the camera
+    # slows down, the thing being measured changes, which is worse than an
+    # inconvenience. Untick it in the Displays panel; no restart needed.
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 200; 200; 200
+      Color Transformer: RGB8
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Min Color: 0; 0; 0
+      Name: FULL cloud (turn OFF before recording)
+      Position Transformer: XYZ
+      Queue Size: 1
+      Selectable: false
+      Size (Pixels): 1
+      Size (m): 0.005
+      Style: Points
+      Topic: /zedx_front/zed_node/point_cloud/cloud_registered
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
+
+  Enabled: true
+  Global Options:
+    Background Color: 48; 48; 48
+    Default Light: true
+    Fixed Frame: zedx_front_left_camera_frame
+    Frame Rate: 15
+  Name: root
+  Tools:
+    - Class: rviz/Interact
+      Hide Inactive Objects: true
+    - Class: rviz/MoveCamera
+    - Class: rviz/Select
+  Value: true
+  Views:
+    Current:
+      Class: rviz/Orbit
+      Distance: 8
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.06
+        Swap Stereo Eyes: false
+        Value: false
+      Focal Point:
+        X: 4
+        Y: 0
+        Z: 0.75
+      Focal Shape Fixed Size: true
+      Invert Z Axis: false
+      Name: Current View
+      Near Clip Distance: 0.01
+      Pitch: 0.2
+      Target Frame: <Fixed Frame>
+      Yaw: 3.14
+    Saved: ~
+Window Geometry:
+  Displays:
+    collapsed: false
+  Height: 900
+  Width: 1400
+  QMainWindow State: ""

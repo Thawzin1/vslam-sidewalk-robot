@@ -1,0 +1,534 @@
+# robot_frames.yaml — The robot's physical geometry.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# READ THIS BEFORE CHANGING ANYTHING
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Every number in this file is a STATEMENT ABOUT PHYSICAL REALITY — measured on
+# this robot, or taken from the manufacturer's specification where nobody has
+# measured yet. NOT ONE of them is a tuning parameter. You do not adjust these
+# until the map looks better; you measure them, and if the map looks wrong you
+# measure them again.
+#
+# Which numbers are which is not left to the reader to guess. STATUS OF THESE
+# NUMBERS, below, gives the provenance of every block — and as of 2026-08-29
+# only ONE of the three blocks has actually been measured. Treating the other
+# two as though they had been is the failure this file exists to prevent.
+#
+# Why this matters more than it appears to:
+#
+#   The SLAM system assumes the camera is rigidly fixed to the robot at exactly
+#   the offset stated here. Every distance the camera reports is converted into
+#   robot coordinates using these numbers. An error here does not produce
+#   obviously broken output — it produces plausible output that is wrong, which
+#   is far more dangerous.
+#
+#   Angular errors dominate. A 1 degree camera pitch error displaces a point at
+#   20 m by about 35 cm (20 m x tan(1 deg)). At 1 m it displaces it by 1.7 cm.
+#   So a mounting error you cannot see by eye is invisible up close and severe
+#   at the far end of the camera's 35 m range — which is exactly where you were
+#   relying on it for obstacle detection.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# CONVENTIONS
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# ROS uses a right-handed coordinate system (REP-103):
+#     x forward, y left, z up
+#     roll about x, pitch about y, yaw about z
+#
+# Units are METRES and RADIANS. Always. Mixing in degrees or millimetres here
+# is a recurring source of bugs; convert before you type.
+#
+# All offsets are measured FROM base_link TO the named frame.
+#
+# base_link sits at the robot's centre of rotation, projected onto the ground
+# plane. For a differential-drive robot that is the midpoint of the drive-wheel
+# axle, at ground level. Choosing anything else makes the odometry equations
+# subtly wrong.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+
+# STATUS OF THESE NUMBERS — READ THE SCOPE FIRST, THE FLAG IS NOT FILE-WIDE
+#
+# This file holds TWO kinds of number with DIFFERENT provenance, and the single
+# top-level `measured:` flag below cannot honestly describe both. Its scope is
+# written down here so that nobody reads `measured: false` and concludes the
+# camera pose is a guess, and nobody flips it to true and thereby claims the
+# chassis was measured when it was not:
+#
+#     base:          MANUFACTURER SPEC for the A200. NOT measured.
+#     camera_front:  MEASURED on this unit, 2026-08-29. THE EXCEPTION.
+#     camera_rear:   PLACEHOLDER. Hardware not fitted, nothing to measure.
+#
+# `measured:` IS SCOPED TO THE `base:` BLOCK. That is not a convention invented
+# here — it is what the two programs that read the flag actually do with it.
+# Both use it to caveat the CHASSIS FOOTPRINT and nothing else:
+#
+#     sidewalk_navigation/scripts/nav_preflight.py — prints
+#         "0.99 x 0.67 m is an UNMEASURED PLACEHOLDER" against the footprint it
+#         has just compared to the costmap polygon.
+#     sidewalk_perception/scripts/obstacle_segmenter.py — prints the same
+#         caveat as a banner above its mount-geometry table.
+#
+# DO NOT express the scope by turning `measured:` into a nested block. Both
+# readers expect a TOP-LEVEL SCALAR, and nav_preflight.py in particular has its
+# own line-oriented parser that only inspects column 0 — given a block it would
+# match nothing, find no value, and fall through to "not measured" without
+# saying so. Its own docstring is explicit that a preflight check which
+# silently degrades to "looks fine" is worse than no check at all. The scope
+# lives in this comment and in per-block keys instead.
+#
+# ── THE CHASSIS (base:) — spec, not measured ────────────────────────────────
+#
+# The lab robot is confirmed as a Clearpath Husky A200 running ROS 1 onboard.
+# That makes these numbers something better than an arbitrary guess: they were
+# checked against Clearpath's official Husky A200 user manual and match to
+# within a few millimetres —
+#
+#     spec sheet            length 990 mm   width 670 mm   track 555 mm
+#     this file              0.99 m          0.67 m         0.55 m
+#
+# — plus wheel_radius 0.165 m against a published ~330 mm wheel diameter, and
+# an axle spacing (see the wheel joints in the URDF, x = ±0.26 m) against the
+# spec's 512 mm wheelbase. All consistent.
+#
+# measured: false STAYS FALSE. This is the manufacturer's stated spec for the
+# A200 chassis, not a tape measurement of THIS unit with the ZED X, Jetson
+# enclosure and cabling actually mounted on it — manufacturing tolerance and
+# whatever the sensor payload adds could still shift the real numbers by a
+# centimetre or two, and that is exactly the kind of error the safety margin
+# in the navigation config exists to absorb. Flip this to true only after an
+# actual tape/caliper check of the assembled robot, not before.
+#
+# ── THE FRONT CAMERA (camera_front:) — measured, and the exception ──────────
+#
+# camera_front is NOT covered by the flag below. Its position was derived from
+# a tape measurement of the ZED X housing on this robot plus the camera's own
+# internal offsets read from the live transform tree, and its pitch was
+# measured twice by two methods that share no failure mode (a floor-plane fit
+# and the accelerometer's reading of gravity). The full account, including what
+# is measured and what is only assumed, is inside that block, which carries its
+# own `measured: true` at its own level. Nothing reads that nested key today;
+# it is there so the claim sits beside the numbers it is a claim about, rather
+# than in a comment somebody can edit the numbers without reading.
+#
+# The camera being measured does NOT license flipping the flag below. Whoever
+# eventually puts a tape on the chassis should set `measured: true` and fill in
+# measured_by / measured_date at the same time — those two are the CHASSIS
+# measurement's provenance and are empty because that measurement has not
+# happened. The camera's provenance is in camera_front, not here.
+measured: false
+measured_by: ""              # chassis measurement only — see the scope above
+measured_date: ""            # chassis measurement only — see the scope above
+robot_model: "Clearpath Husky A200"
+spec_source: "Clearpath Husky A200 official user manual (manufacturer spec, not a physical measurement of this unit)"
+mount_revision: "rev-0-placeholder"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Robot base
+# ─────────────────────────────────────────────────────────────────────────────
+# THESE DIMENSIONS ARE COPIED INTO TWO OTHER FILES. IF YOU CHANGE THEM HERE,
+# CHANGE THEM THERE, AND RE-DERIVE WHAT DEPENDS ON THEM:
+#
+#   sidewalk_navigation/config/costmap_common.yaml
+#       `footprint:` as a polygon, because costmap_2d takes a polygon and not
+#       a length/width pair. CHECKED AT RUNTIME: nav_preflight.py compares it
+#       against this file and FAILS if they disagree. Run it without ROS with
+#           python3 nav_preflight.py --geometry-only
+#
+#   sidewalk_bringup/urdf/sidewalk_robot.urdf.xacro
+#       base_length / base_width, because xacro cannot read YAML. NOT checked
+#       automatically — it affects visualisation and the TF tree, not
+#       collision checking, so a mismatch is cosmetic rather than dangerous.
+#
+#   Derived clearance values, which do NOT update themselves:
+#       inscribed radius   r_in  = footprint_width / 2
+#       circumscribed rad. r_out = hypot(length/2, width/2)
+#       inflation_radius in costmap_global.yaml and costmap_local.yaml, each
+#       of which must exceed r_out + footprint_padding. ALSO CHECKED AT
+#       RUNTIME by nav_preflight.py, which re-derives r_out from the costmap
+#       polygon and FAILS if either radius is under the floor.
+#       NOT checked automatically: the speed cap. hard_max_vel_x in
+#       sidewalk_navigation/config/safety.yaml is derived from the stopping
+#       distance available in front of the BUMPER, so it moves when
+#       footprint_length moves. Redo the derivation in dwa_local_planner.yaml
+#       if you change the length here.
+#
+# These two files disagreed once: the costmap carried 0.70 x 0.50 m against
+# the 0.99 x 0.67 m stated here, and every clearance number in the navigation
+# package was derived from the wrong one. That is why the runtime check exists.
+base:
+  frame_id: "base_link"
+  footprint_length: 0.99      # m, front to back
+  footprint_width:  0.67      # m, side to side
+  wheel_separation: 0.55      # m, centre-to-centre of left and right wheels
+  wheel_radius:     0.165     # m
+  ground_clearance: 0.13      # m
+
+  # ── THE DATUM THAT TURNS THIS FILE'S z VALUES INTO HEIGHTS ────────────────
+  #
+  # Height of the base_link ORIGIN above the floor, in metres.
+  #
+  # SOURCE: sidewalk_bringup/urdf/husky_a200_real.urdf, base_footprint_joint —
+  #     <origin rpy="0 0 0" xyz="0 0 -0.13228"/>
+  #     parent base_link, child base_footprint
+  # base_footprint is the ground-contact plane directly under the robot, so
+  # base_link sits 0.13228 m ABOVE the floor. The URDF states it as negative
+  # because that joint points DOWN from base_link; the value here is the same
+  # distance stated upward, which is the direction every consumer wants it in.
+  #
+  # WHY THIS IS WRITTEN DOWN AT ALL. Every z in this file is measured FROM
+  # base_link — the CONVENTIONS block at the top says so once, for the whole
+  # file. base_link IS NOT ON THE GROUND. Anything that wants a height above
+  # the FLOOR must ADD this number:
+  #
+  #     height above floor = camera_front.z + base_link_height_above_floor
+  #                        = 0.563 + 0.13228
+  #                        = 0.6953 m        <- the front camera's left lens
+  #
+  # THIS OMISSION HAS ALREADY CAUSED A BUG, which is why the datum now exists
+  # as a key rather than as a sentence in a comment. sidewalk_perception's
+  # obstacle_segmenter.py reads camera_front.z straight into its `cam_height_m`
+  # and its geometry then treats that as height above the ground. Every
+  # ground-intercept, blind-zone and obstacle-height number it derives is
+  # therefore 132 mm too low. Too low is the DANGEROUS direction: it
+  # under-reports how far ahead the camera first sees the ground, so the blind
+  # strip in front of the bumper reads smaller than it really is. The datum was
+  # not available to read, so it was not added. It is available now — a
+  # consumer that needs a floor-referenced height should read this key, not
+  # re-type 0.13228, and not silently assume base_link is at zero.
+  #
+  # NOT THE SAME THING AS ground_clearance ABOVE, despite 0.13 and 0.13228
+  # looking like a rounding difference. They are different quantities from
+  # different sources that happen to land close together:
+  #     ground_clearance             gap under the CHASSIS UNDERSIDE — what the
+  #                                  robot can drive over. Clearpath's manual.
+  #     base_link_height_above_floor where the URDF puts the COORDINATE ORIGIN.
+  # Coincidence of design, not identity. Never substitute one for the other.
+  #
+  # PROVENANCE CAVEAT: this is a MODEL DEFINITION, not a tape measurement. It
+  # is exact with respect to the transform tree — every node that uses TF
+  # already behaves as though base_link is exactly here, so coordinate
+  # arithmetic with it is exact. The PHYSICAL height of that origin above a
+  # real floor additionally depends on wheel radius and tyre compression under
+  # the sensor payload, which nobody has checked. Treat it as exact for frame
+  # arithmetic and as good to a few millimetres against the actual ground.
+  base_link_height_above_floor: 0.13228
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Front camera — ZED X (ZED-312110)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# MEASURE TO THE LEFT LENS, not the housing centre, not a mounting screw.
+#
+# The ZED SDK reports depth in the LEFT camera's optical frame. That is the
+# origin of everything the camera tells you, so it is the point whose position
+# on the robot must be known. The housing is ~163 mm wide with a 120 mm stereo
+# baseline, so the left lens sits roughly 60 mm left of the housing centre —
+# measuring to the centre puts you 6 cm out before you start.
+#
+camera_front:
+  # ── WHICH FRAME THESE NUMBERS DESCRIBE ────────────────────────────────────
+  #
+  # CORRECTED 2026-08-29. frame_id was "zedx_front_link", which is wrong for two
+  # independent reasons. The first draft of this note said that frame "does not
+  # exist and never did"; that is NOT TRUE and is corrected here the same day,
+  # because a provenance file that states something false about the system is
+  # the exact failure it exists to prevent. The accurate account:
+  #
+  #   1. IT IS THE WRONG POINT, always, everywhere. zedx_front_link is the
+  #      HOUSING frame. The x/y/z below describe the LEFT LENS, for the reason
+  #      set out in this section's header — the ZED SDK reports depth from the
+  #      left lens, so that is the point whose position on the robot matters.
+  #      The two are 60 mm apart in y. This reason alone settles it.
+  #
+  #   2. IT IS ABSENT IN THE CONFIGURATION THAT ACTUALLY RUNS. The frame is
+  #      real, but only one authority declares it: this project's own
+  #      sidewalk_bringup/urdf/sidewalk_robot.urdf.xacro, whose zedx_camera
+  #      macro declares ${name}_link and hangs it off base_link. It is
+  #      therefore published whenever bringup.launch is running, because that
+  #      is what loads the xacro into /robot_description and starts
+  #      robot_state_publisher. The ZED DRIVER never declares it — its own
+  #      macro has no bare ${name}_link (see the frame list below) — so on the
+  #      Jetson running the camera alone, which is how the camera is usually
+  #      brought up, the frame is simply not in the tree.
+  #
+  # The consequence of listing it in preflight_check.py's transform-tree gate
+  # was therefore not a crash but something worse: a gate that FAILED on the
+  # front camera on every camera-only run, and passed on every bringup run, for
+  # reasons unrelated to whether the geometry was right. A gate that fails
+  # routinely is a gate everybody learns to scroll past, and it then hides the
+  # real transform failures it was built to catch.
+  #
+  # VERIFIED against the LIVE transform tree on the Jetson, 2026-08-29, with
+  # the camera running. The ZED driver builds every link name from its
+  # camera_name argument ("zedx_front"), in
+  #     ~/catkin_ws/src/zed-ros-wrapper/zed_wrapper/urdf/zed_macro.urdf.xacro
+  # on the JETSON, which declares exactly these links and no others:
+  #     ${name}_base_link              the driver's root, at the MOUNT point
+  #     ${name}_camera_center          middle of the housing
+  #     ${name}_left_camera_frame      <- the left lens
+  #     ${name}_left_camera_optical_frame
+  #     ${name}_right_camera_frame  /  ${name}_right_camera_optical_frame
+  # plus ${name}_imu_link. There is NO bare ${name}_link anywhere in that
+  # macro, so no combination of settings could ever have produced the old name.
+  #
+  # zedx_front_left_camera_frame is the correct one of those five, because it
+  # is THE ONE WHOSE ORIGIN IS THE LEFT LENS — which is the point this block's
+  # x/y/z describe, for the reason set out in the header above. Confirmed
+  # numerically on the live tree, not assumed:
+  #     rosrun tf tf_echo base_link zedx_front_left_camera_frame
+  #       -> translation [0.072, 0.020, 0.564], rpy [0.000, 0.057, 0.000]
+  # against the 0.071 / 0.020 / 0.563 and pitch 0.0565 written below. The 1 mm
+  # in x is the measured pitch rotating the ZED's internal base-to-lens offset
+  # into base_link. That is the two figures AGREEING, not disagreeing.
+  #
+  # DO NOT reinstate the old name, and do not "simplify" this to one of the
+  # neighbouring frames. zedx_base_frame is the mount point on the robot's own
+  # URDF sensor arch, and zedx_front_base_link is the driver's root; those two
+  # sit on top of each other at (0.081, -0.040, 0.547) and are a DIFFERENT
+  # PHYSICAL POINT from the lens, 60 mm away in y. Substituting either one
+  # silently reintroduces exactly the error the header warns about.
+  frame_id: "zedx_front_left_camera_frame"
+
+  # Verified live on the same tree, unchanged — this name was always correct.
+  optical_frame: "zedx_front_left_camera_optical_frame"
+
+  # ── PROVENANCE OF THIS BLOCK ──────────────────────────────────────────────
+  # The top-level `measured:` flag is scoped to `base:` (see the file header)
+  # and does not speak for the camera. These three keys do. Nothing reads them
+  # yet; they exist so the claim sits beside the numbers it describes.
+  measured: true
+  measured_date: "2026-08-29"
+  measured_method: "tape to the housing plus the camera's internal offsets read from the live transform tree for x/y/z; RANSAC floor-plane fit cross-checked against the accelerometer's reading of gravity for pitch"
+
+  # Position of the left lens RELATIVE TO base_link, in metres.
+  #
+  # CORRECTED 2026-08-29. These were x=0.35, y=0.00, z=0.62 — placeholders that
+  # were never measured and never reached the driver. The old z carried the
+  # comment "height above ground", which contradicted this block's own header
+  # ("relative to base_link"); base_link sits 0.13228 m up, so the two readings
+  # of that one number differ by 13 cm. The reference is base_link, stated once
+  # here and not repeated per-axis.
+  #
+  # DERIVED, not guessed. Two steps:
+  #   1. zedx_base_frame — the camera's MOUNT point on the sensor arch, from
+  #      the robot URDF: (0.081, -0.040, 0.547) relative to base_link. Its z
+  #      comes from a tape measurement of 0.7112 m from the floor to the ZED X
+  #      housing UPPER SURFACE, minus half the 31.8 mm body height and minus the
+  #      camera's internal base->centre offset [Stereolabs datasheet Rev 1.6;
+  #      full arithmetic in sidewalk_perception/launch/zedx_front.launch].
+  #      y = -0.040 is a physical re-position toward swiftnav_link, set the
+  #      same day; it was +0.070.
+  #   2. The ZED's own internal offset from its base to the LEFT LENS, read
+  #      from the live transform tree: (-0.010, +0.060, +0.016).
+  #   Sum: (0.071, 0.020, 0.563) relative to base_link = 0.695 m above the floor.
+  #
+  # THESE ARE NOT THE MOUNT NUMBERS. If you are setting cam_pos_* on the camera
+  # launch, use the MOUNT (step 1), not this. This block is the left lens
+  # because that is where the ZED SDK reports depth from — see the header above.
+  #
+  # THE 60 mm IN y IS THE WHOLE POINT OF THIS BLOCK. The mount point and the
+  # left lens are NOT the same place, and the header above explains why the lens
+  # is the one that matters. Do not copy zedx_base_frame's numbers here.
+  x:  0.071
+  y:  0.020
+  z:  0.563
+
+  # Orientation in radians.
+  #
+  # PITCH IS MEASURED, 2026-08-29. It is not a design choice and not a tuning
+  # knob — it is a property of how the bracket happens to hold the camera, and
+  # it was measured twice by two methods that share no failure mode.
+  #
+  #   Method 1 — RANSAC floor-plane fit, measure_camera_tilt.py, 5 frames,
+  #     ~16500 inliers each. Unmodelled pitch read -3.24 deg (spread 0.28)
+  #     before the correction and -0.03 deg (spread 0.27) after, against the
+  #     script's stated +/-0.3 deg noise floor. The reconstructed floor went
+  #     from rising 226 mm over 4 m to rising 2 mm.
+  #
+  #   Method 2 — gravity, check_gravity.py. The ZED X accelerometer at rest
+  #     measures true vertical, which owes nothing to the transform tree. Its
+  #     reading rotated into base_link through this model lands 0.90 deg from
+  #     vertical. This is the test that establishes CAUSE: had the camera been
+  #     level and the observed floor patch sloped, it would read ~3.2 deg; had
+  #     the robot body been pitched on its wheels, ~6.5 deg.
+  #
+  # WHY METHOD 2 EXISTS. Method 1 alone cannot say WHERE the angle comes from.
+  # base_footprint is bolted to the robot body, not to the world, so it fits
+  # the same linear combination (camera-tilt + patch-slope) before and after
+  # the correction — re-measuring after applying it is arithmetic confirming
+  # itself, not evidence. Only the accelerometer decomposes the sum.
+  #
+  # ROLL is left at 0. Method 1 read +0.22/+0.24 deg, inside its noise floor.
+  # Method 2 read -1.37 deg. The two disagree by ~1.6 deg, which is within the
+  # combined accelerometer bias and factory IMU-to-camera calibration, so there
+  # is no roll figure worth writing down. Do not "fix" this by averaging them.
+  #
+  # YAW is UNMEASURED and not measurable this way — a rotation about vertical
+  # leaves a horizontal plane horizontal and leaves gravity unchanged. It needs
+  # a known straight edge, or a driven straight line compared against heading.
+  roll:   0.0
+  pitch:  0.0565     # MEASURED: 3.24 deg nose down. See above.
+  yaw:    0.0        # UNMEASURED — see above, not a claim of zero.
+
+  # What the downward tilt buys, recorded now that it is known to be real:
+  #   The ZED X 4.6 mm lens has a 51.0 degree vertical field of view (MEASURED
+  #   from the camera's own calibration - the datasheet's 45 deg is wrong for
+  #   this unit) and a 1.0 m minimum depth. Level at 0.70 m, the bottom
+  #   of the frame would first meet the ground well ahead of the robot, and
+  #   nothing closer than 1 m returns depth at all — a blind zone exactly where
+  #   a sidewalk robot most needs to see. 3.24 deg down pulls the near edge in.
+  #
+  #   This is an explanation of a measured value, NOT a justification for
+  #   changing it. If the tilt is ever to be studied as a variable (Phase 4),
+  #   that means physically re-shimming the bracket and re-measuring with both
+  #   methods above — never editing this number to a preferred one.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Rear camera — Phase 7, NOT YET INSTALLED
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Second ZED X facing the opposite direction, for cross-camera dynamic object
+# tracking (watching a vehicle approach, pass, and depart).
+#
+# yaw = pi means it faces directly backwards. The two cameras' fields of view
+# do NOT overlap: 73 degrees each, back to back, leaves two blind wedges of
+# about 107 degrees at the sides. (This said "80 degrees each ... about 100
+# degrees" until 2026-08-29. 80 was remembered, not read; the ZED X datasheet
+# gives a MAXIMUM of 73 degrees horizontal for our 4.6 mm lens. The blind
+# wedges are (360 - 2*73)/2 = 107 degrees, so they are SEVEN DEGREES WIDER
+# than this file claimed — the error was in the optimistic direction, as it
+# was everywhere else this figure appeared.)
+#
+# An object crossing from one camera to the other is therefore UNSEEN for a
+# period, and must be predicted through that gap rather than continuously
+# tracked. See sidewalk_multicam.
+#
+camera_rear:
+  installed: false            # ← flip to true when the hardware is fitted
+
+  # ── FRAME NAMES: PREDICTED, NOT VERIFIED ──────────────────────────────────
+  #
+  # [UNVERIFIED] and unverifiable today. The camera is not fitted, so nothing
+  # publishes these names and no live check can confirm them.
+  #
+  # frame_id was "zedx_rear_link" — the same non-existent name that was wrong
+  # on the front camera until 2026-08-29 (see that block for the full account).
+  # It is corrected here rather than merely flagged, because leaving a name
+  # that is known to be wrong sitting in the file means it gets inherited on
+  # the day the second camera is installed, at exactly the moment nobody is
+  # looking at this file.
+  #
+  # The replacement is PREDICTED from the driver's own macro, which is
+  # deterministic: zed_macro.urdf.xacro on the JETSON names every link
+  # ${camera_name}_..., so launching sidewalk_perception/launch/zedx_front.launch
+  # with camera_name:=zedx_rear produces the front camera's exact frame set
+  # with the prefix swapped. optical_frame was already right for the same
+  # reason and is unchanged.
+  #
+  # CONFIRM BEFORE TRUSTING ANYTHING DOWNSTREAM, on the day the hardware goes on:
+  #     rosrun tf tf_echo base_link zedx_rear_left_camera_frame
+  # and add both names to expected_frames at the bottom of this file at the
+  # same time as flipping installed: to true.
+  frame_id: "zedx_rear_left_camera_frame"
+  optical_frame: "zedx_rear_left_camera_optical_frame"
+
+  # ── THESE FIVE NUMBERS ARE PLACEHOLDERS, NOT GEOMETRY ─────────────────────
+  #
+  # x = -0.35, z = 0.62 and pitch = 0.087 are the SAME superseded placeholder
+  # values that sat in camera_front until they were measured on 2026-08-29,
+  # mirrored to the rear. They were never measured on either camera and they
+  # describe no bracket that exists. They are left here only so the block
+  # parses and the shape of the eventual entry is visible.
+  #
+  # MEASURE THEM WHEN THE CAMERA IS FITTED — on the rear mount, with the two
+  # methods recorded in camera_front. DO NOT copy camera_front's numbers across
+  # and negate x: those belong to a different bracket, in a different place, at
+  # a different height, and the 60 mm y offset to the left lens does not mirror
+  # the way intuition suggests when the camera is turned around.
+  x: -0.35
+  y:  0.00
+  z:  0.62
+  roll:  0.0
+  pitch: 0.087
+  yaw:   3.14159265           # pi — facing backwards
+
+# ─────────────────────────────────────────────────────────────────────────────
+# IMU
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# The ZED X has an IMU inside the housing, at a small fixed offset from the
+# left lens which the SDK already knows and applies. You do not measure it.
+#
+# It is listed here only to record that this is the IMU being used, so that
+# nobody later adds a second IMU source and fuses the same physical motion
+# twice — which makes an EKF overconfident and is hard to spot after the fact.
+#
+imu:
+  source: "zed_x_internal"
+  frame_id: "zedx_front_imu_link"
+  rate_hz: 400
+  external_imu_present: false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Frames expected to exist, checked by preflight_check.py
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# The first entry is the reference; every other one is checked for a transform
+# against it.
+#
+# CORRECTED 2026-08-29: "zedx_front_link" removed, replaced by the left-lens
+# frame. It is the housing, not the lens, and it is published only by this
+# project's own robot description and not by the ZED driver — so the gate could
+# only ever fail on the front camera whenever the camera was brought up without
+# bringup.launch. See camera_front.frame_id above for the full account and for
+# the live verification of the name that replaces it.
+#
+# EVERY NAME BELOW IS PUBLISHED BY THE ZED DRIVER ITSELF, which is what makes
+# this list safe to check in either configuration — camera alone, or camera
+# under bringup.launch. Verified 2026-08-29 by reading the driver's own sources
+# on the JETSON:
+#     ~/catkin_ws/src/zed-ros-wrapper/zed_wrapper/urdf/zed_macro.urdf.xacro
+#         declares ${name}_base_link, ${name}_camera_center, the four
+#         left/right camera and optical frames, and optional mag/baro/temp
+#         links. It declares NO bare ${name}_link.
+#     ~/catkin_ws/src/zed-ros-wrapper/zed_wrapper/launch/include/zed_camera.launch.xml
+#         defaults base_frame to "base_link", and the macro parents
+#         ${name}_base_link to it — which is why base_link, the reference on
+#         the first line below, exists even with no robot description loaded.
+#     zed_nodelets/.../zed_wrapper_nodelet.cpp:1306
+#         mImuFrameId = mCameraName + "_imu_link", which is where
+#         zedx_front_imu_link comes from.
+#
+# A CAVEAT THE CHECK CANNOT SEE. Three of these names are also declared by
+# sidewalk_robot.urdf.xacro, so when bringup.launch and the camera both run,
+# two authorities publish the same frames — see the FRAME NAME COLLISION
+# warning in that file. This gate only asks whether a transform RESOLVES, not
+# which authority won it. Passing here does not settle that.
+#
+# camera_rear's frames are deliberately ABSENT. That camera is not fitted, and
+# listing frames that cannot exist is precisely the defect being fixed here.
+# Add them when camera_rear's installed: becomes true, not before.
+#
+# THIS IS NOW THE ONLY COPY OF THE LIST, and the running check reads it.
+# CORRECTED 2026-08-29, later the same day. This note used to say the opposite
+# — that preflight.launch carried its own hand-written copy, that the copy was
+# the one with teeth, and to keep the two in step. That was accurate when it
+# was written and it was also the defect: two copies with nothing enforcing
+# agreement had already drifted, and the correction above had no effect on the
+# running check because of it.
+#
+# preflight.launch no longer has a copy. It loads THIS FILE into the check's
+# own private namespace, so the list below arrives as the node's
+# ~expected_frames directly. bringup.launch still loads this file under
+# /sidewalk/ for everything else in the project, and preflight_check.py falls
+# back to /sidewalk/expected_frames when it is started by hand rather than by
+# preflight.launch. Both routes lead here. Edit this list and the gate changes;
+# there is nowhere else to edit.
+expected_frames:
+  - "base_link"
+  - "zedx_front_left_camera_frame"
+  - "zedx_front_left_camera_optical_frame"
+  - "zedx_front_imu_link"

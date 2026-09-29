@@ -1,0 +1,106 @@
+{
+ "legs": [
+  {
+   "leg": 1,
+   "dir": "forward",
+   "t_start": 37.9,
+   "t_end": 128.7,
+   "wheel": 16.0245,
+   "ekf": 16.0394,
+   "blend": 15.6562,
+   "cam": 14.9353,
+   "map": 14.9581,
+   "cam_reset_inside": false
+  },
+  {
+   "leg": 2,
+   "dir": "reverse",
+   "t_start": 153.0,
+   "t_end": 235.0,
+   "wheel": 16.0028,
+   "ekf": 16.026,
+   "blend": 15.4649,
+   "cam": 14.796,
+   "map": 14.9076,
+   "cam_reset_inside": false
+  },
+  {
+   "leg": 3,
+   "dir": "forward",
+   "t_start": 251.1,
+   "t_end": 326.0,
+   "wheel": 15.7814,
+   "ekf": 15.795,
+   "blend": 15.3594,
+   "cam": 15.2802,
+   "map": 14.754,
+   "cam_reset_inside": true
+  },
+  {
+   "leg": 4,
+   "dir": "reverse",
+   "t_start": 343.3,
+   "t_end": 420.3,
+   "wheel": 14.7826,
+   "ekf": 14.8057,
+   "blend": 14.4187,
+   "cam": 13.6757,
+   "map": 13.7508,
+   "cam_reset_inside": false
+  },
+  {
+   "leg": 5,
+   "dir": "forward",
+   "t_start": 440.9,
+   "t_end": 513.4,
+   "wheel": 14.697,
+   "ekf": 14.719,
+   "blend": 14.3342,
+   "cam": 13.819,
+   "map": 13.7324,
+   "cam_reset_inside": false
+  },
+  {
+   "leg": 6,
+   "dir": "reverse",
+   "t_start": 541.4,
+   "t_end": 614.9,
+   "wheel": 15.8696,
+   "ekf": 15.8861,
+   "blend": 15.3569,
+   "cam": 14.8948,
+   "map": 14.7713,
+   "cam_reset_inside": false
+  }
+ ],
+ "parked": [
+  [
+   0.0,
+   37.9
+  ],
+  [
+   128.7,
+   153.0
+  ],
+  [
+   235.0,
+   251.1
+  ],
+  [
+   326.0,
+   343.3
+  ],
+  [
+   420.3,
+   440.9
+  ],
+  [
+   513.4,
+   541.4
+  ],
+  [
+   614.9,
+   679.6
+  ]
+ ]
+}

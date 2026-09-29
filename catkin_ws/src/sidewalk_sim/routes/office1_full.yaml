@@ -1,0 +1,331 @@
+# office1_full.yaml — full-floor mapping drive for the FIRST office layout
+# (catkin_ws/src/sidewalk_sim/worlds/office.world).
+#
+# *** NOT YET SHAKEDOWN-TESTED. NOBODY HAS DRIVEN THIS. ***
+# Every number below came from reading office.world's collision geometry and
+# walking these primitives on paper. That is exactly the level of evidence
+# mcity_building_loop.yaml had, and that route froze the robot against a kerb
+# for 150 s at a time before anyone noticed (docs/SOLVED.md, the wheel-slip
+# entry). Treat this file the same way: first run at --speed 0.4 with someone
+# watching the Gazebo window, ready to kill it. Do not put it in a campaign,
+# and do not quote a number from a run of it, until it has completed cleanly
+# at least once.
+#
+# ---------------------------------------------------------------------------
+# SPAWN POSE — THE ROUTE IS MEANINGLESS FROM ANY OTHER START
+# ---------------------------------------------------------------------------
+# There are no absolute coordinates in a route file. Every "forward" and
+# "turn" below is relative to the one before it, so the whole path is pinned
+# to one starting pose and nothing else. Start anywhere else and the robot
+# drives into a wall on primitive 3.
+#
+#   spawn_x:=0.0   spawn_y:=0.0   spawn_z:=0.1   spawn_yaw:=0.0
+#
+# Those are already the defaults of husky_real_gazebo.launch, which is also
+# the launch file that defaults its world to office.world — so the plain
+# command is enough, but pass them explicitly anyway if anything upstream has
+# been touched. The robot starts at the world origin, in the middle of the
+# corridor, facing +X (east).
+#
+#   roslaunch sidewalk_sim husky_real_gazebo.launch \
+#       gui:=false rviz:=false zedx:=true zedx_stereo:=true
+#   rosrun sidewalk_sim route_player.py \
+#       --route $(rospack find sidewalk_sim)/routes/office1_full.yaml --speed 0.4
+#
+# Reset the robot to the world origin before every recorded run (ENGINEERING_NOTES.md
+# rule 10): RTAB-Map anchors its map frame wherever the robot happens to
+# start, so a different start silently offsets every error reading.
+#
+# ---------------------------------------------------------------------------
+# WHAT IT DRIVES
+# ---------------------------------------------------------------------------
+# 63 primitives, 79.4 m of forward travel, 31 in-place turns. About 4 minutes
+# at 0.4 m/s once the turns are counted. It ends back at the world origin
+# facing east — the same pose it started in, which is a genuine same-viewpoint
+# revisit for loop closure rather than a stop wherever the path ran out.
+#
+# Room-visit order (corridor circuit plus every one of the four rooms):
+#
+#   1. corridor spine, origin eastwards
+#   2. SOUTH-EAST BREAK ROOM       in and out through its own doorway
+#   3. NORTH-EAST MEETING ROOM     in and out through its own doorway
+#   4. corridor spine, eastwards back to the middle then west
+#   5. NORTH-WEST OFFICE           in and out on a diagonal (see below)
+#   6. corridor west end, past the reception desk
+#   7. SOUTH-WEST OFFICE           in and out through its own doorway
+#   8. corridor spine, home to the origin
+#
+# Rooms 2 and 3 share the same doorway centreline (x = 3.78) on opposite sides
+# of the corridor, so the robot leaves the break room and continues straight
+# into the meeting room on one 6.90 m run. Rooms 5 and 7 are likewise reached
+# from the same stretch of corridor. Every leg that goes into a room comes
+# back out along its own path, which is deliberate: a retraced leg is a
+# second look at the same scene from the same viewpoint, and that is the
+# cheapest loop-closure opportunity there is.
+#
+# ---------------------------------------------------------------------------
+# THIS WORLD CANNOT BE DRIVEN AT THE PROJECT'S OWN CLEARANCE RULE. READ THIS.
+# ---------------------------------------------------------------------------
+# docs/SOLVED.md ("A 'clear' test coordinate near furniture still isn't clear
+# of the robot's own body") sets the standing rule: at least 0.8 to 1.0 m of
+# clearance from every wall and prop edge, for every point along a planned
+# path, not just at its endpoints. office.world does not allow that anywhere
+# near the four rooms.
+#
+# The Husky is 0.99 x 0.67 m with a circumscribed radius of 0.598 m, so it
+# sweeps a circle 1.196 m across just turning on the spot
+# (sidewalk_navigation/config/costmap_common.yaml; that package's README.md
+# flags the footprint as `measured: false`, an unverified placeholder, so
+# treat 1.196 m as a floor and not a target). Against that, the best that any
+# possible path through this world can achieve was computed by a widest-path
+# search over a 5 cm grid of the world's own collision shapes:
+#
+#   corridor east end                        0.900 m   comfortable
+#   corridor west end, south of the desk      0.800 m   comfortable
+#   into the south-east break room (east bay) 0.791 m   just under the rule
+#   into the south-west office                0.750 m   under the rule
+#   into the north-west office                0.710 m   under the rule
+#   into the north-east meeting room          0.650 m   well under the rule
+#   into the west half of the meeting room    0.413 m   NOT DRIVABLE
+#   into the west half of the break room      0.440 m   NOT DRIVABLE
+#
+# That is a property of the world, not of this route: no cleverer path exists.
+# The props in office.world were placed for feature richness (see that file's
+# own header, which explains the 13-keypoint disaster that led to them), and
+# nobody checked them against the robot's footprint afterwards. Three of them
+# sit directly in a doorway's line of travel:
+#
+#   nw_crate    (-3.2, 3.0)  sits 0.58 m inside the north-west doorway, dead
+#                            on its centreline. The gap between it and the
+#                            west door frame is 1.08 m, so a straight run in
+#                            gets 0.54 m. The diagonal used below gets 0.67 m.
+#   ne_table    (3.5, 4.0)   spans x 2.3 to 4.7, which is EXACTLY the width of
+#                            the north-east doorway, 1.4 m inside it. Nothing
+#                            can drive straight in past it.
+#   sw_crate    (-3.0, -3.2) sits inside the south-west doorway, off-centre;
+#                            the gap to the west door frame is 1.32 m.
+#
+# and two more close off half a room each:
+#
+#   ne_column   (6.2, 3.2)   leaves only 1.3 m between itself and ne_table.
+#                            That 1.3 m gap is the ONLY way into the meeting
+#                            room, and it is the tightest point of this whole
+#                            route: 0.650 m of clearance, i.e. 0.315 m of air
+#                            on each side of the robot's body.
+#   se_table +  (2.5, -4.0)  together with se_crate they seal the west half of
+#   se_stools                the break room; the best path in is 0.44 m.
+#
+# If the human wants this route to meet the 0.8 m rule, the world has to
+# change, not the route. The smallest useful edits, in order of payoff:
+#   * move ne_column from (6.2, 3.2) to about (6.4, 2.6) — buys the meeting
+#     room roughly 0.15 m and lifts this route's worst point to ~0.80 m;
+#   * move nw_crate from (-3.2, 3.0) to about (-2.0, 3.2), out of the doorway
+#     axis — lets the north-west office be entered straight instead of on a
+#     diagonal;
+#   * move sw_crate from (-3.0, -3.2) about 0.6 m east.
+# That is the same fix the second office layout already received: its author
+# relocated o4_desk, o4_chair, o5_desk and o5_chair for exactly this reason
+# (see office2.world's own comments). ENGINEERING_NOTES.md forbids the Jetson operator deleting or
+# moving anything, so this is a note for the human, not a change.
+#
+# WHAT THIS ROUTE ACTUALLY ACHIEVES, measured segment by segment on a 1 cm
+# sample of every straight leg (not just endpoints):
+#
+#   worst clearance on a straight leg   0.650 m   primitive 17, north through
+#                                                 the ne_table / ne_column gap
+#                                                 at (5.35, 3.00)
+#   worst clearance at an in-place turn 0.650 m   primitive 18, the about-face
+#                                                 at (5.35, 4.40) beside
+#                                                 ne_table
+#   next worst                          0.656 m   primitives 53 and 61, the
+#                                                 south-west doorway
+#   then                                0.672 m   primitives 27 and 43, the
+#                                                 north-west doorway diagonal
+#
+# 0.650 m still clears the 0.598 m turning circle, by 52 mm. That is a real
+# margin and the robot will fit, but it is a thin one, and it assumes the
+# unverified 0.99 x 0.67 m footprint is right. If the tape measure ever says
+# the Husky is bigger than that, primitives 15 to 21 are the ones that stop
+# working first. Measure the robot.
+#
+# ---------------------------------------------------------------------------
+# IN-PLACE TURNS: WHERE THEY ARE UNAVOIDABLE
+# ---------------------------------------------------------------------------
+# Turning on the spot is where visual tracking is most likely to drop
+# (docs/PHASE1_RESULTS.md). The route uses 31 of them, which is as few as this
+# floor plan allows: each room has exactly one doorway, it is the only way in
+# and the only way out, so every room visit costs at least one turn to face
+# the doorway, one about-face inside, and one to rejoin the corridor.
+#
+# Seven of the 31 are full 180-degree about-faces — primitives 8, 18, 30, 36,
+# 50, 56 and 58 — one at the far end of each room sweep and one at the far
+# west end of the corridor. The hardest of them is primitive 18, in the
+# meeting room's east bay, because it is the one that also happens in the
+# tightest place. Nothing can be done about any of them without a reversing
+# primitive, which route_player.py does not have.
+#
+# Two places use gentle non-right-angle turns instead of sharp ones on
+# purpose, and both buy real clearance:
+#   * primitives 26/27 and 42/43 — a single 45-degree diagonal in and out of
+#     the north-west office, threading between the west door frame and
+#     nw_crate. A straight run gets 0.54 m there; the diagonal gets 0.67 m.
+#   * primitives 46/47 — a 29-degree dog-leg round the reception desk instead
+#     of a right-angle pair, which keeps the robot moving and pointing down
+#     the corridor while it changes lane.
+#
+# ---------------------------------------------------------------------------
+# HOW THE GEOMETRY WAS CHECKED
+# ---------------------------------------------------------------------------
+# A throwaway script parsed every <collision> shape out of office.world
+# (39 of them: 12 wall segments plus 27 props, boxes and cylinders, each with
+# its own yaw), walked this exact primitive list from the spawn pose the way
+# route_player.py does, and measured the distance from the robot's centre path
+# to the nearest shape at 1 cm intervals along every straight leg and at every
+# pivot point. The visual-only floor skin was ignored on purpose — it carries
+# no <collision> and the robot drives straight over it.
+#
+# What that check does NOT cover, and what the shakedown run has to:
+#   * it assumes the robot follows the commanded path. route_player.py holds
+#     heading from the inertial measurement unit and counts distance from the
+#     wheel encoders, and skid-steer turns scrub; real tracking error over
+#     79 m is not zero.
+#   * wheel-encoder distance cannot tell "driving" from "stuck against
+#     something with the wheels still turning" — that is the failure that ate
+#     mcity_building_loop.yaml. If the shakedown stalls anywhere, re-run with
+#     --recover-on-stuck and compare wheel-odometry distance against ground
+#     truth displacement over the stall window.
+#
+# ---------------------------------------------------------------------------
+# READING THE COMMENTS BELOW
+# ---------------------------------------------------------------------------
+# Each "forward" comment gives the world coordinate the robot should be
+# standing on when that primitive finishes, so the geometry can be checked by
+# reading rather than by driving (same convention as mcity_building_loop.yaml).
+# Headings: 0 degrees is +X (east), 90 is +Y (north), turns are
+# counter-clockwise-positive.
+
+# ===== corridor spine, eastwards ==========================================
+- {forward: 3.78}     # to (3.78, 0.00) — corridor centreline; this x is the
+                      #   shared centreline of BOTH east doorways
+- {turn: -90}         # face south
+
+# ===== SOUTH-EAST BREAK ROOM ==============================================
+- {forward: 4.10}     # to (3.78, -4.10) — through the doorway (frames at
+                      #   x 2.3 and 4.7), threading between se_counter's west
+                      #   face and se_table; tightest 0.72 m at y = -2.70
+- {turn: 90}          # face east
+- {forward: 1.42}     # to (5.20, -4.10) — east across the room, passing south
+                      #   of se_counter; tightest 0.73 m past se_stool_2
+- {turn: -90}         # face south
+- {forward: 0.80}     # to (5.20, -4.90) — down to the south wall, so the map
+                      #   gets the south-east corner and se_column
+- {turn: 180}         # about-face — pivot clearance 0.93 m, the roomiest
+                      #   about-face in this room
+- {forward: 0.80}     # back to (5.20, -4.10)
+- {turn: 90}          # face west
+- {forward: 1.42}     # back to (3.78, -4.10) — retraces the east leg, second
+                      #   look at the same scene
+- {turn: -90}         # face north
+
+# ===== corridor crossing straight into the NORTH-EAST MEETING ROOM ========
+- {forward: 6.90}     # to (3.78, 2.80) — one continuous run: out of the break
+                      #   room, across the full width of the corridor, in
+                      #   through the north-east doorway. Stops 0.70 m short
+                      #   of ne_table's south face, which is as close as the
+                      #   table allows.
+- {turn: -90}         # face east — TIGHT PIVOT, 0.70 m (ne_table)
+- {forward: 1.57}     # to (5.35, 2.80) — east past the end of ne_table and
+                      #   into the only gap that leads north
+- {turn: 90}          # face north — TIGHT PIVOT, 0.68 m (ne_column)
+- {forward: 1.60}     # to (5.35, 4.40) — THE TIGHTEST LEG OF THE ROUTE.
+                      #   1.30 m of gap between ne_table's east face (x 4.7)
+                      #   and ne_column's west face (x 6.0), so 0.65 m of
+                      #   clearance either side of the centre line. Drive this
+                      #   one slowly the first time.
+- {turn: 180}         # about-face — TIGHT PIVOT, 0.65 m (ne_table). The
+                      #   robot's 1.196 m turning circle fits with 52 mm to
+                      #   spare and no more.
+- {forward: 1.60}     # back to (5.35, 2.80)
+- {turn: -90}         # face west — TIGHT PIVOT, 0.68 m
+- {forward: 1.57}     # back to (3.78, 2.80)
+- {turn: 90}          # face south — TIGHT PIVOT, 0.70 m
+- {forward: 2.80}     # back to (3.78, 0.00) — out of the meeting room, onto
+                      #   the corridor spine
+
+# ===== corridor spine, westwards ==========================================
+- {turn: -90}         # face west
+- {forward: 5.43}     # to (-1.65, 0.00) — the open middle of the corridor,
+                      #   1.11 m clear of cor_crate_e and cor_crate_w
+
+# ===== NORTH-WEST OFFICE (entered on a diagonal, on purpose) ==============
+- {turn: -45}         # face north-west
+- {forward: 4.81}     # to (-5.05, 3.40) — a single 45-degree run through the
+                      #   north-west doorway. It threads the 1.08 m gap
+                      #   between the west door frame corner (-4.7, 2.1) and
+                      #   nw_crate's nearest corner: 0.67 m at the pinch,
+                      #   against 0.54 m for any straight run.
+- {turn: 45}          # face west
+- {forward: 0.95}     # to (-6.00, 3.40) — west end of the room, looking at
+                      #   the west wall with nw_desk and nw_chair above;
+                      #   0.80 m clear of nw_chair
+- {turn: 180}         # about-face
+- {forward: 1.65}     # to (-4.35, 3.40) — back east, stopping short of
+                      #   nw_crate (0.80 m)
+- {turn: 43}          # face north-east
+- {forward: 1.31}     # to (-3.39, 4.29) — round the north side of nw_crate;
+                      #   0.74 m at the crate's north corner
+- {turn: -56}         # face just south of east
+- {forward: 2.46}     # to (-1.00, 3.74) — east across the whole room, passing
+                      #   under nw_barrel with 0.70 m to spare and finishing
+                      #   0.90 m off the dividing wall at x = 0
+- {turn: 180}         # about-face
+- {forward: 2.46}     # back to (-3.39, 4.29)
+- {turn: 56}          # face south-west
+- {forward: 1.31}     # back to (-4.35, 3.40)
+- {turn: -43}         # face west
+- {forward: 0.70}     # to (-5.05, 3.40) — back onto the exit diagonal's
+                      #   start point; this must be exact, the diagonal only
+                      #   clears nw_crate from here
+- {turn: 135}         # face south-east, along the reverse of the entry line
+- {forward: 4.81}     # to (-1.65, 0.00) — back out through the doorway, same
+                      #   0.67 m pinch, same scene in reverse
+
+# ===== corridor west end, round the reception desk ========================
+- {turn: -135}        # face west
+- {forward: 1.35}     # to (-3.00, 0.00) — still on the corridor spine
+- {turn: 29}          # gentle dog-leg rather than a right-angle pair; the
+                      #   reception desk blocks the middle of the corridor's
+                      #   west end (it spans y -0.25 to 0.25) and the only
+                      #   lane past it is the southern one
+- {forward: 2.28}     # to (-4.99, -1.11) — 0.80 m clear of the south wall and
+                      #   0.85 m clear of the desk
+- {turn: -29}         # face west again
+- {forward: 1.00}     # to (-5.99, -1.11) — far west end of the corridor, with
+                      #   reception_desk and cor_pillar in view
+- {turn: 180}         # about-face
+- {forward: 1.95}     # to (-4.04, -1.11) — east, onto the south-west doorway
+                      #   centreline. x = -4.04 is not the doorway's midpoint;
+                      #   it is the line that splits the difference between the
+                      #   west door frame and sw_crate's nearest corner.
+
+# ===== SOUTH-WEST OFFICE ==================================================
+- {turn: -90}         # face south
+- {forward: 3.49}     # to (-4.04, -4.60) — through the doorway; tightest
+                      #   0.66 m at y = -1.98, between the door frame and
+                      #   sw_crate
+- {turn: -90}         # face west
+- {forward: 1.16}     # to (-5.20, -4.60) — west end of the room; 0.80 m clear
+                      #   of sw_barrel and 0.81 m of sw_chair
+- {turn: 180}         # about-face
+- {forward: 3.20}     # to (-2.00, -4.60) — the full width of the room, east;
+                      #   stops 0.86 m short of sw_cabinet
+- {turn: 180}         # about-face
+- {forward: 2.04}     # back to (-4.04, -4.60) — the doorway centreline
+- {turn: -90}         # face north
+- {forward: 4.60}     # to (-4.04, 0.00) — out through the doorway (same 0.66 m
+                      #   pinch) and straight on to the corridor spine
+
+# ===== home ===============================================================
+- {turn: -90}         # face east
+- {forward: 4.04}     # to (0.00, 0.00) — the spawn point, facing east, the
+                      #   exact pose the run started in

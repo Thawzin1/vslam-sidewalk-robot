@@ -1,0 +1,42 @@
+{
+ "run": "s2_nav_03",
+ "goals_file": "<repo>/catkin_ws/src/sidewalk_navigation/goals_d10_route_B2rest.yaml",
+ "results": [
+  {
+   "k": 0,
+   "name": "W2_south_line",
+   "goal": [
+    10.5,
+    -14.62,
+    180
+   ],
+   "result": "ABORTED",
+   "time_s": 3.7,
+   "t_send_rel": 0.337,
+   "end_estimate": [
+    11.768,
+    -14.667,
+    3.049
+   ],
+   "dist_estimate_to_goal_m": 1.269
+  },
+  {
+   "k": 1,
+   "name": "B3_SW_widest",
+   "goal": [
+    1.62,
+    -14.9,
+    90
+   ],
+   "result": "ABORTED",
+   "time_s": 3.7,
+   "t_send_rel": 14.087,
+   "end_estimate": [
+    11.755,
+    -14.666,
+    3.05
+   ],
+   "dist_estimate_to_goal_m": 10.137
+  }
+ ]
+}

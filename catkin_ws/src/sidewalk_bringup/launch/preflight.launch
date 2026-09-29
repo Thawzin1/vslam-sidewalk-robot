@@ -1,0 +1,192 @@
+<?xml version="1.0"?>
+<!--
+  preflight.launch — the readiness check. Run this before every session.
+
+  It starts nothing and changes nothing. It inspects the running system and
+  tells you whether the data you are about to record will be worth keeping.
+
+  Run it AFTER bringup.launch (and after the camera, if you are using one),
+  because it checks a live system rather than a static configuration.
+
+  USAGE
+    roslaunch sidewalk_bringup preflight.launch
+    roslaunch sidewalk_bringup preflight.launch strict:=true   # warnings block too
+
+  Use strict:=true before a long recording session or any run whose results
+  will go into the report. Use the default while developing, when a warning is
+  usually something you already know about.
+
+  WHERE THE FRAME LIST COMES FROM — it is NOT written in this file any more.
+  It is loaded straight out of config/robot_frames.yaml, which is the file that
+  owns the robot's geometry. See the first tag inside the node below for why
+  that changed on 2026-08-29.
+-->
+<launch>
+
+  <arg name="strict" default="false"
+       doc="Treat warnings as blocking. Use before recording data that matters."/>
+  <arg name="camera_expected" default="true"
+       doc="Set false when deliberately running without the camera."/>
+
+  <node name="preflight_check" pkg="sidewalk_bringup" type="preflight_check.py"
+        output="screen" required="false">
+
+    <!-- ════════════════════════════════════════════════════════════════
+         THE FRAME LIST, LOADED FROM THE ONE FILE THAT OWNS IT.
+
+         This tag REPLACES a hand-written second copy of expected_frames that
+         used to live here, and removing that copy is the entire point of it.
+
+         WHAT WENT WRONG, so nobody reintroduces it. The list existed in two
+         places — here, and at the bottom of config/robot_frames.yaml — with
+         nothing keeping them in step. On 2026-08-29 the copy in
+         robot_frames.yaml was corrected to name the frame the ZED driver
+         really publishes. This copy was not. And because preflight_check.py
+         reads its PRIVATE parameter ~expected_frames, which only this file
+         set, the correction changed nothing about the running check:
+         bringup.launch loads robot_frames.yaml under /sidewalk/, so the
+         corrected list sat at /sidewalk/expected_frames where the node never
+         looked. The gate went on testing the stale list.
+
+         HOW THIS TAG FIXES IT. A <rosparam command="load" file="..."/> placed
+         inside a <node> loads into that node's PRIVATE namespace. So
+         robot_frames.yaml's top-level `expected_frames:` key arrives as
+         ~expected_frames — precisely the parameter the script already reads.
+         There is now one list, in the file whose whole subject is the robot's
+         geometry, and no way for a copy to drift from it.
+         [VERIFIED 2026-08-29 on the Jetson with roslaunch's dump-params option
+          (two leading hyphens, which cannot be written inside an XML comment)
+          on a scratch launch file of exactly this shape: the file's
+          expected_frames key came out as /preflight_check/expected_frames, and
+          a <param> tag placed after this one still took effect.]
+
+         THE WHOLE FILE IS LOADED, not just that one key, because roslaunch's
+         rosparam tag cannot select a sub-key out of a file. robot_frames.yaml's
+         other keys (base:, camera_front:, imu: ...) therefore land in this
+         node's private namespace as well. That is harmless — the script reads
+         three parameters and ignores everything else — and it is also mildly
+         useful, since the geometry the check is implicitly about is then
+         visible on the parameter server beside the check that ran.
+
+         KEEP THIS TAG FIRST. roslaunch applies a node's parameter tags in
+         document order, last write wins. First means (a) anything below can
+         deliberately override the list, and (b) a key ever added to
+         robot_frames.yaml that happened to share a name with one set below —
+         `strict`, say — cannot silently clobber it. Last would invert both.
+         ════════════════════════════════════════════════════════════════ -->
+    <rosparam command="load"
+              file="$(find sidewalk_bringup)/config/robot_frames.yaml"/>
+
+    <param name="strict" value="$(arg strict)"/>
+
+    <!-- Tells the script whether an empty topic list is a deliberate choice or
+         a misconfiguration. Without this the script cannot tell the two apart,
+         and its only safe move is to stay quiet — which is how a check ends up
+         doing nothing while printing nothing. -->
+    <param name="camera_expected" value="$(arg camera_expected)"/>
+
+    <!-- ════════════════════════════════════════════════════════════════
+         Topics that must exist, with the rate each should hold.
+
+         The check MEASURES the real rate rather than trusting the configured
+         one. That gap is exactly where bandwidth and power problems hide: the
+         Quad card shares bandwidth between camera groups, so a second camera
+         on the same deserializer group can quietly halve the frame rate of
+         the first. Nothing errors. The number just drops.
+
+         THESE ARE PUBLISH RATES, AND A PUBLISH RATE IS NOT A GRAB RATE.
+         sidewalk_perception/config/zedx_front.yaml (this repository, and its
+         copy on the Jetson) sets two different numbers, and they differ on
+         purpose: general/grab_frame_rate: 30 at line 58, how often the
+         camera is read, and general/pub_frame_rate: 15 at line 59, how often
+         the wrapper puts a frame on a topic. This check subscribes to
+         topics, so the publish rate is the only one it can ever observe.
+
+         BOTH IMAGE ENTRIES SAID 30.0 UNTIL 2026-08-29. With FPS_TOLERANCE =
+         0.85 in preflight_check.py that set a 25.5 Hz floor under a stream
+         configured to deliver 15, so a correctly configured camera warned on
+         every single run — and under strict:=true, blocked the run.
+
+         THE IMU ENTRY SAID 400.0, which is the ZED 2's figure, carried over
+         to a camera whose datasheet states 200 Hz in two separate places (the
+         "Motion Sensors" tables). The identical mistake was corrected the
+         same day in perception_common.ZEDX["imu_rate_hz"] and in
+         sidewalk_perception/config/validation_thresholds.yaml. 400 x 0.85 =
+         340 Hz is a floor no healthy ZED X can reach, so that gate fired on
+         every run too.
+
+         THE CHECK IS ONE-SIDED — see check_topics() in preflight_check.py. It
+         warns when the measured rate is BELOW want_hz x 0.85 and says nothing
+         at all when it is above. So a number set too LOW here makes the gate
+         silent rather than noisy, which is why these have to track
+         zedx_front.yaml rather than being left comfortably generous.
+
+         WHY THIS IS A LIST OF PAIRS AND NOT A PLAIN topic: rate MAPPING.
+         It used to be a mapping, and that made this check DEAD — it never ran
+         once, on any run, and said nothing while not running.
+
+         The reason is a rosparam rule that is easy to walk into: when a
+         <rosparam> value is a dictionary, roslaunch sets each of its keys as
+         its own parameter, and a key BEGINNING WITH "/" is a GLOBAL name. Every
+         key here is a topic, so every key begins with "/". The three entries
+         therefore did not land under ~expected_topics at all — they were
+         written to the global parameter server as /zedx_front/zed_node/... ,
+         inside the live camera node's own parameter namespace, leaving
+         ~expected_topics with no children whatsoever. The script's
+         `rospy.get_param("~expected_topics", {})` fell through to its empty
+         default and printed "No expected topics configured — skipping".
+         [VERIFIED 2026-08-29 on the Jetson with roslaunch's dump-params option:
+          on the old block it emitted /zedx_front/zed_node/left/image_rect_color
+          = 30.0 as a GLOBAL parameter and no /preflight_check/expected_topics
+          at all, while a test key without a leading slash landed correctly
+          under /preflight_check/expected_topics/. The same command on the list
+          form below returns the list whole and intact.]
+
+         A YAML LIST is opaque to that key-splitting — it is stored as one
+         value — so writing the pairs as a list keeps them where the script can
+         read them. Do not "tidy" this back into a mapping.
+         ════════════════════════════════════════════════════════════════ -->
+    <rosparam if="$(arg camera_expected)" param="expected_topics">
+      # 15.0 = general/pub_frame_rate in zedx_front.yaml, NOT the 30 of
+      # general/grab_frame_rate. Both entries read 30.0 before 2026-08-29.
+      - {topic: /zedx_front/zed_node/left/image_rect_color,  hz: 15.0}
+      # Depth: same 15.0. [INFERENCE] pub_frame_rate is documented as one
+      # publish rate covering video and depth together, and this project has
+      # no copy of the zed-ros-wrapper source where this was written.
+      # Settle it with the camera on, in one command:
+      #     rostopic hz /zedx_front/zed_node/depth/depth_registered
+      # If depth turns out to publish at the 30 Hz grab rate, raise this
+      # entry to 30.0 — leaving it at 15.0 costs no false warning (the check
+      # is one-sided) but does make the depth gate blind to a halving.
+      - {topic: /zedx_front/zed_node/depth/depth_registered, hz: 15.0}
+      # 200.0 = the ZED X datasheet's IMU output data rate, the same value
+      # held in perception_common.ZEDX["imu_rate_hz"]. It read 400.0 before
+      # 2026-08-29; 400 Hz is the ZED 2's figure and was carried over by
+      # mistake. sensors/max_pub_rate in zedx_front.yaml is 400.0, but that
+      # is a CEILING above the source rate and therefore a no-op — it is not
+      # a second opinion about what this topic delivers.
+      - {topic: /zedx_front/zed_node/imu/data,               hz: 200.0}
+    </rosparam>
+
+    <!-- ════════════════════════════════════════════════════════════════
+         Frames that must be connected in the transform tree.
+
+         A missing transform is the most dangerous failure in this list,
+         because it does not stop anything. Programs that need the frame
+         simply fall back to defaults or drop data, and you end up with a map
+         built in the wrong reference — plausible-looking and wrong.
+
+         THE LIST IS NOT HERE. It is loaded from config/robot_frames.yaml by
+         the first tag in this node — read that tag before adding one back.
+         The first entry in it is the reference; every other is checked
+         against it.
+
+         To check a DIFFERENT set of frames for a one-off, add a
+         <rosparam param="expected_frames"> block BELOW this comment. Being
+         later in the file, it overrides the loaded list. Do not make that
+         permanent: a permanent second copy is the defect that was just fixed.
+         ════════════════════════════════════════════════════════════════ -->
+
+  </node>
+
+</launch>

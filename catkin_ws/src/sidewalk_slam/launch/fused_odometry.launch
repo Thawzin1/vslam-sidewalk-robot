@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<!--
+  fused_odometry.launch - the blend for drive 3 (Jetson): wheels + gyroscope + camera.
+
+  Design: option B of the blend design (camera + wheels + gyroscope; see config/CONFIG_GUIDE.md).
+
+  WHAT IT STARTS
+    1. ekf_input_conditioner.py   our small node that cleans the three inputs:
+                                  /robot/wheel_odom -> /ekf_in/wheel_odom  (zero-velocity update, the hold)
+                                  /robot/imu        -> /ekf_in/imu         (gyro offset removed, honest variance)
+                                  /rtabmap/odom     -> /ekf_in/vo_odom     (lost frames dropped, honest variance)
+    2. ekf_fused                  robot_localization 2.7.7 ekf_localization_node with
+                                  config/ekf_fused.yaml. An EKF (extended Kalman filter: a
+                                  program that keeps one best guess of the robot's position
+                                  and blends each new reading into it, weighted by how much
+                                  each sensor deserves to be trusted). It publishes
+                                  TF odom -> base_link, 50 times a second, and /fused/odometry.
+
+  Both are required="true": if either dies, both stop, and nothing publishes
+  odom -> base_link. Plain terms: the map then stops adding pictures rather than drawing
+  from a half-working blend. Do NOT restart it mid-drive: a new EKF starts at the origin,
+  a sudden jump the map cannot absorb (DESIGN.md section 5.5). Park and stop the drive.
+
+  THE ONE RULE THAT MATTERS: exactly one program may publish odom -> base_link. With this
+  running, the camera tracker must be started with vo_publish_tf:=false
+  (record_mapping_run.launch / rtabmap_mapping.launch / rtabmap_common.launch). start_drive.sh
+  does both when FUSION=1, and checks it with tf_one_parent_check.py before and after the
+  mapping starts.
+
+  This file does NOT set /use_sim_time. The master it runs on decides (false on the drive
+  master, which start_drive.sh checks; true only on a spare replay master, set by the test).
+
+  usage (drive, via start_drive.sh):   roslaunch sidewalk_slam fused_odometry.launch run:=<run_id>
+  usage (offline test T2):             ... run:=fusion_T2 vo_lin_var_scale:=1.0 vo_yaw_var_scale:=1.0
+                                           vo_lin_var_floor:=1e-6 vo_yaw_var_floor:=1e-8
+-->
+<launch>
+
+  <arg name="run" default="fused"
+       doc="Run name. The conditioner writes ~/jobs/RUN_ekf_inputs.progress (Jetson) every 10 s."/>
+  <arg name="config" default="$(find sidewalk_slam)/config/ekf_fused.yaml"
+       doc="The EKF settings. Every key checked against robot_localization 2.7.7 on the Jetson."/>
+
+  <!-- The camera's trust. Defaults are the live values (ekf_design.md section 6.3): the
+       conditioner multiplies rtabmap's own per-frame variance by these, never going below the
+       floor. Plain terms: they set how much the camera's speed and turn rate count against the
+       wheels and the gyroscope. Offline test T2 feeds already-calibrated keyframe values and
+       so sets scale 1.0 with tiny floors. -->
+  <arg name="vo_lin_var_scale" default="8.9"/>
+  <arg name="vo_yaw_var_scale" default="0.14"/>
+  <arg name="vo_lin_var_floor" default="4e-4"/>
+  <arg name="vo_yaw_var_floor" default="4e-6"/>
+
+  <!-- The hold (DESIGN.md section 4.2): "not moving" once every input has been silent this
+       long. Plain terms: when nothing can sense motion, freeze rather than invent a path. -->
+  <arg name="hold" default="true"/>
+  <arg name="hold_after_s" default="0.3"/>
+
+  <arg name="output" default="screen"/>
+
+  <node pkg="sidewalk_slam" type="ekf_input_conditioner.py" name="ekf_input_conditioner"
+        required="true" output="$(arg output)">
+    <param name="run"              value="$(arg run)"/>
+    <param name="vo_lin_var_scale" value="$(arg vo_lin_var_scale)"/>
+    <param name="vo_yaw_var_scale" value="$(arg vo_yaw_var_scale)"/>
+    <param name="vo_lin_var_floor" value="$(arg vo_lin_var_floor)"/>
+    <param name="vo_yaw_var_floor" value="$(arg vo_yaw_var_floor)"/>
+    <param name="hold"             value="$(arg hold)"/>
+    <param name="hold_after_s"     value="$(arg hold_after_s)"/>
+  </node>
+
+  <node pkg="robot_localization" type="ekf_localization_node" name="ekf_fused"
+        required="true" output="$(arg output)">
+    <rosparam command="load" file="$(arg config)"/>
+    <!-- /odometry/filtered is the ROBOT's own blend. Reusing that name on the Jetson invites
+         mix-ups in recordings, so this one is /fused/odometry. -->
+    <remap from="odometry/filtered" to="/fused/odometry"/>
+  </node>
+
+</launch>

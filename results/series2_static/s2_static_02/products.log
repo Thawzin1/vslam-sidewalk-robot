@@ -1,0 +1,36 @@
+  /media/administrator/USB Drive/slam_series2/s2_static_02/rtab_helios.db: 865 nodes, 0 loop closures
+    PASS  corrected positions saved (Admin.opt_poses)    38139 bytes
+    PASS  visual dictionary saved (Word table)           not expected in a LiDAR map
+    PASS  neighbour links stored both ways               864 forward, 864 back (865 nodes in the saved graph)
+  CLOSED PROPERLY - safe to power off.
+{
+  "source_database": "/media/administrator/USB Drive/slam_series2/s2_static_02/rtab_helios.db",
+  "pose_kind": "corrected",
+  "label": "LiDAR (Helios), s2_static_02",
+  "loop_closures": 0,
+  "tool": "tools/db/db_corrected_tum.py",
+  "method": "Admin.opt_poses - RTAB-Map's own saved optimisation, full 3D",
+  "exact": true,
+  "poses": 865,
+  "first_node": 1,
+  "last_node": 1315,
+  "end_gap_corrected_m": 20.7061
+}
+  /odometry/filtered -> /media/administrator/USB Drive/slam_series2/s2_static_02/wheel.tum
+  69684 poses, 1393.7 s
+{
+  "database": "/media/administrator/USB Drive/slam_series2/s2_static_02/rtab_helios.db",
+  "positions": "corrected",
+  "positions_source": "corrected (after loop closures) - lidar.tum",
+  "graph_nodes_corrected": 865,
+  "nodes": 865,
+  "nodes_with_grids": 865,
+  "duration_s": 1388.8,
+  "path_m_nodes": 293.53,
+  "closed_loop_gap_m": 20.568,
+  "cells_solid": 224894,
+  "cells_free": 0,
+  "cell_size_m": 0.05,
+  "map_width_m": 78.2,
+  "map_height_m": 76.2
+}

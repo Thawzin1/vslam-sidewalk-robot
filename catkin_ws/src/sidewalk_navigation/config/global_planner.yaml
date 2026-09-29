@@ -1,0 +1,20 @@
+# global_planner.yaml - the route finder (global_planner/GlobalPlanner, navigation 1.17.3).
+# *Plain terms: finds the cheapest way through the saved floor plan from where the robot is to the goal,
+#  where "cheap" means short AND away from walls.*
+GlobalPlanner:
+  use_dijkstra: true        # Dijkstra's shortest-path search (Dijkstra 1959), the same search NavFn uses
+                            # (NavFn = Konolige 2000's gradient navigation function). false = A* (Hart,
+                            # Nilsson, Raphael 1968): same route on this map, fewer cells searched.
+  use_grid_path: false      # false = follow the smooth downhill of the cost field (NavFn style) instead of
+                            # hopping cell to cell; gives a smoother route for DWA to follow.
+  use_quadratic: true       # smoother cost interpolation between cells (package default).
+  allow_unknown: false      # never route through grey "never seen" cells of drive 10's map.
+                            # *If a goal is refused as "no plan", this is why: pick a goal on white cells.*
+  default_tolerance: 0.30   # m: if the goal cell itself is blocked, accept the nearest free cell within 0.3 m.
+  cost_factor: 3.0          # how strongly wall-nearness (inflation cost) is avoided, relative to distance.
+  neutral_cost: 50          # cost of one free cell step (package default).
+  lethal_cost: 253          # cells at or above this are walls (costmap_2d's "inscribed" value).
+  orientation_mode: 1       # 1 = each route point faces along the route (forward).
+  orientation_window_size: 1
+  publish_potential: false
+  visualize_potential: false

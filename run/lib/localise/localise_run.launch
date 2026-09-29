@@ -1,0 +1,91 @@
+<?xml version="1.0"?>
+<!--
+  localise_run.launch - the localisation launch (used live 26-27 Sept 2026, s2_loc_01..04, s2_nav_01..03). It lives in
+  run/lib/ (Jetson) and is started by path:
+      roslaunch "<this folder>/localise_run.launch" run_id:=... database_path:=<WORKING COPY>
+
+  WHAT IT IS: the same stack drive 4 mapped with (record_mapping_run.launch -> rtabmap_mapping.launch
+  -> rtabmap_common.launch), with ONE change: localization:=true. That makes rtabmap_common.launch
+  load config/rtabmap_localization.yaml on top of rtabmap_zedx.yaml and set
+  Mem/IncrementalMemory=false (localisation mode: the map is read, nothing is added to it).
+
+  *Plain terms: the robot is given drive 4's map and asked "where am I on it?", instead of drawing
+  a new map.*
+
+  Why a new file and not rtabmap_localization.launch: that file does not pass vo_publish_tf
+  (needed so the wheel+gyro+camera blend owns odom -> base_link, as in drives 3-5), queue_size,
+  wait_imu_to_init, approx_sync=true (what record_mapping_run.launch gave drive 4), or the
+  per-run monitor and path recorder. Every argument below is set to the value drive 4 ran with.
+
+  delete_db_on_start is HARD-WIRED false (deleting the database = deleting the map).
+  database_path MUST be a working copy, never ~/slam_series2/localise/s2_static_04_map.db:
+  start_drive.sh (LOCALISE=1) refuses the master.
+-->
+<launch>
+  <arg name="run_id"/>
+  <arg name="database_path"/>
+  <arg name="rtabmap_log"          default=""/>
+  <arg name="vo_publish_tf"        default="true"/>
+  <arg name="extra_rtabmap_params" default=""/>
+  <!-- Vis/MinInliers (verified on this build: default 20, "Minimum feature correspondences to
+       compute/accept the transformation") = how many picture points must line up in 3D before a
+       recognised place is accepted. rtabmap_localization.yaml raises it to 25; drive 4 MAPPED with 20
+       (rtabmap_zedx.yaml). Bench 2026-09-26: the correct place (map node 1, the start mark) reached
+       20-21 and was refused at 25. Default here: 20, drive 4's own value. Set 25 with MIN_INLIERS=25. -->
+  <arg name="min_inliers"          default="20"/>
+  <!-- Rtabmap/LoopThr (recognition score a place must reach before it is tried). Session 2 (26 Sept) ran 0.15
+       and RTAB-Map never ACCEPTED a correct recognition at 3 of 5 spots: after one pending link its threshold
+       rises from RGBD/AggressiveLoopThr 0.05 to 0.15 (Rtabmap.cpp:2140-2156); scores stayed 0.04-0.10, so the
+       second link it waits for never came while the first was still remembered. 0.05 keeps the threshold the
+       same before and after the first link. Offline test (RESULTS.md "Session 2", session2_diag/offline_kidnap/): accepted A, B, C
+       from a guess 49-62 m off at the 3rd-5th picture, no fix over 1 m off. The 3D check (Vis/MinInliers 20)
+       is unchanged and remains the guard against wrong places.
+       CHANGED to 0.08 on 26 Sept 09:10 Hamilton (PASS_LINES.md addendum of that time): the whole-of-drive-6 test
+       (33 windows per value, off-map guess) gave 3 fixes in windows wholly outside drive 4's map at 0.05 and 0 at 0.08.
+       The launch argument loop_thr:=0.05 restores the old value. -->
+  <arg name="loop_thr"             default="0.08"/>
+
+  <include file="$(find sidewalk_slam)/launch/rtabmap_common.launch">
+    <arg name="localization"         value="true"/>
+    <arg name="database_path"        value="$(arg database_path)"/>
+    <arg name="delete_db_on_start"   value="false"/>
+    <!-- drive 4's values (record_mapping_run.launch defaults + start_drive.sh step 3) -->
+    <arg name="use_sim_time"         value="false"/>
+    <arg name="approx_sync"          value="true"/>
+    <arg name="stereo"               value="false"/>
+    <arg name="queue_size"           value="5"/>
+    <arg name="wait_imu_to_init"     value="true"/>
+    <arg name="force_3dof"           value="true"/>
+    <arg name="rviz"                 value="false"/>
+    <arg name="rtabmap_viz"          value="false"/>
+    <arg name="visual_odometry"      value="true"/>
+    <arg name="vo_publish_tf"        value="$(arg vo_publish_tf)"/>
+    <arg name="extra_rtabmap_params" value="$(arg extra_rtabmap_params)"/>
+  </include>
+
+  <!-- THE FIX THAT MAKES THIS LOCALISE AT ALL (found 2026-09-26 by roslaunch dump-params).
+       rtabmap_common.launch ends the rtabmap node with
+         Mem/IncrementalMemory = $(eval 'false' if arg('localization') in ('true','True','1') else 'true')
+       but inside $(eval) roslaunch hands arg('localization') over as the Python value True, not the
+       string 'true', so the test is ALWAYS false and the parameter is ALWAYS 'true' (mapping mode),
+       overriding rtabmap_localization.yaml's "false". Checked: resolve_args("$(eval arg('localization')
+       in ('true','True','1'))", localization='true') returns False. So rtabmap_localization.launch has
+       always started in MAPPING mode. Set it again here, after the include: the last setting wins.
+       start_drive.sh (LOCALISE=1) also refuses unless the log says "Localization mode". -->
+  <param name="/rtabmap/rtabmap/Mem/IncrementalMemory" type="string" value="false"/>
+  <param name="/rtabmap/rtabmap/Vis/MinInliers"        type="string" value="$(arg min_inliers)"/>
+  <param name="/rtabmap/rtabmap/Rtabmap/LoopThr"       type="string" value="$(arg loop_thr)"/>
+
+  <!-- where the map puts the robot (map -> base_link from TF, 20 Hz), TUM format -->
+  <node name="traj_rec_slam" pkg="sidewalk_slam" type="trajectory_recorder.py"
+        args="--stack rtabmap_localisation --run-id $(arg run_id) --source tf
+              --fixed-frame map --body-frame base_link --rate 20"
+        output="screen"/>
+
+  <!-- the same 1 Hz monitor as a drive (closure counts from /rtabmap/info) -->
+  <node name="run_monitor" pkg="sidewalk_slam" type="run_monitor.py" output="screen">
+    <param name="log_file" value="$(arg rtabmap_log)"/>
+    <param name="out_file" value="$(env HOME)/.run_records/$(arg run_id)/monitor.csv"/>
+    <param name="rate"     value="1.0"/>
+  </node>
+</launch>

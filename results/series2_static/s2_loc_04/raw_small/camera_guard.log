@@ -1,0 +1,5 @@
+2026-09-27 07:39:56 EDT adopted camera: roslaunch pid 531598, zed_wrapper_node pid 531681
+2026-09-27 07:39:56 EDT   command: /opt/ros/noetic/bin/roslaunch sidewalk_perception zedx_front.launch depth_mode:=NEURAL pos_tracking_mode:=GEN_2
+2026-09-27 07:39:56 EDT   DISPLAY=:0 XAUTHORITY=/run/user/1000/gdm/Xauthority
+2026-09-27 07:39:56 EDT watching: rtabmap pid 533171, max 5 restarts, SVO=0, stop file ~/.run_records/s2_loc_04/CAMERA_GUARD_STOP
+2026-09-27 08:07:59 EDT stopping: mapping pid 533171 has exited (drive over). Camera left running (it is restarted fresh at the next drive)

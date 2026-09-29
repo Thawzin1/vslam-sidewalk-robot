@@ -1,0 +1,1 @@
+{"run": "s2_loc_04", "state": "ended", "t": 1790510879.5305626, "down_since": null, "down_since_hms": null, "restarts": 0, "attempts": 0, "max_restarts": 5, "last_event": "watching", "image_age_s": 0.0406641960144043, "guard_pid": 541509, "camera_pid": 531681, "launch_pid": 531598}

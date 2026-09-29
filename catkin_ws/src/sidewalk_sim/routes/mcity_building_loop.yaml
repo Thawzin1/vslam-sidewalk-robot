@@ -1,0 +1,38 @@
+# mcity_building_loop.yaml — SHAKEDOWN, NOT YET VALIDATED (2026-08-22).
+#
+# A full perimeter loop around the office building west of the mcity_loop.yaml
+# corridor, requested so a loop closure is visually obvious (leave a place,
+# go all the way around a building, come back to the same spot facing the
+# same way) rather than the out-and-back pattern of mcity_loop.yaml.
+#
+# Geometry was read off a live top-down capture of the world (temporary
+# downward camera, see tools this session), gridded against known world
+# coordinates - NOT measured by driving it first, unlike mcity_loop.yaml
+# which went through 3 iterations before being trusted. Two of these four
+# legs (west, north) are LESS CERTAIN to be fully on drivable pavement the
+# whole way - this file is explicitly a shakedown attempt, run slow (0.4 m/s
+# via --speed) with someone watching live and ready to kill it.
+#
+# Building footprint (read off the grid, approximate): x in [-80,-20],
+# y in [-65,-20]. This route stays outside that box on all sides:
+#   south leg  y=-75  (10 m clear of the building's south wall)
+#   west leg   x=-88  (matches a marked turn-lane on the image, west of x=-80)
+#   north leg  y=-8   (12 m clear of the building's north wall)
+#   east leg   x=-9   (the already-validated mcity_loop.yaml corridor)
+#
+# SPAWN (same as mcity_loop.yaml — unchanged):
+#   spawn_x:=0.0  spawn_y:=-60.5  spawn_z:=0.3  spawn_yaw:=3.1416  (facing west)
+
+- {forward: 9.0}      # to (-9,-60.5) - matches mcity_loop.yaml's first leg exactly
+- {turn: 90}           # face south
+- {forward: 14.5}      # to (-9,-75)
+- {turn: -90}          # face west
+- {forward: 81.0}      # to (-90,-75) — SOUTH LEG, high confidence
+- {turn: -90}          # face north
+- {forward: 67.0}      # to (-90,-8) — WEST LEG, lower confidence
+- {turn: -90}          # face east
+- {forward: 81.0}      # to (-9,-8) — NORTH LEG, lower confidence
+- {turn: -90}          # face south
+- {forward: 52.5}      # to (-9,-60.5) — EAST LEG, matches known-safe corridor
+- {turn: 90}           # face west, matching spawn heading
+- {forward: 9.0}       # back to spawn (0,-60.5) — loop closed

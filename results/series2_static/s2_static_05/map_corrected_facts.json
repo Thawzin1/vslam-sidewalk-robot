@@ -1,0 +1,16 @@
+{
+  "database": "~/slam_series2/s2_static_05.db",
+  "positions": "corrected",
+  "positions_source": "corrected (after loop closures) - camera_corrected.tum",
+  "graph_nodes_corrected": 280,
+  "nodes": 688,
+  "nodes_with_grids": 688,
+  "duration_s": 717.9,
+  "path_m_nodes": 60.08,
+  "closed_loop_gap_m": 7.968,
+  "cells_solid": 5510,
+  "cells_free": 45917,
+  "cell_size_m": 0.05000000074505806,
+  "map_width_m": 20.6,
+  "map_height_m": 28.7
+}

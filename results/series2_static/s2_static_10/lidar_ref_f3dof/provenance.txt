@@ -1,0 +1,20 @@
+run=s2_static_10 mode=colleague variant=f3dof rate=1.0 wrap=/media/administrator/USB Drive/slam_series2/tools/colleague_variants/f3dof.launch
+0767fc1e94e12573e77c56d5653336e4  /media/administrator/USB Drive/slam_series2/tools/colleague_variants/f3dof.launch
+started 2024-06-17 16:30:54 EDT on cpr-a200-0985
+bag /media/administrator/USB Drive/slam_series2/s2_static_10_lidar.bag 9168340394 bytes
+ros-noetic-rtabmap 0.21.10-1focal.20250213.181132
+ros-noetic-rtabmap-odom 0.21.10-1focal.20250213.195929
+ros-noetic-rtabmap-slam 0.21.10-1focal.20250213.195937
+ros-noetic-rtabmap-sync 0.21.10-1focal.20250213.193303
+ros-noetic-rtabmap-util 0.21.10-1focal.20250213.193305
+d50d096a109ffcec30a0cb6782767387  tools/replay_colleague_variant.sh
+d41d8cd98f00b204e9800998ecf8427e  /dev/null
+cb9ca662ae093bf9763782b3da43ef5d  /home/administrator/catkin_ws/src/rslidar_sdk/config/replay_config.yaml
+23:      use_lidar_clock: true        #  true--Use the lidar clock as the message timestamp
+27:      ts_first_point: true         #  true: time-stamp point cloud with the first point; false: with the last point;   
+32:      split_angle: 180           #  Azimuth at which a revolution is cut.
+2ee62a3c3e405b856e3d8a69be880ac0  /home/administrator/catkin_ws/src/matt_self_navigation/launch/helios_body_filter.launch
+07f5171db81d0559ac06d89f30900126  /home/administrator/catkin_ws/src/matt_self_navigation/scripts/helios_restamp.py
+0568a9c6d92120274cab1a23bbd2dea3  /home/administrator/catkin_ws/src/matt_self_navigation/scripts/box_crop.py
+744381369c1af0049aae5b6f04c85201  /home/administrator/catkin_ws/src/matt_self_navigation/launch/3dreplay_pipeline.launch
+099b269839710d212eca59648c0a2758  /home/administrator/catkin_ws/src/matt_self_navigation/launch/rtabmap_3d.launch

@@ -1,0 +1,13 @@
+stop,t_start_hamilton,t_end_hamilton,s_start,s_end,duration_s,map_x,map_y,kind,walkway_end,in_W2,seen_by,fixes_during,fixes_in_10m_before,m_since_last_fix_at_stop_start,W2_ok
+0,07:43:12,07:44:53,0.0,101.1,101.1,nan,nan,"standing at the start, before driving began",,False,robot,0,0,,
+0,07:44:57,07:46:10,105.4,178.0,72.6,nan,nan,"standing at the start, before driving began",,False,robot,0,0,,
+0,07:46:52,07:47:05,220.1,233.4,13.3,7.24,-0.16,during drive,,False,robot,1,8,0.12,True
+0,07:47:18,07:49:50,246.0,398.4,152.4,9.22,-0.12,during drive,,False,robot,1,20,0.1,True
+1,07:50:31,07:51:05,439.3,473.4,34.1,14.47,-0.59,during drive,1,True,robot,0,40,0.01,True
+0,07:54:23,07:54:31,670.9,679.3,8.4,0.43,-0.07,during drive,5,False,robot,1,18,0.26,True
+2,07:55:21,07:55:51,729.5,759.4,29.9,13.99,0.18,during drive,6,True,jetson+robot,0,23,1.88,True
+0,07:56:42,07:56:53,809.9,821.3,11.4,14.61,9.78,during drive,7,False,robot,0,35,0.0,True
+0,08:00:02,08:00:12,1009.6,1019.6,10.0,-2.93,-14.29,during drive,9,False,jetson+robot,0,21,1.72,True
+0,08:02:17,08:02:23,1144.7,1150.9,6.2,0.06,-15.1,during drive,11,False,robot,0,0,10.72,False
+3,08:03:18,08:03:37,1206.2,1225.4,19.2,14.73,-14.71,during drive,12,True,jetson+robot,1,21,0.08,True
+0,08:06:47,08:07:56,1415.2,1484.2,69.0,0.03,-0.04,park,,False,jetson+robot,1,35,0.15,

@@ -1,0 +1,15 @@
+{
+  "source_database": "~/<repo folder>/Week 7/08_run8/lab_map_08.db",
+  "pose_kind": "corrected",
+  "method": "SE(2) Gauss-Newton over Link types 0-4, first graph node fixed",
+  "tool": "tools/db/optimize_graph_se2.py",
+  "graph_nodes": 616,
+  "first_node": 1,
+  "last_node": 971,
+  "closure_edges_by_type": {
+    "1": 49,
+    "2": 216
+  },
+  "end_gap_corrected_m": 0.2608,
+  "end_gap_odometry_same_nodes_m": 0.9014
+}

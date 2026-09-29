@@ -1,0 +1,121 @@
+11:37:49 robot_bridge_recv 2026-09-25a  run s2_loc_04  robot ['<robot-wifi-address>'] port 8111  pid 520722  files ~/jobs/s2_loc_04_bridge.*
+11:37:49 START robot_bridge_recv 2026-09-25a robot <robot-wifi-address> port 8111 pid 520722
+11:37:49 STATE CONNECTING to <robot-wifi-address>:8111
+11:37:49 CONNECT <robot-wifi-address>:8111 sender robot_bridge_send 2026-09-24a host cpr-a200-0985 test False
+11:37:49 STATE LOCKING clock
+11:37:49 ANNOUNCE 0 /husky_velocity_controller/odom nav_msgs/Odometry cd5e73d190d741a2f92e81eda573aca7
+11:37:49 ANNOUNCE 1 /imu/data sensor_msgs/Imu 6a62c6daae103f4ff57a132d6f95cec2
+11:37:49 ANNOUNCE 2 /imu/data_raw sensor_msgs/Imu 6a62c6daae103f4ff57a132d6f95cec2
+11:37:49 ANNOUNCE 3 /odometry/filtered nav_msgs/Odometry cd5e73d190d741a2f92e81eda573aca7
+11:37:50 LOCK applied offset 0.086 ms (bound 1.638 ms, spread 5.306 ms, 8 pings)
+11:37:50 STATE UP LOCK
+11:46:35 STATE DOWN no bytes for 1.5 s
+11:46:36 CONNECT <robot-wifi-address>:8111 sender robot_bridge_send 2026-09-24a host cpr-a200-0985 test False
+11:46:36 STATE LOCKING clock
+11:46:36 ANNOUNCE 0 /husky_velocity_controller/odom nav_msgs/Odometry cd5e73d190d741a2f92e81eda573aca7
+11:46:36 ANNOUNCE 1 /imu/data sensor_msgs/Imu 6a62c6daae103f4ff57a132d6f95cec2
+11:46:36 ANNOUNCE 2 /imu/data_raw sensor_msgs/Imu 6a62c6daae103f4ff57a132d6f95cec2
+11:46:36 ANNOUNCE 3 /odometry/filtered nav_msgs/Odometry cd5e73d190d741a2f92e81eda573aca7
+11:46:36 RELOCK_QUICK applied offset 0.189 ms (bound 1.603 ms, spread 0.285 ms, 2 pings)
+11:46:36 STATE UP RELOCK_QUICK
+11:51:59 STATE DOWN no bytes for 1.5 s
+11:52:00 CONNECT <robot-wifi-address>:8111 sender robot_bridge_send 2026-09-24a host cpr-a200-0985 test False
+11:52:00 STATE LOCKING clock
+11:52:00 ANNOUNCE 0 /husky_velocity_controller/odom nav_msgs/Odometry cd5e73d190d741a2f92e81eda573aca7
+11:52:00 ANNOUNCE 1 /imu/data sensor_msgs/Imu 6a62c6daae103f4ff57a132d6f95cec2
+11:52:00 ANNOUNCE 2 /imu/data_raw sensor_msgs/Imu 6a62c6daae103f4ff57a132d6f95cec2
+11:52:00 ANNOUNCE 3 /odometry/filtered nav_msgs/Odometry cd5e73d190d741a2f92e81eda573aca7
+11:52:00 RELOCK_QUICK applied offset 0.913 ms (bound 19.591 ms, spread 4.469 ms, 2 pings)
+11:52:00 STATE UP RELOCK_QUICK
+11:55:24 STATE DOWN no bytes for 1.5 s
+11:55:38 CONNECT <robot-wifi-address>:8111 sender robot_bridge_send 2026-09-24a host cpr-a200-0985 test False
+11:55:38 STATE LOCKING clock
+11:55:38 ANNOUNCE 0 /husky_velocity_controller/odom nav_msgs/Odometry cd5e73d190d741a2f92e81eda573aca7
+11:55:38 ANNOUNCE 1 /imu/data sensor_msgs/Imu 6a62c6daae103f4ff57a132d6f95cec2
+11:55:38 ANNOUNCE 2 /imu/data_raw sensor_msgs/Imu 6a62c6daae103f4ff57a132d6f95cec2
+11:55:38 ANNOUNCE 3 /odometry/filtered nav_msgs/Odometry cd5e73d190d741a2f92e81eda573aca7
+11:55:38 RELOCK_QUICK applied offset 1.334 ms (bound 2.037 ms, spread 0.400 ms, 2 pings)
+11:55:38 STATE UP RELOCK_QUICK
+11:56:09 STATE DOWN no bytes for 1.5 s
+11:56:20 CONNECT <robot-wifi-address>:8111 sender robot_bridge_send 2026-09-24a host cpr-a200-0985 test False
+11:56:20 STATE LOCKING clock
+11:56:20 ANNOUNCE 0 /husky_velocity_controller/odom nav_msgs/Odometry cd5e73d190d741a2f92e81eda573aca7
+11:56:20 ANNOUNCE 1 /imu/data sensor_msgs/Imu 6a62c6daae103f4ff57a132d6f95cec2
+11:56:20 ANNOUNCE 2 /imu/data_raw sensor_msgs/Imu 6a62c6daae103f4ff57a132d6f95cec2
+11:56:20 ANNOUNCE 3 /odometry/filtered nav_msgs/Odometry cd5e73d190d741a2f92e81eda573aca7
+11:56:20 RELOCK_QUICK applied offset 1.427 ms (bound 1.614 ms, spread 0.176 ms, 2 pings)
+11:56:20 STATE UP RELOCK_QUICK
+11:57:19 STATE DOWN no bytes for 1.5 s
+11:57:50 CONNECT <robot-wifi-address>:8111 sender robot_bridge_send 2026-09-24a host cpr-a200-0985 test False
+11:57:50 STATE LOCKING clock
+11:57:50 ANNOUNCE 0 /husky_velocity_controller/odom nav_msgs/Odometry cd5e73d190d741a2f92e81eda573aca7
+11:57:50 ANNOUNCE 1 /imu/data sensor_msgs/Imu 6a62c6daae103f4ff57a132d6f95cec2
+11:57:50 ANNOUNCE 2 /imu/data_raw sensor_msgs/Imu 6a62c6daae103f4ff57a132d6f95cec2
+11:57:50 ANNOUNCE 3 /odometry/filtered nav_msgs/Odometry cd5e73d190d741a2f92e81eda573aca7
+11:57:50 RELOCK_QUICK applied offset 1.704 ms (bound 1.654 ms, spread 0.112 ms, 2 pings)
+11:57:50 STATE UP RELOCK_QUICK
+11:58:00 STATE DOWN no bytes for 1.5 s
+11:58:02 CONNECT <robot-wifi-address>:8111 sender robot_bridge_send 2026-09-24a host cpr-a200-0985 test False
+11:58:02 STATE LOCKING clock
+11:58:02 ANNOUNCE 0 /husky_velocity_controller/odom nav_msgs/Odometry cd5e73d190d741a2f92e81eda573aca7
+11:58:02 ANNOUNCE 1 /imu/data sensor_msgs/Imu 6a62c6daae103f4ff57a132d6f95cec2
+11:58:02 ANNOUNCE 2 /imu/data_raw sensor_msgs/Imu 6a62c6daae103f4ff57a132d6f95cec2
+11:58:02 ANNOUNCE 3 /odometry/filtered nav_msgs/Odometry cd5e73d190d741a2f92e81eda573aca7
+11:58:02 RELOCK_QUICK applied offset 1.808 ms (bound 209.561 ms, spread 37.057 ms, 2 pings)
+11:58:02 STATE UP RELOCK_QUICK
+11:58:26 STATE DOWN no bytes for 1.5 s
+11:58:27 CONNECT <robot-wifi-address>:8111 sender robot_bridge_send 2026-09-24a host cpr-a200-0985 test False
+11:58:27 STATE LOCKING clock
+11:58:27 ANNOUNCE 0 /husky_velocity_controller/odom nav_msgs/Odometry cd5e73d190d741a2f92e81eda573aca7
+11:58:27 ANNOUNCE 1 /imu/data sensor_msgs/Imu 6a62c6daae103f4ff57a132d6f95cec2
+11:58:27 ANNOUNCE 2 /imu/data_raw sensor_msgs/Imu 6a62c6daae103f4ff57a132d6f95cec2
+11:58:27 ANNOUNCE 3 /odometry/filtered nav_msgs/Odometry cd5e73d190d741a2f92e81eda573aca7
+11:58:27 RELOCK_QUICK applied offset 1.742 ms (bound 1.566 ms, spread 0.239 ms, 2 pings)
+11:58:27 STATE UP RELOCK_QUICK
+11:59:51 STATE DOWN no bytes for 1.5 s
+12:00:07 CONNECT <robot-wifi-address>:8111 sender robot_bridge_send 2026-09-24a host cpr-a200-0985 test False
+12:00:07 STATE LOCKING clock
+12:00:07 ANNOUNCE 0 /husky_velocity_controller/odom nav_msgs/Odometry cd5e73d190d741a2f92e81eda573aca7
+12:00:07 ANNOUNCE 1 /imu/data sensor_msgs/Imu 6a62c6daae103f4ff57a132d6f95cec2
+12:00:07 ANNOUNCE 2 /imu/data_raw sensor_msgs/Imu 6a62c6daae103f4ff57a132d6f95cec2
+12:00:07 ANNOUNCE 3 /odometry/filtered nav_msgs/Odometry cd5e73d190d741a2f92e81eda573aca7
+12:00:07 RELOCK_QUICK applied offset 1.378 ms (bound 1.694 ms, spread 0.225 ms, 2 pings)
+12:00:07 STATE UP RELOCK_QUICK
+12:00:47 STATE DOWN no bytes for 1.5 s
+12:00:48 CONNECT <robot-wifi-address>:8111 sender robot_bridge_send 2026-09-24a host cpr-a200-0985 test False
+12:00:48 STATE LOCKING clock
+12:00:48 ANNOUNCE 0 /husky_velocity_controller/odom nav_msgs/Odometry cd5e73d190d741a2f92e81eda573aca7
+12:00:48 ANNOUNCE 1 /imu/data sensor_msgs/Imu 6a62c6daae103f4ff57a132d6f95cec2
+12:00:48 ANNOUNCE 2 /imu/data_raw sensor_msgs/Imu 6a62c6daae103f4ff57a132d6f95cec2
+12:00:48 ANNOUNCE 3 /odometry/filtered nav_msgs/Odometry cd5e73d190d741a2f92e81eda573aca7
+12:00:48 RELOCK_QUICK applied offset 1.208 ms (bound 5.759 ms, spread 2.723 ms, 2 pings)
+12:00:48 STATE UP RELOCK_QUICK
+12:03:16 STATE DOWN no bytes for 1.5 s
+12:03:30 CONNECT <robot-wifi-address>:8111 sender robot_bridge_send 2026-09-24a host cpr-a200-0985 test False
+12:03:30 STATE LOCKING clock
+12:03:30 ANNOUNCE 0 /husky_velocity_controller/odom nav_msgs/Odometry cd5e73d190d741a2f92e81eda573aca7
+12:03:30 ANNOUNCE 1 /imu/data sensor_msgs/Imu 6a62c6daae103f4ff57a132d6f95cec2
+12:03:30 ANNOUNCE 2 /imu/data_raw sensor_msgs/Imu 6a62c6daae103f4ff57a132d6f95cec2
+12:03:30 ANNOUNCE 3 /odometry/filtered nav_msgs/Odometry cd5e73d190d741a2f92e81eda573aca7
+12:03:30 RELOCK_QUICK applied offset 1.004 ms (bound 3.150 ms, spread 1.147 ms, 2 pings)
+12:03:30 STATE UP RELOCK_QUICK
+12:04:29 STATE DOWN no bytes for 1.5 s
+12:04:34 CONNECT <robot-wifi-address>:8111 sender robot_bridge_send 2026-09-24a host cpr-a200-0985 test False
+12:04:34 STATE LOCKING clock
+12:04:34 ANNOUNCE 0 /husky_velocity_controller/odom nav_msgs/Odometry cd5e73d190d741a2f92e81eda573aca7
+12:04:34 ANNOUNCE 1 /imu/data sensor_msgs/Imu 6a62c6daae103f4ff57a132d6f95cec2
+12:04:34 ANNOUNCE 2 /imu/data_raw sensor_msgs/Imu 6a62c6daae103f4ff57a132d6f95cec2
+12:04:34 ANNOUNCE 3 /odometry/filtered nav_msgs/Odometry cd5e73d190d741a2f92e81eda573aca7
+12:04:34 RELOCK_QUICK applied offset 1.401 ms (bound 1.580 ms, spread 0.390 ms, 2 pings)
+12:04:34 STATE UP RELOCK_QUICK
+12:04:39 STATE DOWN no bytes for 1.5 s
+12:04:41 CONNECT <robot-wifi-address>:8111 sender robot_bridge_send 2026-09-24a host cpr-a200-0985 test False
+12:04:41 STATE LOCKING clock
+12:04:41 ANNOUNCE 0 /husky_velocity_controller/odom nav_msgs/Odometry cd5e73d190d741a2f92e81eda573aca7
+12:04:41 ANNOUNCE 1 /imu/data sensor_msgs/Imu 6a62c6daae103f4ff57a132d6f95cec2
+12:04:41 ANNOUNCE 2 /imu/data_raw sensor_msgs/Imu 6a62c6daae103f4ff57a132d6f95cec2
+12:04:41 ANNOUNCE 3 /odometry/filtered nav_msgs/Odometry cd5e73d190d741a2f92e81eda573aca7
+12:04:41 RELOCK_QUICK applied offset 1.288 ms (bound 1.666 ms, spread 12.431 ms, 2 pings)
+12:04:41 STATE UP RELOCK_QUICK
+12:08:00 FINAL {"applied_offset_ns": 1558666, "connects": 13, "elapsed_s": 1811.0, "loop_stall_max_s": 0.0, "loop_stalls": 0, "sender_stats": {"connected": true, "deepest": 52, "dropped": {"/husky_velocity_controller/odom": 133, "/imu/data": 267, "/imu/data_raw": 259, "/odometry/filtered": 674}, "holds": 0, "queue": 0, "received": {"/husky_velocity_controller/odom": 19294, "/imu/data": 37601, "/imu/data_raw": 37601, "/odometry/filtered": 96504}, "sent": {"/husky_velocity_controller/odom": 16957, "/imu/data": 33033, "/imu/data_raw": 33035, "/odometry/filtered": 84795}, "t_robot_ns": 1790510875285820505, "test": false}, "steps": 0, "topics": {"/husky_velocity_controller/odom": {"future": 0, "held_locking": 32, "lost": 35, "missed_while_down": 1180, "out_of_order": 0, "published": 16665, "refused": 0, "stale": 184}, "/imu/data": {"future": 0, "held_locking": 63, "lost": 67, "missed_while_down": 2293, "out_of_order": 0, "published": 32477, "refused": 0, "stale": 359}, "/imu/data_raw": {"future": 0, "held_locking": 64, "lost": 65, "missed_while_down": 2293, "out_of_order": 0, "published": 32479, "refused": 0, "stale": 358}, "/odometry/filtered": {"future": 0, "held_locking": 161, "lost": 168, "missed_while_down": 5906, "out_of_order": 0, "published": 83350, "refused": 0, "stale": 925}}, "unknown_frames": 0}
+12:08:00 EXIT

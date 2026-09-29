@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!--
+  f3dof.launch - OUR wrapper (2026-09-26), on the robot card in slam_series2/tools/colleague_variants/.
+  Runs the colleague's replay pipeline EXACTLY as "replay_lidar.sh <run> colleague" does
+  (self_navigation 3dreplay_pipeline.launch sensor:=helios, unchanged, not copied) and adds ONE
+  parameter to its mapping node: Reg/Force3DoF=true (the map may only move in x, y and turn;
+  it may not believe the robot tipped or climbed). Nothing of the colleague's file is edited:
+  the value is placed in the node's own parameter space before it starts, and RTAB-Map reads
+  every parameter it knows from there. Proof per run: Info.parameters of the new database
+  differs from the colleague-mode database in Reg/Force3DoF only (param_diff.txt).
+-->
+<launch>
+  <arg name="db_dir"/>
+  <param name="/rtabmap/rtabmap/Reg/Force3DoF" type="string" value="true"/>
+  <include file="$(find self_navigation)/launch/3dreplay_pipeline.launch">
+    <arg name="sensor" value="helios"/>
+    <arg name="db_dir" value="$(arg db_dir)"/>
+  </include>
+</launch>

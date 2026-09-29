@@ -1,0 +1,12 @@
+tf_one_parent_check: listening to /tf and /tf_static for 5.0 s on http://127.0.0.1:11311
+  parent                   -> child                        topic                msgs/s  published by
+  base_link                -> zedx_front_base_link         /tf_static              0.2  /zedx_front/zedx_front_state_publisher
+  odom                     -> base_link                    /tf                    41.0  /ekf_fused
+  zedx_front_base_link     -> zedx_front_camera_center     /tf_static              0.2  /zedx_front/zedx_front_state_publisher
+  zedx_front_camera_center -> zedx_front_left_camera_frame /tf_static              0.2  /zedx_front/zedx_front_state_publisher
+  zedx_front_camera_center -> zedx_front_right_camera_frame /tf_static              0.2  /zedx_front/zedx_front_state_publisher
+  zedx_front_left_camera_frame -> zedx_front_imu_link          /tf_static              0.2  /zedx_front/zed_node
+  zedx_front_left_camera_frame -> zedx_front_left_camera_optical_frame /tf_static              0.2  /zedx_front/zedx_front_state_publisher
+  zedx_front_right_camera_frame -> zedx_front_right_camera_optical_frame /tf_static              0.2  /zedx_front/zedx_front_state_publisher
+  odom's parent(s): none heard (odom is a root, or absent)
+  PASS: 9 frames, 8 parent->child lines, 207 messages in 5.0 s

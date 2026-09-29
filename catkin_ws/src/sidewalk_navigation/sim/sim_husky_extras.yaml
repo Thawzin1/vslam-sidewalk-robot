@@ -1,0 +1,8 @@
+# SIM ONLY (loaded through HUSKY_CONFIG_EXTRAS by run_sim_dryrun.sh). Clearpath's control.yaml sets
+# wheel_separation_multiplier 1.875 - a calibration for the REAL Husky's tyres scrubbing on a real floor. In Gazebo
+# the same value makes the simulated Husky turn about 1.5 times faster than commanded (turn_probe.py, run 3:
+# commanded 0.2 / 0.3 / 0.4 / 0.6 rad/s -> true 0.31 / 0.38 / 0.60 / 0.90 rad/s), and move_base then overshoots every
+# turn on the spot (run 4, goal B1: 100 s of hunting). 1.875 / 1.5 = 1.25 restores "turns at the commanded rate" in
+# the simulator. The real robot's controller is NOT touched.
+husky_velocity_controller:
+  wheel_separation_multiplier: 1.25

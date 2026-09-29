@@ -1,0 +1,13 @@
+{
+  "source_database": "/media/administrator/USB Drive/slam_series2/s2_static_08/lidar_ref_f3dof/rtab_helios.db",
+  "pose_kind": "corrected",
+  "label": "LiDAR estimate (Force3DoF replay), s2_static_08",
+  "loop_closures": 87,
+  "tool": "tools/db/db_corrected_tum.py",
+  "method": "Admin.opt_poses - RTAB-Map's own saved optimisation, full 3D",
+  "exact": true,
+  "poses": 544,
+  "first_node": 1,
+  "last_node": 824,
+  "end_gap_corrected_m": 0.0187
+}

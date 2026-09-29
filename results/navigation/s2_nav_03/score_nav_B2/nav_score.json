@@ -1,0 +1,137 @@
+{
+ "run_dir": "~/.run_records/s2_nav_03/nav_B2",
+ "legs": [
+  {
+   "k": 0,
+   "name": "B1_east_junction",
+   "result": "SUCCEEDED",
+   "time_s": 74.9,
+   "end_estimate_to_goal_m": 0.162,
+   "end_truth_to_goal_m": null,
+   "n_samples": 849,
+   "n_plans": 77,
+   "planned_length_m": 14.65,
+   "driven_length_estimate_m": 14.39,
+   "dev_first_median_m": 0.023,
+   "dev_first_p95_m": 0.057,
+   "dev_first_max_m": 0.09,
+   "dev_force_median_m": 0.005,
+   "dev_force_p95_m": 0.019
+  },
+  {
+   "k": 1,
+   "name": "B2_SE_on_line",
+   "result": "SUCCEEDED",
+   "time_s": 65.2,
+   "end_estimate_to_goal_m": 0.226,
+   "end_truth_to_goal_m": null,
+   "n_samples": 753,
+   "n_plans": 68,
+   "planned_length_m": 14.75,
+   "driven_length_estimate_m": 14.98,
+   "dev_first_median_m": 0.137,
+   "dev_first_p95_m": 0.335,
+   "dev_first_max_m": 0.456,
+   "dev_force_median_m": 0.01,
+   "dev_force_p95_m": 0.053
+  },
+  {
+   "k": 2,
+   "name": "W2_south_line",
+   "result": "ABORTED",
+   "time_s": 20.2,
+   "end_estimate_to_goal_m": 1.3,
+   "end_truth_to_goal_m": null,
+   "n_samples": 302,
+   "n_plans": 51,
+   "planned_length_m": 4.43,
+   "driven_length_estimate_m": 3.01,
+   "dev_first_median_m": 0.004,
+   "dev_first_p95_m": 0.23,
+   "dev_first_max_m": 0.263,
+   "dev_force_median_m": 0.001,
+   "dev_force_p95_m": 0.061
+  },
+  {
+   "k": 3,
+   "name": "B3_SW_widest",
+   "result": "ABORTED",
+   "time_s": 3.7,
+   "end_estimate_to_goal_m": 10.18,
+   "end_truth_to_goal_m": null,
+   "n_samples": 138,
+   "n_plans": 32,
+   "planned_length_m": 10.29,
+   "driven_length_estimate_m": 0.05,
+   "dev_first_median_m": 0.0,
+   "dev_first_p95_m": 0.0,
+   "dev_first_max_m": 0.001,
+   "dev_force_median_m": 0.001,
+   "dev_force_p95_m": 0.002
+  },
+  {
+   "k": 4,
+   "name": "B4_start_mark",
+   "result": "ABORTED",
+   "time_s": 3.7,
+   "end_estimate_to_goal_m": 18.67,
+   "end_truth_to_goal_m": null,
+   "n_samples": 137,
+   "n_plans": 32,
+   "planned_length_m": 25.81,
+   "driven_length_estimate_m": 0.04,
+   "dev_first_median_m": 0.0,
+   "dev_first_p95_m": 0.001,
+   "dev_first_max_m": 0.002,
+   "dev_force_median_m": 0.001,
+   "dev_force_p95_m": 0.002
+  }
+ ],
+ "N1": {
+  "pass": false,
+  "reached": 2,
+  "goals": 5,
+  "line": "every goal: move_base SUCCEEDED within its time limit, robot estimate <= 0.50 m from the goal"
+ },
+ "N2": {
+  "pass_software_part": false,
+  "unplanned_stops": [
+   {
+    "t": 2.051,
+    "goal": 0,
+    "why": "deadman button released"
+   },
+   {
+    "t": 74.851,
+    "goal": 0,
+    "why": "deadman button released"
+   },
+   {
+    "t": 86.501,
+    "goal": 1,
+    "why": "deadman button released"
+   },
+   {
+    "t": 208.95,
+    "goal": 4,
+    "why": "Jetson: pause file"
+   }
+  ],
+  "line": "no stop by the safety layer except the planned end of each leg; collisions and hand-overs are judged by the user on the spot (PROTOCOL.md)"
+ },
+ "N3": {
+  "dev_first_median_m": 0.03,
+  "dev_first_p95_m": 0.235,
+  "dev_force_median_m": 0.005,
+  "dev_force_p95_m": 0.036,
+  "n": 2179
+ },
+ "N4": {
+  "largest_correction_step_m": null,
+  "largest_correction_step_deg": null,
+  "steps_over_0.3m": 0,
+  "driven_m_by_wheels_blend": 0.0,
+  "n_fixes": null,
+  "note": "no position samples matched the wheel log in time, so fixes cannot be placed by distance"
+ }
+}

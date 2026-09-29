@@ -1,0 +1,27 @@
+{
+ "source_db": "~/slam_series2/localise/s2_static_10_map.db",
+ "source_sha256_16": "98f71ed1b18f5e73",
+ "opened": "read-only, sqlite immutable=1",
+ "rows": 802,
+ "cols": 675,
+ "resolution_m": 0.05000000074505806,
+ "origin_xy_m": [
+  -10.524999618530273,
+  -21.69523048400879
+ ],
+ "extent_m": {
+  "x": [
+   -10.524999618530273,
+   23.225000884383917
+  ],
+  "y": [
+   -21.69523048400879,
+   18.404770113527775
+  ]
+ },
+ "cells": {
+  "unknown": 427362,
+  "free": 92736,
+  "occupied": 21252
+ }
+}

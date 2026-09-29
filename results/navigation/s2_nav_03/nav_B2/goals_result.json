@@ -1,0 +1,96 @@
+{
+ "run": "s2_nav_03",
+ "goals_file": "<repo>/catkin_ws/src/sidewalk_navigation/goals_d10_route_B2.yaml",
+ "results": [
+  {
+   "k": 0,
+   "name": "B1_east_junction",
+   "goal": [
+    14.3,
+    0.0,
+    -90
+   ],
+   "result": "SUCCEEDED",
+   "time_s": 74.9,
+   "t_send_rel": 0.308,
+   "end_estimate": [
+    14.141,
+    -0.032,
+    -1.323
+   ],
+   "dist_estimate_to_goal_m": 0.162
+  },
+  {
+   "k": 1,
+   "name": "B2_SE_on_line",
+   "goal": [
+    14.6,
+    -14.62,
+    180
+   ],
+   "result": "SUCCEEDED",
+   "time_s": 65.2,
+   "t_send_rel": 85.253,
+   "end_estimate": [
+    14.58,
+    -14.395,
+    -2.908
+   ],
+   "dist_estimate_to_goal_m": 0.226
+  },
+  {
+   "k": 2,
+   "name": "W2_south_line",
+   "goal": [
+    10.5,
+    -14.62,
+    180
+   ],
+   "result": "ABORTED",
+   "time_s": 20.2,
+   "t_send_rel": 160.501,
+   "end_estimate": [
+    11.799,
+    -14.67,
+    3.047
+   ],
+   "dist_estimate_to_goal_m": 1.3
+  },
+  {
+   "k": 3,
+   "name": "B3_SW_widest",
+   "goal": [
+    1.62,
+    -14.9,
+    90
+   ],
+   "result": "ABORTED",
+   "time_s": 3.7,
+   "t_send_rel": 190.758,
+   "end_estimate": [
+    11.798,
+    -14.67,
+    3.047
+   ],
+   "dist_estimate_to_goal_m": 10.18
+  },
+  {
+   "k": 4,
+   "name": "B4_start_mark",
+   "goal": [
+    0.25,
+    0.0,
+    0
+   ],
+   "result": "ABORTED",
+   "time_s": 3.7,
+   "t_send_rel": 204.505,
+   "end_estimate": [
+    11.799,
+    -14.67,
+    3.048
+   ],
+   "dist_estimate_to_goal_m": 18.67
+  }
+ ]
+}

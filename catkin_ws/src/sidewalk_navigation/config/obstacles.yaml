@@ -1,0 +1,18 @@
+# obstacles.yaml - rtabmap_util/obstacles_detection (RTAB-Map 0.21.13): split the camera's points into
+# "floor" and "not floor". Grid/ values are the SAME as rtabmap_zedx.yaml (the settings drive 10's own 2D map
+# was made with), so what counts as an obstacle live matches what counts as a wall on the saved map.
+# Every name exists on this build: `rtabmap --params` (checked 27 Sept 2026); the node's log line
+# "Setting parameter" is the read-back (sim_results/obstacles_detection.log).
+frame_id: base_link
+wait_for_transform: 0.2            # s
+Grid/NormalsSegmentation: "true"   # floor = points whose surface faces up (default true)
+Grid/MaxGroundAngle: "30"          # deg from vertical still counted as floor (rtabmap_zedx.yaml; default 45)
+Grid/MinGroundHeight: "-0.20"      # m relative to base_link (floor at -0.132): rtabmap_zedx.yaml
+Grid/MaxGroundHeight: "0.10"       # m relative to base_link: rtabmap_zedx.yaml
+Grid/MaxObstacleHeight: "1.60"     # m relative to base_link: rtabmap_zedx.yaml
+Grid/CellSize: "0.05"              # m voxel before segmentation (Grid/PreVoxelFiltering default true)
+Grid/NoiseFilteringRadius: "0.09"  # m: rtabmap_zedx.yaml (drop lone points: < 5 neighbours within 9 cm)
+Grid/NoiseFilteringMinNeighbors: "5"
+Grid/ClusterRadius: "0.1"          # default
+Grid/MinClusterSize: "10"          # default
+Grid/FlatObstacleDetected: "true"  # default

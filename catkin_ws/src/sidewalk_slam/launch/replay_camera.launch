@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<!--
+  replay_camera.launch - the ZED X camera played back from its recording (SVO file), for a replay.
+
+  WHY A SEPARATE LAUNCH FILE
+    The wrapper's own launch file starts the camera node with required="true"
+    (zed_wrapper/launch/include/zed_camera.launch.xml:69): when that node exits, roslaunch shuts
+    down EVERY node in the same launch, each with a 15 s limit before it is killed. The node can
+    exit on its own: after a crash (three in one night, 2026-09-26), or at the end of the file on a
+    wrapper build where the exit at zed_wrapper_nodelet.cpp:4015-4020 is reachable (on this build
+    it is not, see docs/REPLAY.md section 4). In one launch that would take RTAB-Map down while its
+    database may still be writing. So the camera runs
+    in this launch of its own, and run/replay.sh closes the map in the right order when this one
+    ends - the same split the live drives use (start_drive.sh starts the camera separately).
+
+  WHAT IS SET, AND WHY
+    svo_file           the recording; zedx_front.launch passes it to the wrapper, which switches
+                       from the live camera to file playback with the same topics and settings
+    depth_mode         NEURAL = what the drives used (recorded in each run's camera.log)
+    pos_tracking_mode  GEN_2 = what the drives used
+    self_calib         false = freeze the lens geometry at the factory calibration so two replays
+                       of one recording agree; the live drives ran with true
+    svo_realtime       true, set AFTER the include so it beats the yaml: the SDK plays the file at
+                       its recorded speed by the wall clock, dropping frames when the computer is
+                       slower than the camera was (Camera.hpp, svo_real_time_mode). That is what
+                       keeps the pictures in step with the bag, which also plays by the wall clock.
+
+  HOW TO RUN (run/replay.sh does this, after replay_drive.launch is up)
+    roslaunch <this file> svo:=/path/run.svo2
+-->
+<launch>
+  <arg name="svo"/>
+  <arg name="depth_mode"        default="NEURAL"/>
+  <arg name="pos_tracking_mode" default="GEN_2"/>
+  <arg name="self_calib"        default="false"/>
+
+  <include file="$(find sidewalk_perception)/launch/zedx_front.launch">
+    <arg name="svo_file"          value="$(arg svo)"/>
+    <arg name="depth_mode"        value="$(arg depth_mode)"/>
+    <arg name="pos_tracking_mode" value="$(arg pos_tracking_mode)"/>
+    <arg name="self_calib"        value="$(arg self_calib)"/>
+  </include>
+  <param name="/zedx_front/zed_node/general/svo_realtime" type="bool" value="true"/>
+</launch>

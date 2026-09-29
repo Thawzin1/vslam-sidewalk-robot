@@ -1,0 +1,85 @@
+<?xml version="1.0"?>
+<!--
+  sim_nav.launch - the navigation DRY RUN in Gazebo (Jetson, headless). Started by run_sim_dryrun.sh on its OWN
+  ROS master port (11411) and Gazebo port (11445), so it can never touch the live master on 11311.
+
+  What is simulated and what is real code:
+    Gazebo world         = drive 10's saved 2D map pulled up into 1.2 m walls (grid_to_world.py)
+    robot                = Clearpath's own Husky model (husky_gazebo 0.6.10) with its STOCK control stack:
+                           the same twist_mux priorities, the same wheel controller (husky_control), and a
+                           depth camera (the RealSense model, 640 x 480, 87 deg) placed where the ZED X sits
+                           (0.071, 0.02, 0.563 m from base_link, 3.24 deg nose down: robot_frames.yaml)
+    localisation         = STAND-IN (sim_localiser.py): map -> odom corrected from the simulator's truth every
+                           2 s with 5 cm / 1 deg noise, in steps like RTAB-Map's fixes. The real run gets
+                           map -> odom from RTAB-Map.
+    everything else      = the REAL navigation files of this folder: map_server with maps/d10_nav.yaml,
+                           point_cloud_xyz + obstacles_detection (config/obstacles.yaml), move_base
+                           (config/*.yaml); nav_cmd_sender.py, nav_cmd_recv.py and nav_goals.py are started
+                           by run_sim_dryrun.sh.
+-->
+<launch>
+  <arg name="here" default="$(find sidewalk_navigation)"/>
+  <arg name="world" default="$(arg here)/sim/d10_floor.world"/>
+  <param name="/use_sim_time" value="true"/>
+
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name"   value="$(arg world)"/>
+    <arg name="paused"       value="false"/>
+    <arg name="use_sim_time" value="true"/>
+    <arg name="gui"          value="false"/>
+    <arg name="headless"     value="true"/>
+    <arg name="debug"        value="false"/>
+  </include>
+
+  <!-- the Husky at the start mark, facing east; no joystick device in the sim (sim_joy.py stands in) -->
+  <include file="$(find husky_gazebo)/launch/spawn_husky.launch">
+    <arg name="x" value="0.0"/>
+    <arg name="y" value="0.0"/>
+    <arg name="yaw" value="0.0"/>
+    <arg name="joystick" value="false"/>
+  </include>
+
+  <!-- drive 10's saved 2D map -->
+  <node pkg="map_server" type="map_server" name="nav_map_server" args="'$(arg here)/maps/d10_nav_clean.yaml'">
+    <param name="frame_id" value="map"/>
+    <remap from="map" to="/nav/map"/>
+    <remap from="map_metadata" to="/nav/map_metadata"/>
+  </node>
+
+  <!-- 27 Sept (route B touched a wall post the camera could not see): the same walls for the LOCAL (wheel-check)
+       costmap, minus the cells drive 10's own outline drove over (make_local_walls.py) -->
+  <node pkg="map_server" type="map_server" name="nav_map_server_local" args="'$(arg here)/maps/d10_nav_local.yaml'">
+    <param name="frame_id" value="map"/>
+    <remap from="map" to="/nav/map_local"/>
+    <remap from="map_metadata" to="/nav/map_local_metadata"/>
+  </node>
+
+  <!-- STAND-IN for RTAB-Map localisation (sim only). Default: sim_localiser.py, started by run_sim_dryrun.sh
+       (map -> odom corrected from the simulator's truth every 2 s, in steps like RTAB-Map's fixes).
+       localiser:=static holds map -> odom at identity instead (wheel odometry alone). -->
+  <arg name="localiser" default="truth"/>
+  <node if="$(eval localiser == 'static')" pkg="tf2_ros" type="static_transform_publisher" name="sim_map_to_odom"
+        args="0 0 0 0 0 0 map odom"/>
+
+  <!-- camera depth -> points -> floor / not-floor (same nodes and settings as the real run) -->
+  <node pkg="nodelet" type="nodelet" name="nav_points" args="standalone rtabmap_util/point_cloud_xyz">
+    <remap from="depth/image"       to="/realsense/depth/image_rect_raw"/>
+    <remap from="depth/camera_info" to="/realsense/depth/camera_info"/>
+    <remap from="cloud"             to="/nav/camera_cloud"/>
+    <param name="decimation" value="4"/>   <!-- 640x480 -> 160x120 points at 30 Hz = ~0.58 M points/s, the same load as the real ZED at decimation 8 and 15 Hz (sim run 8 starved move_base at decimation 2) -->
+    <param name="voxel_size" value="0.05"/>
+    <param name="max_depth"  value="4.0"/>
+    <param name="approx_sync" value="false"/>
+  </node>
+  <node pkg="nodelet" type="nodelet" name="nav_obstacles" args="standalone rtabmap_util/obstacles_detection">
+    <rosparam command="load" file="$(arg here)/config/obstacles.yaml"/>
+    <remap from="cloud"     to="/nav/camera_cloud"/>
+    <remap from="obstacles" to="/nav/obstacles_cloud"/>
+    <remap from="ground"    to="/nav/ground_cloud"/>
+  </node>
+
+  <include file="$(arg here)/launch/move_base_nav.launch">
+    <arg name="here" value="$(arg here)"/>
+    <arg name="odom_topic" value="/odometry/filtered"/>
+  </include>
+</launch>

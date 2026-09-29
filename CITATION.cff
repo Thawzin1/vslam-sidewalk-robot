@@ -1,0 +1,37 @@
+cff-version: 1.2.0
+message: "If you use this software or its results, please cite it as below."
+title: "VSLAM-Based Navigation for Autonomous Sidewalk Robots"
+type: software
+authors:
+  - family-names: Zin
+    given-names: Thaw
+    affiliation: "McMaster University (Mitacs Globalink 2026)"
+version: "1.0.0"
+date-released: 2026-09-30
+license: MIT
+repository-code: "https://github.com/Thawzin1/vslam-sidewalk-robot"
+abstract: >-
+  Visual SLAM (RTAB-Map with a ZED X stereo camera, blended with wheel and gyroscope readings) for a
+  Clearpath Husky A200 sidewalk robot on a Jetson AGX Orin: mapping, localisation on a saved map,
+  continued mapping sessions and goal-driven navigation, evaluated against an independent LiDAR
+  estimate. Mitacs Globalink 2026 project at McMaster University, supervised by Prof. Moein Mehrtash.
+keywords:
+  - visual SLAM
+  - RTAB-Map
+  - ZED X
+  - Husky A200
+  - sidewalk robot
+  - ROS Noetic
+references:
+  - type: article
+    title: "RTAB-Map as an open-source lidar and visual SLAM library for large-scale and long-term online operation"
+    authors:
+      - family-names: Labbé
+        given-names: Mathieu
+      - family-names: Michaud
+        given-names: François
+    journal: "Journal of Field Robotics"
+    volume: 36
+    issue: 2
+    year: 2019
+    doi: 10.1002/rob.21831

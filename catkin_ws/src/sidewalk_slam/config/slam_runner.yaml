@@ -1,0 +1,102 @@
+# =============================================================================
+# slam_runner.yaml — how to drive each SLAM stack over one recorded input.
+#
+# Read by scripts/slam_runner.py. Everything the runner executes lives here as
+# plain text rather than being buried in Python, so that a supervisor can read
+# exactly what was run without opening any code, and so that changing the
+# experiment does not mean editing a script.
+#
+# PLACEHOLDERS available in every command string:
+#   {input}        path to the recording (rosbag or SVO2 file)
+#   {rate}         playback rate multiplier
+#   {run_id}       identifier shared by all three stacks in one comparison
+#   {camera_name}  camera namespace, e.g. zedx_front
+#   {node_name}    ZED wrapper node name, e.g. zed_node
+#   {settings}     ORB-SLAM3 settings file path
+#   {db}           RTAB-Map database path for this run
+#   {pkg}          absolute path to this package
+#
+# WHY THE STACKS RUN ONE AT A TIME
+#   It is tempting to run all three simultaneously on the same live topics -
+#   one pass instead of three. Do not. RTAB-Map, ORB-SLAM3 and the ZED SDK each
+#   want most of the CPU and, in the SDK's case, the GPU. Run together on an
+#   AGX Orin they starve each other, and each one's *timing* degrades by a
+#   different amount. You would then be measuring which algorithm degrades most
+#   gracefully under contention, and reporting it as accuracy.
+#
+#   Running sequentially over the same recording costs three times the wall
+#   clock and buys a comparison that means something.
+# =============================================================================
+
+input:
+  # Rosbag playback. --clock is mandatory: it publishes simulated time so that
+  # every node stamps its output with the RECORDED time, not the time of the
+  # replay. Without it, two replays of the same bag produce trajectories with
+  # different timestamps and cannot be compared pose-for-pose.
+  bag_play_cmd: "rosbag play --clock --rate {rate} --queue 1000 {input}"
+
+  # SVO2 playback goes through the camera stack, because an SVO2 file is a ZED
+  # SDK container that only the SDK can decode. This command must match the
+  # launch API that sidewalk_perception actually exposes - edit it here if that
+  # package changes, rather than editing the runner.
+  svo_play_cmd: "roslaunch sidewalk_perception svo_playback.launch svo_file:={input} camera_name:={camera_name}"
+
+  # Seconds to keep the stack alive after playback ends, so that in-flight
+  # frames finish being processed and RTAB-Map's final graph optimisation
+  # completes before anything is shut down.
+  cooldown_s: 10.0
+
+stacks:
+
+  # ---------------------------------------------------------------------
+  # PRIMARY. RTAB-Map consuming ZED X depth + rectified colour + IMU.
+  # ---------------------------------------------------------------------
+  rtabmap:
+    enabled: true
+    label: "RTAB-Map (primary)"
+    # Paths are single-quoted because the repository directory name contains a
+    # space ("<repo folder>"). An unquoted path there splits into two
+    # roslaunch arguments and produces a baffling "invalid argument" error.
+    launch: "roslaunch '{pkg}/launch/rtabmap_mapping.launch' camera_name:={camera_name} node_name:={node_name} use_sim_time:=true database_path:='{db}' delete_db_on_start:=true rtabmap_viz:=false rviz:=false"
+    # RTAB-Map has to load the vocabulary-free but still substantial memory
+    # structures and open the database before it will accept data.
+    warmup_s: 8.0
+    recorder:
+      source: tf
+      fixed_frame: map
+      body_frame: base_link
+      rate: 20.0
+
+  # ---------------------------------------------------------------------
+  # BASELINE 1. The ZED SDK's own visual-inertial positional tracking.
+  # ---------------------------------------------------------------------
+  zed_sdk:
+    enabled: true
+    label: "ZED SDK positional tracking (baseline)"
+    # No SLAM node is launched here at all: the tracking runs inside the ZED
+    # wrapper, which the playback command already starts. All this stack needs
+    # is a recorder pointed at the wrapper's pose output.
+    launch: ""
+    warmup_s: 3.0
+    recorder:
+      source: topic
+      topic: "/{camera_name}/{node_name}/pose"
+      type: pose
+    # The wrapper must be started with positional tracking enabled and TF
+    # publishing turned OFF - see config/zed_positional_tracking.yaml.
+
+  # ---------------------------------------------------------------------
+  # BASELINE 2. ORB-SLAM3, stereo or stereo-inertial.
+  # ---------------------------------------------------------------------
+  orbslam3:
+    enabled: true
+    label: "ORB-SLAM3 (baseline)"
+    launch: "rosrun sidewalk_slam run_orbslam3.py --settings '{settings}' --run-id {run_id} --mode stereo --camera-name {camera_name} --node-name {node_name}"
+    # The ORB vocabulary is ~145 MB of text and takes 20-40 s to load on the
+    # Orin. Any frame that arrives during that window is simply lost, so the
+    # warmup here is long on purpose.
+    warmup_s: 45.0
+    # run_orbslam3.py collects the trajectory itself from ORB-SLAM3's own
+    # output file, so no separate recorder is needed.
+    recorder:
+      source: none

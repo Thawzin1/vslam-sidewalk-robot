@@ -1,0 +1,125 @@
+<?xml version="1.0"?>
+<!--
+  husky_real_gazebo.launch - the real Husky (cpr-a200-0985) in Gazebo,
+  drivable via /cmd_vel.
+
+  Does NOT include husky_gazebo/spawn_husky.launch. That file pulls in
+  husky_control/control.launch, which unconditionally includes
+  husky_description/launch/description.launch - overwriting robot_description
+  with the STOCK Husky xacro. The real robot's description (sensor arch,
+  Ouster, GPS antenna, PACS grid) would be silently replaced by a plain
+  Husky. This file loads husky_real.urdf itself and starts only what's
+  needed on top of it: the controller spawner, robot_state_publisher, and a
+  plain relay from /cmd_vel.
+
+  husky_real.urdf is a patched copy of the mirror's husky_full.urdf - the
+  source-only Ouster Gazebo plugin swapped for the equivalent, already
+  installed Velodyne one, and a duplicate plugin name resolved.
+
+  Driving: the real robot's own control.launch wires /cmd_vel through
+  twist_mux (priority arbitration between joystick/nav/etc). This uses a
+  plain topic_tools/relay instead - one predictable hop, no config file to
+  get wrong while learning the rest of the stack. Swap in twist_mux later if
+  multiple command sources ever need arbitrating.
+-->
+<launch>
+
+  <arg name="world" default="$(find sidewalk_sim)/worlds/office.world"
+       doc="office.world is the multi-room office floor (corridor + four
+            rooms) used for the camera/SLAM demo. office2.world is a larger
+            15-room, 24x18 m office building with a closed-loop corridor -
+            use it via husky_office2_gazebo.launch, which sets this arg for
+            you (see that file for why). indoor.world (a single open room)
+            is still available for plain driving practice."/>
+  <arg name="gui"   default="true"
+       doc="Gazebo's own 3D view. Leave false and watch in RViz instead over
+            ssh -X - llvmpipe software rendering forwards gzclient too
+            slowly to be usable."/>
+  <arg name="rviz"  default="false"
+       doc="real_robot.rviz still carries one un-vetted display
+            (PointCloud2 on /rtabmap/cloud_map, see docs/SOLVED.md's 11GB
+            livelock entry) — off by default to match the rest of the
+            project's map-viewer-off-by-default pattern; opt in deliberately."/>
+
+  <arg name="zedx" default="false"
+       doc="Mount a ZED X on the real robot. Pose is a launch arg so it can
+            be moved and re-spawned without editing any file - see
+            zedx_parent/zedx_xyz/zedx_rpy below."/>
+  <arg name="zedx_parent" default="zedx_base_frame"
+       doc="Link the camera's position is measured from. zedx_base_frame is
+            the ZED X's own dedicated mount point on the sensor arch, built
+            into husky_real.urdf - not shared with anything else. D05 - a
+            PACS cell on the main deck - also still works, for an unrelated,
+            lower mount."/>
+  <arg name="zedx_xyz" default="0 0 0"
+       doc="Position relative to zedx_parent, metres (x y z) - a temporary,
+            try-it-and-see nudge on top of zedx_base_frame's own position.
+            Normally 0 0 0; edit the frame itself in husky_real.urdf for a
+            permanent move."/>
+  <arg name="zedx_rpy" default="0 0 0"
+       doc="Facing the robot's front, no tilt - per the actual bracket."/>
+  <arg name="zedx_stereo" default="false"
+       doc="true = model the ZED X as a true two-lens stereo pair (multicamera
+            sensor, real Gaussian image noise, left/right topics) instead of
+            the noise-free depth camera. The Phase-1 honest-covariance fix;
+            see zedx_mount.urdf.xacro."/>
+  <arg name="zedx_noise_stddev" default="0.005"
+       doc="Per-camera Gaussian image noise in stereo mode, unitless [0,1]
+            per channel (0.005 ~ 1.3 grey levels). Ignored when
+            zedx_stereo=false."/>
+
+  <arg name="spawn_z" default="0.1"
+       doc="Height the robot is dropped from, metres. 0.1 is right for a world
+            whose drivable surface is the ground plane at z=0 (office.world,
+            indoor.world). A world with a RAISED surface needs more or the robot
+            spawns inside it - sidewalk.world puts the pavement at z=0.15 and
+            uses 0.35. It only has to clear the surface; the robot settles."/>
+  <arg name="spawn_x" default="0.0"/>
+  <arg name="spawn_y" default="0.0"
+       doc="Where the robot starts, in WORLD coordinates. Both default to 0
+            because office.world and sidewalk.world are built around an origin
+            the robot can sit on. A world whose origin is not on the drivable
+            surface must override them - marc_sidewalk_driveway.world measures
+            +Y from the building frontage, so its walkway centreline is y=1.0
+            and spawning at y=0 would put the robot half off the kerb edge."/>
+  <arg name="spawn_yaw" default="0.0"
+       doc="Initial heading, radians. 0 faces +X."/>
+
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(arg world)"/>
+    <arg name="use_sim_time" value="true"/>
+    <arg name="gui" value="$(arg gui)"/>
+    <arg name="paused" value="false"/>
+  </include>
+
+  <param if="$(arg zedx)" name="robot_description"
+         command="$(find xacro)/xacro '$(find sidewalk_sim)/urdf/husky_real_zedx.urdf.xacro'
+                  zedx_parent:=$(arg zedx_parent)
+                  zedx_xyz:='$(arg zedx_xyz)'
+                  zedx_rpy:='$(arg zedx_rpy)'
+                  zedx_stereo:=$(arg zedx_stereo)
+                  zedx_noise_stddev:=$(arg zedx_noise_stddev)"/>
+  <param unless="$(arg zedx)" name="robot_description"
+         textfile="$(find sidewalk_sim)/urdf/husky_real.urdf"/>
+
+  <node name="spawn_husky" pkg="gazebo_ros" type="spawn_model"
+        args="-urdf -param robot_description -model husky
+              -x $(arg spawn_x) -y $(arg spawn_y) -z $(arg spawn_z)
+              -Y $(arg spawn_yaw)"
+        respawn="false" output="screen"/>
+
+  <rosparam command="load" file="$(find husky_control)/config/control.yaml"/>
+
+  <node name="controller_spawner" pkg="controller_manager" type="spawner"
+        args="husky_joint_publisher husky_velocity_controller"/>
+
+  <node name="robot_state_publisher" pkg="robot_state_publisher"
+        type="robot_state_publisher"/>
+
+  <node name="cmd_vel_relay" pkg="topic_tools" type="relay"
+        args="/cmd_vel /husky_velocity_controller/cmd_vel"/>
+
+  <node if="$(arg rviz)" name="rviz" pkg="rviz" type="rviz"
+        args="-d $(find sidewalk_bringup)/config/real_robot.rviz"/>
+
+</launch>

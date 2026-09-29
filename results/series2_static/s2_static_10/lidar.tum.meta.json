@@ -1,0 +1,14 @@
+{
+  "source_database": "/media/administrator/USB Drive/slam_series2/s2_static_10/lidar_ref_f3dof/rtab_helios.db",
+  "pose_kind": "corrected",
+  "label": "LiDAR estimate (Force3DoF replay), s2_static_10",
+  "loop_closures": 76,
+  "tool": "tools/db/db_corrected_tum.py",
+  "method": "Admin.opt_poses - RTAB-Map's own saved optimisation, full 3D",
+  "exact": true,
+  "poses": 947,
+  "first_node": 1,
+  "last_node": 1731,
+  "end_gap_corrected_m": 0.0438,
+  "yardstick": "Force3DoF ('no tipping') replay of the colleague's LiDAR mapping, one parameter changed (Reg/Force3DoF=true); FINDINGS.md section 11. No colleague-mode replay exists for drive 10. provenance.txt's start line reads 2024-06-17 because the robot's clock had not locked when the replay started; the message stamps come from the recording."
+}

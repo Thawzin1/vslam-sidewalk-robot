@@ -1,0 +1,14 @@
+Opening database "~/results_packs_work/s2_static_08/d8.db"...
+Opening database "~/results_packs_work/s2_static_08/d8.db"... done (0.000411s).
+Optimizing the map (Full global optimization)...
+Optimizing the map (Full global optimization)... done (0.030112s, poses=475, links=1093).
+Create and assemble the clouds...
+Create and assemble the clouds... done (19.694192s, 10438712 points).
+Voxel grid filtering of the assembled cloud... (voxel=0.030000, 10438712 points)
+Voxel grid filtering of the assembled cloud.... done! (1.085591s, 1561576 points)
+Computing normals of the assembled cloud... (k=20, 1561576 points)
+Computing normals of the assembled cloud... done! (1.370604s, 1561576 points)
+Adjust normals to viewpoints of the assembled cloud... (1561576 points)
+Adjust normals to viewpoints of the assembled cloud... (5.318024s, 1561576 points)
+Saving ~/results_packs_work/s2_static_08/d8_cloud_cloud.ply... (1561576 points)
+Saving ~/results_packs_work/s2_static_08/d8_cloud_cloud.ply... done!

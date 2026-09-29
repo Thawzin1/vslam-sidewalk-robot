@@ -1,0 +1,5 @@
+# Route B2 resumed after a stop in the south doorway (s2_nav_03, 27 Sept 18:57): goals 3-5 of route B2 unchanged.
+goals:
+  - {name: W2_south_line,    x: 10.50, y: -14.62, yaw_deg: 180, timeout_s: 120}  # guide point, no turn
+  - {name: B3_SW_widest,     x: 1.62,  y: -14.90, yaw_deg: 90,  timeout_s: 180}  # clearance 1.13 m: turn to face north
+  - {name: B4_start_mark,    x: 0.25,  y: 0.00,   yaw_deg: 0,   timeout_s: 180}  # turn to face east

@@ -1,0 +1,144 @@
+# =============================================================================
+# sidewalk_evaluation — depth characterization setup
+#
+# Used by scripts/depth_characterization.py. Describes WHERE to read depth from
+# and WHAT distances to test the ZED X at.
+# =============================================================================
+
+# Per-camera namespace. A second ZED X facing the opposite direction is
+# planned; it will be `/zedx_rear/zed_node` and only this line changes.
+camera_namespace: /zedx_front/zed_node
+
+# The ZED ROS wrapper publishes depth in metres as 32FC1 by default. If
+# `openni_depth_mode` is enabled it publishes millimetres as 16UC1 instead;
+# both are handled, and the encoding actually seen is recorded in the results.
+depth_topic: /zedx_front/zed_node/depth/depth_registered
+camera_info_topic: /zedx_front/zed_node/depth/camera_info
+
+# Fraction of image width and height used as the central region of interest.
+# 0.25 gives a 480x300 patch at 1920x1200 -- around 144,000 pixels, plenty for
+# stable statistics.
+#
+# Central, because a 4.6 mm lens covering 73 degrees horizontally carries its
+# largest residual distortion at the edges -- the datasheet quotes -6.7% TV
+# distortion for this lens -- and because the centre is where the wall is most
+# reliably square-on to the optical axis.
+roi_fraction: 0.25
+
+# Distances to characterise, in metres. These all sit inside the ZED X's IDEAL
+# depth range of 1-20 m (it reports depth out to a rated maximum of 35 m, but
+# Stereolabs stops calling that ideal), and they bracket the sidewalk robot's
+# working envelope: 1-2 m is the obstacle-avoidance zone, 5-10 m is where path
+# planning happens, 15 m is where depth is still usable but noticeably
+# degraded.
+#
+# Depth error grows with the SQUARE of range for a fixed 120 mm baseline
+# (error ~ Z^2 * dd / (f * B)), so the useful sample points are spread
+# logarithmically rather than evenly.
+#
+# RECOMMENDED, NOT APPLIED: add 20 m to this list. The datasheet's far
+# accuracy bound is quoted AT 20 m ("< 7% at 20m"), so 20 m is the one
+# distance where a measurement can be compared with a published number
+# instead of with an interpolation. As the list stands, every distance except
+# 1 and 2 m is checked against an interpolated bound, and the far anchor that
+# the whole curve pivots on is never measured at all. The arithmetic for why
+# it matters: at 15 m the bound is 734 mm and is INFERRED; at 20 m it is
+# 1400 mm and is QUOTED. Left unchanged deliberately -- the distance list is
+# the experiment design, changing it changes what the campaign measures, and
+# one variable per experiment is a standing rule of this project. It also
+# needs a wall the camera can see square-on at 20 m, which is a site
+# constraint, not a software one.
+distances_m: [1, 2, 5, 10, 15]
+
+# Frames to average at each distance. 200 frames is about 7 seconds at 30 FPS
+# -- long enough for the temporal noise estimate to settle, short enough that
+# nobody has to hold a tripod steady for a minute.
+frames_per_distance: 200
+
+# =============================================================================
+# HOW TO ACTUALLY RUN THIS EXPERIMENT
+#
+# 1. Find a large flat wall. Larger than the field of view at 15 m, which at
+#    73 degrees horizontal means about 22 m wide (2 * 15 * tan(36.5 deg) =
+#    22.2 m). A building face works; an interior corridor does not. If 20 m is
+#    ever added to the distance list, the wall has to be about 30 m wide.
+#
+# 2. TEXTURE IT. A blank painted wall gives a passive stereo matcher nothing to
+#    match, and most pixels return no depth at all. Tape newspaper, a poster,
+#    or anything patterned across the region the camera sees. This is not
+#    cheating -- it isolates depth accuracy from the separate question of
+#    texture dependence, which is characterised on its own.
+#
+# 3. Square the camera to the wall. The script reports the wall tilt it infers
+#    from the plane fit; keep it under about 2 degrees. Beyond that, real
+#    geometry starts being counted as sensor noise.
+#
+# 4. Measure the distance to the LEFT IMAGER'S LENS PLANE, not to the front of
+#    the housing, the tripod screw, or the mounting bracket. On the ZED X those
+#    differ by a couple of centimetres -- ten times the entire error budget at
+#    1 m. Record the tape measure's own resolution too.
+#
+# 5. Run once per distance:
+#       rosrun sidewalk_evaluation depth_characterization.py \
+#           --distance 5 --truth 4.985 --note "outdoor, overcast, brick"
+#
+# 6. Record the LIGHTING. A 4.6 mm f/2.0 lens with NO polarizer behaves very
+#    differently in flat overcast light and in low winter sun. Repeat the
+#    series in the hardest conditions you can find, not just the convenient
+#    ones -- those are exactly the conditions a sidewalk robot will meet and
+#    the ones least likely to appear in a test on a nice day.
+# =============================================================================
+
+# =============================================================================
+# WHERE THE CAMERA SPECIFICATION LIVES -- AND WHY IT IS NOT DUPLICATED HERE
+#
+# There used to be a `datasheet:` block at the bottom of this file listing the
+# lens, field of view, aperture, baseline, depth range and two depth-error
+# figures, with a header saying it was recorded "for traceability". It is gone,
+# on purpose. Read the single source instead:
+#
+#   catkin_ws/src/sidewalk_perception/scripts/perception_common.py  ->  ZEDX
+#
+# which is transcribed field by field, with a per-field [VERIFIED -- section]
+# note, from the manufacturer's own document:
+#
+#   Official Resources/ZED X - ZED X Mini - Datasheet.pdf   (Rev 1.6)
+#
+# WHY REMOVED RATHER THAN CORRECTED. Nothing ever read this block --
+# depth_characterization.py reads only camera_namespace, depth_topic,
+# camera_info_topic, roi_fraction and distances_m from this file, and no other
+# script opens it at all. So it was documentation that looked like
+# configuration, sitting one directory away from the code it claimed to
+# describe, with nothing to keep the two in step. Predictably they went out of
+# step, and every optical figure in the block was wrong:
+#
+#   lens_mm 4          -> 4.6    (Stereolabs sells 2.2 mm and 4.6 mm for this
+#                                 body; there is no 4 mm option)
+#   fov_h_deg 80       -> 73
+#   fov_v_deg 52       -> 45     (52 EXCEEDED the datasheet's stated maximum)
+#   aperture "f/1.8"   -> f/2.0
+#
+# and the two error figures were not merely stale but INVENTED:
+#
+#   error_at_1m_pct  0.2   and   error_at_15m_pct  3.1
+#
+# Neither appears anywhere in the datasheet, which quotes no 1 m figure and no
+# 15 m figure for any model. What it actually publishes for our column is
+#
+#   Depth Accuracy   < 0.4% to 2m (6.6ft)      < 7% at 20m (65.6ft)
+#
+# -- two INEQUALITIES, i.e. upper bounds, not measurements. The script now
+# imports those from ZEDX at start-up, so this file and the script cannot
+# disagree, and it prints the provenance of what it loaded into every results
+# file. Verify with:
+#
+#   rosrun sidewalk_evaluation depth_characterization.py --self-test
+#
+# It needs no camera. It reproduces the two published bounds exactly and
+# prints the whole acceptance curve.
+#
+# IF YOU ARE ABOUT TO ADD A CAMERA NUMBER TO THIS FILE: don't. Add it to
+# perception_common.ZEDX with the datasheet section it came from, and read it
+# from there. Four independent copies of one camera's specification is how the
+# fabricated figures survived as long as they did.
+# =============================================================================

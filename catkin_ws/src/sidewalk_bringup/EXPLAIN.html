@@ -1,0 +1,346 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bringup — Starting the Robot&#x27;s Nervous System — Mitacs VSLAM</title>
+<style>/* ==========================================================================
+   base.css — shared styling for every explainer page in this project.
+
+   Design goals, in priority order:
+     1. Readable by someone with no technical background, on a computer or phone.
+     2. Works with no internet: no web fonts, no CDN, no external anything.
+     3. Prints cleanly, because supervisors print things.
+     4. Respects the reader's light/dark preference.
+   ========================================================================== */
+
+:root {
+  --bg:        #f7f8fa;
+  --surface:   #ffffff;
+  --ink:       #1a1d23;
+  --ink-soft:  #545b68;
+  --ink-faint: #858c99;
+  --line:      #e3e6ec;
+  --accent:    #1f6feb;
+  --accent-bg: #eaf2ff;
+  --warm:      #b45309;
+  --warm-bg:   #fff8ec;
+  --good:      #15803d;
+  --good-bg:   #edfaf0;
+  --gate:      #a16207;
+  --gate-bg:   #fdf6e3;
+  --code-bg:   #f2f4f7;
+  --radius:    10px;
+  --maxw:      920px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:        #0f1115;
+    --surface:   #171a20;
+    --ink:       #e6e9ef;
+    --ink-soft:  #a7aebb;
+    --ink-faint: #7b8291;
+    --line:      #262b34;
+    --accent:    #6aa3ff;
+    --accent-bg: #16233a;
+    --warm:      #f0b25e;
+    --warm-bg:   #2a2015;
+    --good:      #5fd48a;
+    --good-bg:   #14261a;
+    --gate:      #e0b64a;
+    --gate-bg:   #2a2415;
+    --code-bg:   #1e222a;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.68 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
+
+.skip {
+  position: absolute; left: -9999px;
+}
+.skip:focus {
+  left: 8px; top: 8px; z-index: 10; background: var(--accent);
+  color: #fff; padding: 8px 14px; border-radius: 6px;
+}
+
+/* ---------------------------------------------------------------- header --- */
+.hd {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  padding: 30px 0 26px;
+}
+.back {
+  display: inline-block; margin-bottom: 14px;
+  color: var(--accent); text-decoration: none;
+  font-size: 14px; font-weight: 500;
+}
+.back:hover { text-decoration: underline; }
+.crumb { font-size: 13px; color: var(--ink-faint); letter-spacing: .02em; }
+.hd h1 { margin: 6px 0 10px; font-size: 30px; line-height: 1.25; letter-spacing: -.015em; }
+.lede { margin: 0 0 14px; font-size: 18px; color: var(--ink-soft); max-width: 68ch; }
+
+.badge {
+  display: inline-block; padding: 4px 12px; border-radius: 999px;
+  font-size: 12.5px; font-weight: 600; letter-spacing: .03em;
+}
+.s-ready { background: var(--accent-bg); color: var(--accent); }
+.s-done  { background: var(--good-bg);   color: var(--good); }
+.s-gate  { background: var(--gate-bg);   color: var(--gate); }
+.s-wip   { background: var(--warm-bg);   color: var(--warm); }
+
+/* ----------------------------------------------------------------- cards --- */
+main { padding: 26px 20px 60px; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  margin: 0 0 18px;
+}
+.card h2 {
+  margin: 0 0 12px; font-size: 19px; letter-spacing: -.01em;
+  display: flex; align-items: center; gap: 9px;
+}
+.card h3 { margin: 0 0 8px; font-size: 15px; color: var(--ink-soft); }
+.card p  { margin: 0 0 12px; max-width: 70ch; }
+.card p:last-child { margin-bottom: 0; }
+.ic { color: var(--accent); font-size: 15px; }
+
+/* The "in plain language" card is visually distinct — it is the one section
+   a non-technical reader must not miss. */
+.card.hi { border-left: 3px solid var(--accent); background: var(--accent-bg); }
+.card.an { border-left: 3px solid var(--warm);   background: var(--warm-bg); }
+
+.note { font-size: 14.5px; color: var(--ink-soft); font-style: italic; }
+
+/* ----------------------------------------------------------------- lists --- */
+.steps { margin: 0; padding-left: 22px; }
+.steps li { margin-bottom: 9px; max-width: 68ch; }
+.steps li::marker { color: var(--accent); font-weight: 700; }
+
+ul { padding-left: 20px; margin: 0; }
+ul li { margin-bottom: 6px; }
+
+/* -------------------------------------------------------------- concepts --- */
+.concept {
+  border: 1px solid var(--line); border-radius: 8px;
+  padding: 14px 16px; margin-bottom: 12px; background: var(--bg);
+}
+.cterm { font-weight: 700; font-size: 16px; margin-bottom: 8px; }
+.cplain, .ctech { font-size: 15px; margin-bottom: 6px; }
+.ctech { color: var(--ink-soft); }
+.tag {
+  display: inline-block; font-size: 10.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .07em;
+  background: var(--accent); color: #fff;
+  padding: 2px 7px; border-radius: 4px; margin-right: 8px;
+  vertical-align: 1px;
+}
+.tag.t2 { background: var(--ink-faint); }
+
+/* ------------------------------------------------------------------- I/O --- */
+.io { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.iobox { border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; }
+.iobox.in  { border-top: 3px solid var(--accent); }
+.iobox.out { border-top: 3px solid var(--good); }
+@media (max-width: 640px) { .io { grid-template-columns: 1fr; } }
+
+/* -------------------------------------------------------------- commands --- */
+.run { margin-bottom: 16px; }
+.run:last-child { margin-bottom: 0; }
+pre.cmd {
+  background: var(--code-bg); border: 1px solid var(--line);
+  border-radius: 7px; padding: 12px 14px; margin: 0 0 7px;
+  overflow-x: auto;
+}
+pre.cmd code {
+  font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: none; padding: 0; color: var(--ink);
+}
+.rex { font-size: 15px; color: var(--ink-soft); margin: 0 0 0 2px !important; }
+
+code {
+  font: .89em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: var(--code-bg); padding: 1.5px 5px; border-radius: 4px;
+}
+
+/* ---------------------------------------------------------------- tables --- */
+.tbl { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+.tbl th {
+  text-align: left; padding: 9px 12px;
+  border-bottom: 2px solid var(--line); color: var(--ink-soft);
+  font-size: 12.5px; text-transform: uppercase; letter-spacing: .05em;
+}
+.tbl td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.tbl tr:last-child td { border-bottom: none; }
+
+/* Tables must scroll inside their own box rather than pushing the page wide. */
+.card { overflow-x: auto; }
+
+/* ---------------------------------------------------------------- footer --- */
+.ft {
+  margin-top: 30px; padding-top: 18px; border-top: 1px solid var(--line);
+  font-size: 13px; color: var(--ink-faint); text-align: center;
+}
+
+/* ----------------------------------------------------------------- print --- */
+@media print {
+  :root { --bg: #fff; --surface: #fff; --ink: #000; --line: #ccc; }
+  body { font-size: 11pt; }
+  .hd { border-bottom: 2px solid #000; }
+  .back, .skip { display: none; }
+  .card { break-inside: avoid; border: 1px solid #ccc; margin-bottom: 12px; }
+  .card.hi, .card.an { background: #f6f6f6 !important; }
+  a { color: #000; text-decoration: underline; }
+}
+</style></head><body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="hd"><div class="wrap">
+<a class="back" href="../../../docs/index.html">&larr; All phases</a>
+<div class="crumb">Phase 1 &middot; <code>sidewalk_bringup</code></div>
+<h1>Bringup — Starting the Robot&#x27;s Nervous System</h1>
+<p class="lede">The single command that starts everything, and the map of how the robot&#x27;s body parts relate to each other in space.</p>
+<span class="badge s-ready">Ready to run</span>
+</div></header>
+<main id="main" class="wrap">
+<section class="card hi">
+<h2><span class="ic">◆</span> In plain language</h2>
+<p>Think of a robot as a body. The camera is an eye, the wheels are legs, the
+computer is a brain. None of those parts are useful on their own — what makes
+a robot work is that they are connected, and that each one knows where the
+others are.</p>
+<p>This package is that connection. It does two jobs. First, it is the &quot;on
+switch&quot;: one command starts every piece of software in the right order, so
+you never have to remember which of nine programs to launch first. Second, it
+holds the robot&#x27;s body map — a precise description of where the camera sits
+relative to the wheels, measured in millimetres.</p>
+<p>That second job sounds boring. It is the single most common cause of a failed
+robotics experiment. If the software thinks the camera is 10 cm further
+forward than it really is, every measurement the robot makes will be wrong by
+10 cm, and no amount of clever algorithm work will fix it.</p>
+</section>
+<section class="card"><h2>Why this exists</h2>
+<p>A running robot is not one program. It is a dozen programs talking to each
+other at the same time — camera driver, mapping, navigation, logging. Starting
+those by hand is slow and easy to get wrong, and getting the order wrong
+produces confusing failures that look like algorithm bugs.</p>
+<p>Centralising startup means an experiment can be reproduced exactly. That
+matters for research: a result nobody can reproduce is not a result.</p>
+</section>
+<section class="card an"><h2>The physical picture</h2>
+<p>For a mechanical engineer, the body map here is just a <strong>coordinate transform
+chain</strong> — the same thing you build when you stack reference frames in a CAD
+assembly. Each link in the chain says &quot;frame B sits this far, and rotated this
+much, from frame A&quot;.</p>
+<p>The robot&#x27;s chain runs: world → map → odometry → robot base → camera mount →
+camera lens. Any error anywhere in that chain propagates to everything
+downstream, exactly like a tolerance stack-up in an assembly drawing.</p>
+<p>And like a tolerance stack, the error that hurts you most is usually angular.
+A 1 degree mounting error in the camera&#x27;s pitch does almost nothing to an
+object 10 cm away, but it displaces a point 20 m away by about 35 cm. This is
+why the mounting bracket&#x27;s rigidity is a SLAM problem, not just a mechanical
+one.</p>
+</section>
+<section class="card"><h2>What it actually does</h2><ol class="steps">
+<li>Defines every coordinate frame on the robot and how they relate, in a URDF description</li>
+<li>Publishes those relationships continuously so every other program can ask &quot;where is the camera right now?&quot;</li>
+<li>Provides one launch file per phase, so each stage of the project starts with a single command</li>
+<li>Centralises all tunable numbers into YAML config files instead of scattering them through code</li>
+<li>Sets up logging so every run leaves a permanent, timestamped record</li>
+<li>Runs a preflight check that refuses to start if something important is missing</li>
+</ol></section>
+<section class="card"><h2>Key ideas, explained twice</h2>
+<p class="note">Once in everyday words, once in the technical terms you will meet in the literature.</p>
+<div class="concept">
+<div class="cterm">Node</div>
+<div class="cplain"><span class="tag">Plainly</span>One running program that does one job — for example, the program that talks to the camera. A robot runs many at once.</div>
+<div class="ctech"><span class="tag t2">Technically</span>An executable process registered with the ROS master, communicating over TCPROS/UDPROS.</div>
+</div>
+<div class="concept">
+<div class="cterm">Topic</div>
+<div class="cplain"><span class="tag">Plainly</span>A named channel that programs use to broadcast information. The camera publishes pictures to a channel; anyone who wants pictures listens to that channel. The publisher does not know or care who is listening.</div>
+<div class="ctech"><span class="tag t2">Technically</span>A named, typed, many-to-many asynchronous message bus with publisher/subscriber semantics.</div>
+</div>
+<div class="concept">
+<div class="cterm">TF (transform) tree</div>
+<div class="cplain"><span class="tag">Plainly</span>The robot&#x27;s body map — a live, constantly-updated record of where every part is relative to every other part.</div>
+<div class="ctech"><span class="tag t2">Technically</span>A time-indexed directed tree of coordinate frame transforms, queryable at arbitrary timestamps with interpolation.</div>
+</div>
+<div class="concept">
+<div class="cterm">URDF</div>
+<div class="cplain"><span class="tag">Plainly</span>A text file describing the robot&#x27;s physical shape and dimensions — essentially a simplified CAD model the software can read.</div>
+<div class="ctech"><span class="tag t2">Technically</span>Unified Robot Description Format: an XML schema for kinematic and visual robot models.</div>
+</div>
+<div class="concept">
+<div class="cterm">Launch file</div>
+<div class="cplain"><span class="tag">Plainly</span>A recipe listing which programs to start, in what order, with which settings.</div>
+<div class="ctech"><span class="tag t2">Technically</span>An XML declaration of nodes, parameters, remappings and nested includes, executed by roslaunch.</div>
+</div>
+</section>
+<section class="card"><h2>Inputs and outputs</h2><div class="io">
+<div class="iobox in"><h3>Takes in</h3><ul>
+<li><code>config/robot_frames.yaml</code> — the measured physical offsets between robot parts</li>
+<li><code>config/camera_mount.yaml</code> — where the ZED X sits and how it is oriented</li>
+<li>Phase selection, chosen by which launch file you run</li>
+</ul></div>
+<div class="iobox out"><h3>Produces</h3><ul>
+<li>A live TF tree, published continuously on <code>/tf</code> and <code>/tf_static</code></li>
+<li>The robot model on <code>/robot_description</code>, which visualisation tools read</li>
+<li>A timestamped run log in <code>logs/sidewalk_bringup/</code></li>
+<li>A preflight report saying whether the system is fit to run</li>
+</ul></div>
+</div></section>
+<section class="card"><h2>How to run it</h2>
+<div class="run">
+<pre class="cmd"><code>roslaunch sidewalk_bringup preflight.launch</code></pre>
+<p class="rex">Run this FIRST, every session. It checks the camera is detected, the transform chain is complete, disk space is sufficient and no clock skew exists — then tells you plainly whether you are safe to proceed. It changes nothing; it only reports.</p>
+</div>
+<div class="run">
+<pre class="cmd"><code>roslaunch sidewalk_bringup bringup.launch</code></pre>
+<p class="rex">Starts the core system: robot description, transform publishers and logging. This is the foundation every other phase builds on.</p>
+</div>
+<div class="run">
+<pre class="cmd"><code>roslaunch sidewalk_bringup bringup.launch camera:=true</code></pre>
+<p class="rex">The same, plus the ZED X camera driver. Use this once the camera is physically wired.</p>
+</div>
+<div class="run">
+<pre class="cmd"><code>rosrun sidewalk_bringup hello_ros.py</code></pre>
+<p class="rex">A deliberately tiny teaching program. It publishes a counter, subscribes to it, and prints what it receives — demonstrating the publish/subscribe idea in about forty lines. Read the source; it is commented line by line.</p>
+</div>
+<div class="run">
+<pre class="cmd"><code>rosrun rqt_tf_tree rqt_tf_tree</code></pre>
+<p class="rex">Draws the robot&#x27;s body map as a diagram. Every frame should be connected to every other. A frame floating on its own means a transform is missing, and anything depending on it will silently produce wrong answers.</p>
+</div>
+</section>
+<section class="card"><h2>When it goes wrong</h2>
+<table class="tbl"><thead><tr><th>You see this</th><th>It usually means</th><th>Do this</th></tr></thead><tbody>
+<tr><td><code>rqt_tf_tree</code> shows a disconnected frame</td><td>A transform in the chain is not being published, usually a typo in a frame name</td><td>Check the frame names in <code>config/robot_frames.yaml</code> match exactly what the camera driver publishes. Names are case-sensitive and a trailing space will break them.</td></tr>
+<tr><td>Everything starts but no data appears anywhere</td><td><code>ROS_IP</code> is unset, so nodes advertise an address other machines cannot reach</td><td>This exact bug existed on the old system. <code>bringup.launch</code> now sets <code>ROS_IP</code> explicitly — verify with <code>echo $ROS_IP</code>.</td></tr>
+<tr><td><code>roslaunch</code> cannot find the package</td><td>The workspace was not sourced in this terminal</td><td>Run <code>source ~/catkin_ws/devel/setup.bash</code>, then try again. Every new terminal needs this.</td></tr>
+<tr><td>Timestamps look wrong, or data is rejected as too old</td><td>Clock mismatch between machines</td><td>Preflight checks this. Ensure both machines run NTP and agree to within a few milliseconds.</td></tr>
+<tr><td>Preflight reports the camera is missing</td><td>Driver not installed, camera not wired, or daemon not running</td><td>Run <code>tools/health_check.sh</code> for a full diagnosis — it distinguishes these three cases.</td></tr>
+</tbody></table></section>
+<section class="card"><h2>Files in this package</h2><table class="tbl"><tbody>
+<tr><td><code>launch/preflight.launch</code></td><td>Safety check run before every session; reports readiness and changes nothing</td></tr>
+<tr><td><code>launch/bringup.launch</code></td><td>Master startup — the single on switch</td></tr>
+<tr><td><code>urdf/sidewalk_robot.urdf.xacro</code></td><td>The robot&#x27;s physical description: dimensions, frames, camera mounting</td></tr>
+<tr><td><code>config/robot_frames.yaml</code></td><td>Measured offsets between robot parts. Update this whenever hardware moves.</td></tr>
+<tr><td><code>config/camera_mount.yaml</code></td><td>ZED X position and orientation relative to the robot base</td></tr>
+<tr><td><code>scripts/hello_ros.py</code></td><td>Teaching example: publisher, subscriber and service in one commented file</td></tr>
+<tr><td><code>scripts/preflight_check.py</code></td><td>The readiness check logic</td></tr>
+<tr><td><code>scripts/run_logger.py</code></td><td>Shared logging helper used by every package in this project</td></tr>
+</tbody></table></section>
+<section class="card"><h2>Where the logs go</h2>
+<p>Every run of this package writes a timestamped record to <code>logs/sidewalk_bringup/</code>, and adds one summary line to <code>logs/RUNLOG.md</code>. If you want to know what happened during an experiment, that is where to look.</p></section>
+<footer class="ft">Generated by <code>tools/explain.py</code> on 2026-07-20 15:19 &middot; Mitacs Globalink 2026 &middot; Project 50124 &middot; THAW ZIN</footer>
+</main></body></html>

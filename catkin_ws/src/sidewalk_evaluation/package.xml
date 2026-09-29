@@ -1,0 +1,82 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>sidewalk_evaluation</name>
+  <version>0.1.0</version>
+  <description>
+    Phase 5 — quantitative evaluation of mapping and localization performance
+    for the autonomous sidewalk robot.
+
+    This package turns recorded runs into numbers: absolute and relative
+    trajectory error against a reference, drift per distance travelled,
+    loop-closure and relocalization behaviour, processing latency and system
+    load, and depth-sensor characterization against a flat wall at known
+    distances. It then renders those numbers into plots and a single
+    self-contained HTML report that can be emailed or opened offline.
+
+    The core research contribution of the project is a like-for-like comparison
+    of three localization stacks — RTAB-Map (primary), the ZED SDK's own
+    positional tracking, and ORB-SLAM3 — evaluated on identical recorded input.
+    This package is the instrument that performs that comparison.
+
+    All maths is implemented directly on numpy so that the evaluation runs on a
+    freshly flashed Jetson with no extra Python packages installed. The `evo`
+    toolkit may optionally be used as an independent cross-check, but nothing
+    here depends on it.
+  </description>
+
+  <maintainer email="thawzin@users.noreply.github.com">THAW ZIN</maintainer>
+  <license>MIT</license>
+  <author email="thawzin@users.noreply.github.com">THAW ZIN</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- Runtime message and library dependencies. Everything here ships with a
+       standard ROS Noetic desktop install; nothing exotic is required. -->
+  <depend>rospy</depend>
+  <depend>std_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>cv_bridge</depend>
+  <depend>message_filters</depend>
+
+  <!-- The numerical and plotting stack. python3-matplotlib is an exec-only
+       dependency: if it is missing the evaluation still produces every number,
+       it simply omits the figures and says so in the report. -->
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>python3-matplotlib</exec_depend>
+  <exec_depend>python3-psutil</exec_depend>
+
+  <!-- Used to replay recorded runs through each SLAM stack for comparison. -->
+  <exec_depend>rosbag</exec_depend>
+  <exec_depend>rostopic</exec_depend>
+
+  <!-- Sibling package: provides scripts/run_logger.py, the shared logging
+       helper that every node in this project writes through. -->
+  <exec_depend>sidewalk_bringup</exec_depend>
+
+  <export>
+    <!--
+      sidewalk_navigation is deliberately NOT a dependency, even though
+      scripts/nav_run.py reads the run directories that package writes.
+
+      nav_run.py imports nothing from it. It carries its own statement of the
+      run-summary schema and checks incoming files against that, so the two
+      packages agree by verification rather than by construction. Importing the
+      writer's constants would turn that check into a tautology and let a real
+      drift between the packages pass silently, which is the one failure this
+      whole arrangement exists to prevent.
+
+      The practical benefit is the same one that makes the rest of this package
+      ROS-free: a supervisor can copy a run directory onto any computer with
+      neither ROS nor sidewalk_navigation present and still evaluate it.
+
+      The schema itself lives in a comment block duplicated verbatim in
+      sidewalk_navigation/scripts/nav_run_io.py and scripts/nav_run.py. Change
+      one, change the other, in the same commit.
+    -->
+  </export>
+</package>

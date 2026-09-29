@@ -1,0 +1,16 @@
+{
+  "database": "~/slam_series2/s2_static_10.db",
+  "positions": "odometry",
+  "positions_source": "Node.pose - map nodes, tracking alone (= the blend in a fused drive), not corrected",
+  "graph_nodes_corrected": null,
+  "nodes": 1558,
+  "nodes_with_grids": 1547,
+  "duration_s": 1743.8,
+  "path_m_nodes": 257.92,
+  "closed_loop_gap_m": 2.11,
+  "cells_solid": 9896,
+  "cells_free": 129915,
+  "cell_size_m": 0.05000000074505806,
+  "map_width_m": 32.3,
+  "map_height_m": 40.0
+}

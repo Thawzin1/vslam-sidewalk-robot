@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<!--
+  real_robot_model.launch — draw the real Husky's body in RViz on the JETSON.
+
+  WHY THIS IS NEEDED AT ALL
+    The Husky and the Jetson run SEPARATE ROS masters and are not networked to
+    each other. The robot's own master has its `robot_description`; the Jetson's
+    has only the ZED X camera's. So RViz run against the Jetson (where the map
+    lives) shows a map with no robot in it. This publishes a copy of the Husky's
+    description on the Jetson side purely for visualisation.
+
+  WHY joint_state_publisher IS HERE — this is the bit that is easy to miss
+    The four wheel joints (front_left_wheel, front_right_wheel,
+    rear_left_wheel, rear_right_wheel) are type="continuous".
+    robot_state_publisher cannot compute a transform for a movable joint
+    without a joint angle, so with no /joint_states the four wheel links get NO
+    transform and RViz silently draws the robot WITHOUT WHEELS — no error, just
+    a floating body. Observed on run lab_map_01, 2026-08-23.
+
+    The real wheel angles live on the robot's master and do not reach here.
+    joint_state_publisher supplies zeros instead, which is correct for this
+    purpose: in a map view the wheels only need to BE somewhere, and how far
+    each has spun is irrelevant.
+
+  THIS IS VISUALISATION ONLY
+    Nothing here affects mapping, odometry or the map frame. The camera
+    publishes base_link and its own frames; this only hangs the Husky's body
+    links off that same base_link. The URDF was captured from the real robot
+    (cpr-a200-0985) on 2026-08-23 and is checked in so this does not depend on
+    the robot being reachable.
+
+  USAGE
+    roslaunch sidewalk_bringup real_robot_model.launch
+    then in RViz set RobotModel's "Robot Description" to husky_description
+    (config sidewalk_slam/config/lab_real.rviz already does).
+-->
+<launch>
+
+  <!-- Deliberately NOT named robot_description: on the Jetson that name belongs
+       to the ZED X camera's own description, published by the wrapper's state
+       publisher. Overwriting it would break the camera's frames. -->
+  <param name="husky_description"
+         textfile="$(find sidewalk_bringup)/urdf/husky_a200_real.urdf"/>
+
+  <node name="husky_state_publisher" pkg="robot_state_publisher"
+        type="robot_state_publisher" output="screen">
+    <remap from="robot_description" to="husky_description"/>
+    <!-- Listen on a private topic so this cannot be confused with, or fight
+         over, any /joint_states the rest of the system might publish. -->
+    <remap from="joint_states" to="husky_joint_states"/>
+  </node>
+
+  <node name="husky_joint_state_publisher" pkg="joint_state_publisher"
+        type="joint_state_publisher" output="screen">
+    <remap from="robot_description" to="husky_description"/>
+    <remap from="joint_states" to="husky_joint_states"/>
+    <param name="use_gui" value="false"/>
+    <param name="rate" value="5.0"/>
+  </node>
+
+</launch>

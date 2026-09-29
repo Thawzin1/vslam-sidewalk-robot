@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<!--
+  nav_run.launch - the navigation layer (used live 27 Sept 2026, s2_nav_01..03) for the REAL run, on the Jetson's
+  own ROS master (11311), started by start_nav.sh AFTER the localisation is up (start_localise.sh: camera,
+  wheel bridge, the wheels + gyroscope + camera blend (odom -> base_link, /fused/odometry), RTAB-Map in
+  localisation mode on drive 10's map (map -> odom)).
+
+  Adds only:
+    nav_map_server  drive 10's saved 2D map (maps/d10_nav.yaml, exported read-only from the master) on /nav/map
+    nav_points      ZED X depth -> points (rtabmap_util/point_cloud_xyz): the UNMASKED depth, so people are
+                    obstacles here even when the SLAM input blanks them (ENGINEERING_NOTES.md section 5)
+    nav_obstacles   points -> floor / not-floor (rtabmap_util/obstacles_detection, config/obstacles.yaml)
+    move_base       route + wheel commands -> /nav/cmd_vel (config/*.yaml; move_base_nav.launch)
+  The wheel commands reach the robot only through nav_cmd_sender.py (started by start_nav.sh) and
+  nav_cmd_recv.py on the robot (started only after the user's approval, DEPLOY_NOTES.md).
+-->
+<launch>
+  <arg name="here" default="$(find sidewalk_navigation)"/>
+  <arg name="depth_topic"       default="/zedx_front/zed_node/depth/depth_registered"/>
+  <arg name="depth_info_topic"  default="/zedx_front/zed_node/depth/camera_info"/>
+  <arg name="odom_topic"        default="/fused/odometry"/>
+  <arg name="map_yaml"          default="$(arg here)/maps/d10_nav_clean.yaml"/>  <!-- 27 Sept: walls drive 10 drove through removed (make_local_walls.py) -->
+
+  <!-- roslaunch splits args on spaces; the folder path has spaces, hence the single quotes -->
+  <node pkg="map_server" type="map_server" name="nav_map_server" args="'$(arg map_yaml)'">
+    <param name="frame_id" value="map"/>
+    <remap from="map" to="/nav/map"/>
+    <remap from="map_metadata" to="/nav/map_metadata"/>
+  </node>
+
+  <!-- 27 Sept (route B touched a wall post the camera could not see): the same walls for the LOCAL (wheel-check)
+       costmap, minus the cells drive 10's own outline drove over (make_local_walls.py) -->
+  <node pkg="map_server" type="map_server" name="nav_map_server_local" args="'$(arg here)/maps/d10_nav_local.yaml'">
+    <param name="frame_id" value="map"/>
+    <remap from="map" to="/nav/map_local"/>
+    <remap from="map_metadata" to="/nav/map_local_metadata"/>
+  </node>
+
+  <node pkg="nodelet" type="nodelet" name="nav_points" args="standalone rtabmap_util/point_cloud_xyz">
+    <remap from="depth/image"       to="$(arg depth_topic)"/>
+    <remap from="depth/camera_info" to="$(arg depth_info_topic)"/>
+    <remap from="cloud"             to="/nav/camera_cloud"/>
+    <param name="decimation"  value="8"/>    <!-- 1920x1200 -> 240x150 points: ~3 cm apart at 4 m, finer than a 5 cm cell -->
+    <param name="voxel_size"  value="0.05"/>
+    <param name="max_depth"   value="4.0"/>  <!-- m: nearer than 1 m the ZED gives nothing (min_depth 1.0) -->
+    <param name="approx_sync" value="false"/> <!-- depth and its camera_info carry the same stamp -->
+  </node>
+  <node pkg="nodelet" type="nodelet" name="nav_obstacles" args="standalone rtabmap_util/obstacles_detection">
+    <rosparam command="load" file="$(arg here)/config/obstacles.yaml"/>
+    <remap from="cloud"     to="/nav/camera_cloud"/>
+    <remap from="obstacles" to="/nav/obstacles_cloud"/>
+    <remap from="ground"    to="/nav/ground_cloud"/>
+  </node>
+
+  <include file="$(arg here)/launch/move_base_nav.launch">
+    <arg name="here" value="$(arg here)"/>
+    <arg name="odom_topic" value="$(arg odom_topic)"/>
+  </include>
+</launch>

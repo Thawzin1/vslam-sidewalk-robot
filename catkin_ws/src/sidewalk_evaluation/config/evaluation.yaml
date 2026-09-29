@@ -1,0 +1,157 @@
+# =============================================================================
+# sidewalk_evaluation — evaluation parameters
+#
+# Phase 5, Weeks 9-10: "Conduct experiments and evaluate mapping/localization
+# performance."
+#
+# Everything here is a decision about HOW a number is computed. Change one and
+# the numbers change, so every value is justified in a comment. If you alter a
+# value, note it in logs/RUNLOG.md alongside the run — otherwise two results in
+# this repository will not be comparable and nobody will be able to tell why.
+# =============================================================================
+
+metrics:
+
+  # How the estimated trajectory is placed into the reference frame before
+  # absolute error is measured.
+  #   se3     rigid: rotation and translation only. THE DEFAULT, and the
+  #           correct choice for this project. The ZED X is a stereo camera
+  #           with a 120 mm baseline and a metric IMU, so scale is directly
+  #           observable and an error in it is a real error that must not be
+  #           optimised away.
+  #   sim3    also solves for scale. Correct for MONOCULAR systems, which
+  #           cannot know scale. Use here only as a diagnostic.
+  #   origin  aligns only the first few poses. Shows raw accumulated drift
+  #           rather than the best possible global fit. Harsher, and closer to
+  #           what a robot navigating from a known start actually experiences.
+  #   none    no alignment; assumes both are already in the same frame.
+  align_mode: se3
+
+  # Maximum time difference for a pose in one trajectory to be matched with a
+  # pose in the other, in seconds.
+  #
+  # 20 ms is deliberately tight. At walking pace (~1.4 m/s) a 20 ms mismatch is
+  # 2.8 cm of genuine motion that gets charged to the algorithm as error --
+  # already comparable to a good ATE. Loosening this makes the numbers look
+  # WORSE, not better, and hides clock-synchronisation problems that ought to
+  # be fixed rather than tolerated.
+  max_time_diff_s: 0.02
+
+  # Separations at which relative pose error is evaluated.
+  # Suffix "m" = metres of reference path, "s" = seconds, "frames" = poses.
+  # Metres is preferred: it makes a slow careful run comparable with a fast one.
+  #   1 m   local, per-step quality -- essentially visual odometry accuracy
+  #  10 m   the scale at which a sidewalk robot plans around an obstacle
+  #  50 m   the scale at which drift starts to matter for reaching a goal
+  rpe_deltas: ["1m", "10m", "50m", "1s"]
+
+  # Segment lengths for KITTI-style drift, in metres. Drift is reported as a
+  # percentage of distance travelled, averaged over every segment of each
+  # length. Several lengths are used because the SHAPE of the curve is
+  # diagnostic: flat means error grows in proportion to distance (well-behaved);
+  # rising means a systematic heading bias, whose position error grows with the
+  # SQUARE of distance.
+  #
+  # These are shorter than KITTI's 100-800 m because a sidewalk test route is
+  # tens to hundreds of metres, not kilometres.
+  drift_segment_lengths_m: [5, 10, 20, 40, 80]
+
+  # Physical limit used to distinguish a pose-graph correction (the estimate
+  # teleporting when the back-end re-optimises) from real motion. A
+  # Clearpath-style differential-drive base on a sidewalk is limited to roughly
+  # 1.0-2.0 m/s; anything faster than this in the pose stream is not motion.
+  # Raise it if the platform is actually faster, or every fast straight section
+  # will be misread as a loop closure.
+  max_speed_mps: 2.0
+
+  # Closed-loop drift proxy (used when there is no motion-capture reference).
+  # loop_return_radius_m: how close, IN THE ESTIMATE'S OWN COORDINATES, a later
+  #   pose must come to the start for the route to count as closed. Generous,
+  #   because a drifting estimate may report itself several metres from a start
+  #   it is physically standing on.
+  # loop_min_path_m: below this the operator's parking accuracy dominates the
+  #   drift being measured, and the number describes the driver, not the robot.
+  loop_return_radius_m: 1.5
+  loop_min_path_m: 10.0
+
+
+# =============================================================================
+# Pose sources recorded by trajectory_recorder.py
+#
+# Topic names are namespaced per camera (`zedx_front`). A second ZED X facing
+# the opposite direction is planned; when it arrives it becomes `zedx_rear` and
+# nothing else in this project has to change.
+#
+# Set `enabled: false` on any stack that is not running rather than deleting
+# the entry -- keeping the topic name written down is how the next person
+# discovers what it was called.
+# =============================================================================
+
+sources:
+
+  # RTAB-Map: the primary system. Record the LIVE localization pose, not a
+  # post-hoc trajectory export. The live stream is the only place the
+  # pose-graph corrections are visible; an exported trajectory has already had
+  # them applied and will show no loop closures at all.
+  rtabmap:
+    enabled: true
+    topic: /rtabmap/localization_pose
+    type: PoseWithCovarianceStamped
+    status_topic: /rtabmap/info
+
+  # The ZED SDK's own visual-inertial positional tracking, running inside the
+  # SDK on the same frames. A strong baseline: it has privileged access to the
+  # factory stereo calibration and the 200 Hz IMU. (This said 400 Hz until
+  # 2026-08-29; 400 Hz is the older ZED 2's rate. The ZED X datasheet states
+  # 200 Hz in two separate tables. Nothing in this file's configuration
+  # depends on the rate, so no value changes — only the description.)
+  zed:
+    enabled: true
+    topic: /zedx_front/zed_node/pose
+    type: PoseStamped
+    status_topic: /zedx_front/zed_node/status
+
+  # ORB-SLAM3, stereo-inertial. Publishes through the small ROS bridge in
+  # sidewalk_slam. Disabled by default because it must be built and started
+  # separately.
+  orbslam3:
+    enabled: false
+    topic: /orb_slam3/camera_pose
+    type: PoseStamped
+    status_topic: /orb_slam3/tracking_state
+
+  # Wheel odometry from the robot base. Completely independent of vision, which
+  # makes it a genuinely useful cross-check: a visual failure and an odometry
+  # failure have no common cause. It has its own unbounded heading drift and is
+  # degraded by wheel slip on wet concrete, so it is a sanity reference over
+  # tens of metres, not hundreds.
+  wheel_odom:
+    enabled: true
+    topic: /odometry/filtered
+    type: Odometry
+
+
+# =============================================================================
+# Experiment protocol
+#
+# Not read by any script. Written here because the protocol is part of the
+# method, and a config file is the one document that stays with the code.
+# =============================================================================
+
+protocol:
+  repeats_per_route: 3            # drift is a random walk; one run is one sample
+  min_route_length_m: 50          # below this, drift is lost in parking error
+  warmup_stationary_s: 5          # lets every stack initialise before motion
+  mark_start_physically: true     # chalk a cross AND a heading line
+  record_parking_error: true      # the noise floor of the closed-loop method
+  record_conditions: true         # lighting, weather, pedestrian density, speed
+
+  # Two ways to obtain identical input for all three stacks. Do both, and
+  # always say which produced a given number.
+  #   concurrent  all three live on one Jetson. Honest about real-time
+  #               behaviour, but they compete for CPU and GPU, so the cost
+  #               figures belong to the configuration and not to any one stack.
+  #   replay      record one rosbag, replay it once per stack. Perfectly
+  #               identical input and clean per-stack cost figures, but no
+  #               longer evidence of real-time performance.
+  comparison_mode: concurrent

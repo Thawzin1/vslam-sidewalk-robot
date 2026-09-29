@@ -1,0 +1,801 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Perception — Giving the Robot Eyes, and Proving They Work — Mitacs VSLAM</title>
+<style>/* ==========================================================================
+   base.css — shared styling for every explainer page in this project.
+
+   Design goals, in priority order:
+     1. Readable by someone with no technical background, on a computer or phone.
+     2. Works with no internet: no web fonts, no CDN, no external anything.
+     3. Prints cleanly, because supervisors print things.
+     4. Respects the reader's light/dark preference.
+   ========================================================================== */
+
+:root {
+  --bg:        #f7f8fa;
+  --surface:   #ffffff;
+  --ink:       #1a1d23;
+  --ink-soft:  #545b68;
+  --ink-faint: #858c99;
+  --line:      #e3e6ec;
+  --accent:    #1f6feb;
+  --accent-bg: #eaf2ff;
+  --warm:      #b45309;
+  --warm-bg:   #fff8ec;
+  --good:      #15803d;
+  --good-bg:   #edfaf0;
+  --gate:      #a16207;
+  --gate-bg:   #fdf6e3;
+  --code-bg:   #f2f4f7;
+  --radius:    10px;
+  --maxw:      920px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:        #0f1115;
+    --surface:   #171a20;
+    --ink:       #e6e9ef;
+    --ink-soft:  #a7aebb;
+    --ink-faint: #7b8291;
+    --line:      #262b34;
+    --accent:    #6aa3ff;
+    --accent-bg: #16233a;
+    --warm:      #f0b25e;
+    --warm-bg:   #2a2015;
+    --good:      #5fd48a;
+    --good-bg:   #14261a;
+    --gate:      #e0b64a;
+    --gate-bg:   #2a2415;
+    --code-bg:   #1e222a;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.68 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
+
+.skip {
+  position: absolute; left: -9999px;
+}
+.skip:focus {
+  left: 8px; top: 8px; z-index: 10; background: var(--accent);
+  color: #fff; padding: 8px 14px; border-radius: 6px;
+}
+
+/* ---------------------------------------------------------------- header --- */
+.hd {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  padding: 30px 0 26px;
+}
+.back {
+  display: inline-block; margin-bottom: 14px;
+  color: var(--accent); text-decoration: none;
+  font-size: 14px; font-weight: 500;
+}
+.back:hover { text-decoration: underline; }
+.crumb { font-size: 13px; color: var(--ink-faint); letter-spacing: .02em; }
+.hd h1 { margin: 6px 0 10px; font-size: 30px; line-height: 1.25; letter-spacing: -.015em; }
+.lede { margin: 0 0 14px; font-size: 18px; color: var(--ink-soft); max-width: 68ch; }
+
+.badge {
+  display: inline-block; padding: 4px 12px; border-radius: 999px;
+  font-size: 12.5px; font-weight: 600; letter-spacing: .03em;
+}
+.s-ready { background: var(--accent-bg); color: var(--accent); }
+.s-done  { background: var(--good-bg);   color: var(--good); }
+.s-gate  { background: var(--gate-bg);   color: var(--gate); }
+.s-wip   { background: var(--warm-bg);   color: var(--warm); }
+
+/* ----------------------------------------------------------------- cards --- */
+main { padding: 26px 20px 60px; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  margin: 0 0 18px;
+}
+.card h2 {
+  margin: 0 0 12px; font-size: 19px; letter-spacing: -.01em;
+  display: flex; align-items: center; gap: 9px;
+}
+.card h3 { margin: 0 0 8px; font-size: 15px; color: var(--ink-soft); }
+.card p  { margin: 0 0 12px; max-width: 70ch; }
+.card p:last-child { margin-bottom: 0; }
+.ic { color: var(--accent); font-size: 15px; }
+
+/* The "in plain language" card is visually distinct — it is the one section
+   a non-technical reader must not miss. */
+.card.hi { border-left: 3px solid var(--accent); background: var(--accent-bg); }
+.card.an { border-left: 3px solid var(--warm);   background: var(--warm-bg); }
+
+.note { font-size: 14.5px; color: var(--ink-soft); font-style: italic; }
+
+/* ----------------------------------------------------------------- lists --- */
+.steps { margin: 0; padding-left: 22px; }
+.steps li { margin-bottom: 9px; max-width: 68ch; }
+.steps li::marker { color: var(--accent); font-weight: 700; }
+
+ul { padding-left: 20px; margin: 0; }
+ul li { margin-bottom: 6px; }
+
+/* -------------------------------------------------------------- concepts --- */
+.concept {
+  border: 1px solid var(--line); border-radius: 8px;
+  padding: 14px 16px; margin-bottom: 12px; background: var(--bg);
+}
+.cterm { font-weight: 700; font-size: 16px; margin-bottom: 8px; }
+.cplain, .ctech { font-size: 15px; margin-bottom: 6px; }
+.ctech { color: var(--ink-soft); }
+.tag {
+  display: inline-block; font-size: 10.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .07em;
+  background: var(--accent); color: #fff;
+  padding: 2px 7px; border-radius: 4px; margin-right: 8px;
+  vertical-align: 1px;
+}
+.tag.t2 { background: var(--ink-faint); }
+
+/* ------------------------------------------------------------------- I/O --- */
+.io { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.iobox { border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; }
+.iobox.in  { border-top: 3px solid var(--accent); }
+.iobox.out { border-top: 3px solid var(--good); }
+@media (max-width: 640px) { .io { grid-template-columns: 1fr; } }
+
+/* -------------------------------------------------------------- commands --- */
+.run { margin-bottom: 16px; }
+.run:last-child { margin-bottom: 0; }
+pre.cmd {
+  background: var(--code-bg); border: 1px solid var(--line);
+  border-radius: 7px; padding: 12px 14px; margin: 0 0 7px;
+  overflow-x: auto;
+}
+pre.cmd code {
+  font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: none; padding: 0; color: var(--ink);
+}
+.rex { font-size: 15px; color: var(--ink-soft); margin: 0 0 0 2px !important; }
+
+code {
+  font: .89em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: var(--code-bg); padding: 1.5px 5px; border-radius: 4px;
+}
+
+/* ---------------------------------------------------------------- tables --- */
+.tbl { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+.tbl th {
+  text-align: left; padding: 9px 12px;
+  border-bottom: 2px solid var(--line); color: var(--ink-soft);
+  font-size: 12.5px; text-transform: uppercase; letter-spacing: .05em;
+}
+.tbl td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.tbl tr:last-child td { border-bottom: none; }
+
+/* Tables must scroll inside their own box rather than pushing the page wide. */
+.card { overflow-x: auto; }
+
+/* ---------------------------------------------------------------- footer --- */
+.ft {
+  margin-top: 30px; padding-top: 18px; border-top: 1px solid var(--line);
+  font-size: 13px; color: var(--ink-faint); text-align: center;
+}
+
+/* ----------------------------------------------------------------- print --- */
+@media print {
+  :root { --bg: #fff; --surface: #fff; --ink: #000; --line: #ccc; }
+  body { font-size: 11pt; }
+  .hd { border-bottom: 2px solid #000; }
+  .back, .skip { display: none; }
+  .card { break-inside: avoid; border: 1px solid #ccc; margin-bottom: 12px; }
+  .card.hi, .card.an { background: #f6f6f6 !important; }
+  a { color: #000; text-decoration: underline; }
+}
+</style></head><body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="hd"><div class="wrap">
+<a class="back" href="../../../docs/index.html">&larr; All phases</a>
+<div class="crumb">Phase 2 &middot; <code>sidewalk_perception</code></div>
+<h1>Perception — Giving the Robot Eyes, and Proving They Work</h1>
+<p class="lede">Brings the stereo camera online, proves the pictures it produces are trustworthy, and turns them into the two things the navigation system needs: what is in the way, and where the pavement stops.</p>
+<span class="badge s-ready">Ready to run</span>
+</div></header>
+<main id="main" class="wrap">
+<section class="card hi">
+<h2><span class="ic">◆</span> In plain language</h2>
+<p>This package does two things. The first is obvious and the second is the one
+that matters.</p>
+<p>The obvious job is turning the camera on. The robot&#x27;s eye is a <strong>ZED X</strong>, a
+stereo camera — two cameras side by side, 12 centimetres apart, like a pair of
+human eyes. Just as your two eyes see slightly different views and your brain
+turns that difference into a sense of depth, this camera compares its two
+images to work out how far away everything is. It also contains a motion
+sensor that reports which way it is tilting and turning, four hundred times a
+second.</p>
+<p>The second job is checking that the camera is telling the truth. That sounds
+paranoid. It is not.</p>
+<p>A camera can fail in ways that are completely invisible. It can quietly skip
+one picture in every fifty when the computer gets busy. It can stamp its
+pictures with times that come from a slightly different clock than everything
+else, so the robot thinks it saw things a fraction of a second later than it
+did. Nothing on the screen looks wrong. No error message appears. The pictures
+look perfect.</p>
+<p>But the whole point of this project is to compare three different mapping
+programs and say which one works best on a sidewalk. If the camera is dropping
+pictures, all three programs get worse — and they get worse by *different*
+amounts. We would then publish a finding about mapping software that was
+really a finding about a loose cable. That is the specific disaster this
+package exists to prevent.</p>
+<p>So these tools sit and watch the camera for fifteen minutes at a time and
+count everything — every picture that arrives, every one that goes missing,
+every clock reading, every gap. At the end they give a plain verdict on
+whether the data can be trusted.</p>
+<p>The package also handles recording. When the robot drives somewhere
+interesting, everything the camera saw is saved to disk, so the three mapping
+programs can each be run on that exact same drive afterwards. And every
+recording gets a written record attached to it describing precisely how it was
+made — which camera, mounted how, in what weather, on which version of the
+software. Without that record a recording becomes useless within months,
+because nobody can remember the details that turn out to matter.</p>
+<p>There is a third job, added later, and it is the one that keeps the robot out
+of trouble. The camera produces an enormous cloud of measured points — roughly
+two million of them, several times a second, each one a place in the world the
+camera can see. Most of those points are simply the pavement. The robot does
+not need to be told about the pavement; it needs to be told what is standing
+ON the pavement, and where the pavement runs out.</p>
+<p>So one of the programs here sorts the points into three piles. It works out
+where the ground surface is, sets that aside as &quot;floor, drive on it&quot;, and
+hands the rest onward as &quot;things to avoid&quot;. That sounds like it should be easy
+— surely anything higher than ten centimetres is an obstacle? — but it is not,
+for a reason anyone who has walked on a pavement will recognise once it is
+pointed out. Pavements are not flat. They are built with a slight sideways
+tilt so rainwater runs off into the gutter instead of pooling. Over the width
+of the area the camera watches, that deliberate tilt adds up to about eight
+centimetres of perfectly normal, perfectly safe height change. And the robot
+itself rocks back on its wheels when it pulls away, tipping the camera up by a
+degree or two, which at the far end of its view lifts everything by twice that
+again. A program that simply measured height would decide the pavement ahead
+was a wall and stop dead. So instead it works out the *slope* of the ground
+each time it looks, and measures everything relative to that. Tilt and rocking
+then cancel out, and what is left sticking up is genuinely sticking up.</p>
+<p>The last pile is the important one: the edge. A kerb is not an object sitting
+on the pavement — it is the pavement itself suddenly changing level, usually
+by about the width of a hand. The program looks for those sudden changes and,
+crucially, notices which way they go. A step UP is a kerb the robot cannot
+climb, which is a nuisance. A step DOWN is the edge of the road, and that is
+far more dangerous, because a drop is invisible to anything looking for tall
+objects — there is nothing there to see. The ground simply stops. The robot
+would read that as clear space and drive straight off it. So drops are treated
+as the most serious thing this package reports, and are marked in a way that
+the navigation system cannot talk itself out of believing.</p>
+<p>Two honest limitations are worth stating plainly. First, the camera cannot see
+the ground right in front of the robot: because of where it is mounted and how
+wide its view is, the nearest patch of ground it can see is about ninety
+centimetres beyond the robot&#x27;s front edge. Anything that appears in that gap
+without first being seen from further away is invisible. Second, the further
+away something is, the vaguer the camera&#x27;s sense of exactly where it is, and
+beyond about five metres the uncertainty about where a kerb edge lies grows
+larger than the kerb is useful at. So the program deliberately stops reporting
+kerbs past that distance rather than reporting them badly. There is an
+unresolved question sitting underneath that second limitation, and it should
+not be buried: to keep up with the camera the program throws away most of the
+points before it looks for edges, and depending on exactly how that thinning
+falls, kerb detection may in fact fade out nearer than five metres — perhaps
+around four. It would do so without complaining. Nobody has measured it,
+because no camera is connected. Until somebody does, treat five metres as the
+distance the program is *aiming* at, not one it is known to reach.</p>
+</section>
+<section class="card"><h2>Why this exists</h2>
+<p>The central contribution of this project is a fair three-way comparison —
+RTAB-Map against the ZED SDK&#x27;s own tracker against ORB-SLAM3 — on identical
+recorded input. Two things have to be true for that comparison to mean
+anything, and this package is responsible for both.</p>
+<p>First, the input has to be sound. A comparison run on a stream that silently
+drops frames or carries inconsistent timestamps measures the interaction
+between three algorithms and one faulty sensor, not the algorithms. Worse, the
+result would look entirely plausible. There would be numbers, and graphs, and
+a clear winner, and the conclusion would be wrong.</p>
+<p>Second, the input has to be *identical* across the three. Driving the robot
+three times gives three different drives — different light, different
+pedestrians, different tyre slip. Recording once and replaying three times
+removes that entire class of confounding variable, and is also the only way
+the experiment can ever be repeated by somebody else.</p>
+<p>Everything here follows from those two requirements. The validation tools
+exist to establish the first. The recording, replay and dataset-manifest tools
+exist to establish the second.</p>
+</section>
+<section class="card an"><h2>The physical picture</h2>
+<p>A stereo camera is a triangulation instrument, and it obeys the same
+mathematics as any other triangulation instrument. The governing relationship
+is</p>
+<p>Z = f * B / d</p>
+<p>where <strong>Z</strong> is the distance to a point, <strong>f</strong> is the focal length in pixels,
+<strong>B</strong> is the baseline — the 120 mm gap between the two lenses — and <strong>d</strong> is
+the *disparity*, meaning how many pixels the same feature shifts between the
+left and right image. Something close by shifts a lot between the two views.
+Something far away barely shifts at all.</p>
+<p>That last sentence is the whole problem. Depth is inversely proportional to a
+quantity measured in whole pixels, so as distance grows, the measurement being
+relied upon shrinks toward the size of a single pixel. Differentiating the
+relationship gives the error propagation</p>
+<p>sigma_Z ~= Z^2 * sigma_d / (f * B)</p>
+<p>Depth uncertainty grows with the <strong>square</strong> of distance. Double the distance
+and you quadruple the error. This is not a limitation of this particular
+camera or of clever software — it is geometry, and no algorithm can escape it.</p>
+<p>Putting real numbers in makes it concrete. At 1920 pixels wide with the
+datasheet&#x27;s 73 degree horizontal field of view, the 4.6 mm lens works out to
+about 1297 pixels of focal length. With a 120 mm baseline and assuming the
+stereo matcher can locate a feature to within a quarter of a pixel, the
+predicted uncertainty is about 6 mm at 2 m and about 0.64 m at 20 m — which
+is 0.32% and 3.2% of the distance.</p>
+<p>Those two distances are chosen because they are the only two at which the
+manufacturer states an accuracy: the datasheet says the error is under 0.4%
+out to 2 m and under 7% at 20 m. The formula&#x27;s 0.32% and 3.2% both sit inside
+those bounds, which is the agreement we want — it confirms that this simple
+model captures what the camera really does, and so can be trusted to predict
+behaviour at distances nobody has measured yet.</p>
+<p>A correction worth recording, because it is the kind of mistake that hides
+well. Until 2026-08-29 this passage compared the formula against &quot;0.2% at
+1 m and 3.1% at 15 m&quot; and reported close agreement. Those two figures are not
+in the datasheet. They had been written from memory somewhere in this
+project&#x27;s history and then quoted onward as though the manufacturer had said
+them, and the &quot;agreement&quot; was between a formula and an invention. The lens
+focal length (4 mm, really 4.6) and the field of view (80 degrees, really 73)
+were wrong in the same passage and for the same reason. All are now read off
+the datasheet PDF in <code>Official Resources/</code>.</p>
+<p>This is also why the camera is rated 1 m to 35 m and not further. It is a
+design trade-off of exactly the kind found in any instrument. A wider baseline
+would improve distant accuracy — but it would also enlarge the region close to
+the camera where the two lenses cannot both see the same thing, raising that
+1 m floor, and it would make the whole assembly bigger and harder to mount
+rigidly. 120 mm is the compromise chosen for this camera&#x27;s intended range.</p>
+<p><strong>Why the mount is a perception problem, not just a bracket.</strong> The camera-to-
+wheels transform is a datum, and errors in it propagate exactly like a
+tolerance stack-up in an assembly. Angular error dominates, because its effect
+scales with distance — a 1 degree pitch error is negligible for something
+10 cm away but displaces a point 20 m away by about 35 cm. And a bracket that
+flexes is worse than one that is merely misaligned. A fixed misalignment is a
+constant offset that calibration can remove; a flexing bracket makes the datum
+a function of acceleration, which nothing can remove after the fact. Bracket
+stiffness is a mapping-accuracy specification.</p>
+<p><strong>Why the global shutter matters.</strong> This camera exposes every pixel of the
+sensor at the same instant. A cheaper rolling-shutter sensor exposes one row
+after another, taking a few milliseconds to sweep from top to bottom. On a
+stationary tripod nobody notices. On a robot rolling over paving joints, the
+top and bottom of a single image are captured at measurably different moments,
+so a vertical post photographed while the robot vibrates comes out leaning —
+and the amount of lean depends on the vibration at that instant. Every
+straight line in the scene becomes a slightly different shape in every frame.
+A mapping algorithm trying to recognise a place it has been before is then
+matching against geometry that changes with the suspension. A global shutter
+removes that entire failure mode, which is why it is worth paying for on a
+vehicle that vibrates.</p>
+<p><strong>Why exposure time is a mechanical quantity here.</strong> At a walking pace of
+1.5 m/s, a 30 millisecond exposure smears the scene across 4.5 cm of travel.
+Visual mapping works by tracking sharp corners between frames, and motion blur
+destroys corners. A short, slightly noisy exposure beats a clean, long one on
+a moving robot. This is why the camera settings cap the automatic exposure
+rather than letting it choose freely in low light.</p>
+<p>---</p>
+<p><strong>Where the ground actually starts, and the blind zone that follows.</strong> The
+camera&#x27;s left lens sits 0.695 m above the *floor*, tilted 3.24 degrees down,
+with a 45 degree vertical field of view. The bottom edge of its picture
+therefore points 3.24 + 22.5 = 25.74 degrees below horizontal, and simple
+trigonometry says that ray meets the ground at</p>
+<p>x = 0.695 / tan(25.74 deg) = 1.44 m</p>
+<p>ahead of the lens. The lens is 0.071 m ahead of the wheel axle, so the
+nearest visible ground is 1.51 m ahead of the robot&#x27;s centre. The front
+bumper is at 0.495 m. <strong>There is a band 1.02 m deep, the full width of the
+robot, in which this camera never sees the ground at all.</strong> Not &quot;sees it
+poorly&quot; — never sees it. At the 0.6 m/s speed cap that is about 1.7 seconds
+of travel.</p>
+<p>It is worth checking whether the camera&#x27;s 1 m minimum range makes this worse.
+It does not. The slant distance to that first ground point is
+0.695 / sin(25.74 deg) = 1.60 m, but the camera measures distance along its
+optical axis rather than along the ray, which multiplies by cos(22.5 deg) and
+gives 1.48 m. That clears the 1 m floor by 48 cm. Tilt the camera down far
+enough and the minimum-range limit takes over from the field-of-view limit —
+the blind zone stops shrinking no matter how much more you tilt — but at the
+measured 3.24 degrees that crossover is not close. This is the real
+trade-off behind the mounting angle, and it is a geometry problem, not a
+preference.</p>
+<p><strong>Three corrections are folded into the paragraphs above, and every one of
+them moved the blind zone in the same, dangerous direction — outward.</strong> Each
+was found separately, and each had made the robot look as though it could see
+more ground than it can.</p>
+<p>The first two were about the mount. Until 2026-08-29 this page said the
+camera was 0.62 m up and tilted 5 degrees down, and put the blind band at
+0.89 m. Those were placeholder figures that had never been measured. The
+mount was then measured — tape to the housing plus the camera&#x27;s own internal
+offsets read from the live transform tree, and the tilt measured twice by
+two methods that share no failure mode. Separately, the software that
+derives these figures was found to be reading the camera&#x27;s height in the
+wrong reference: the robot&#x27;s coordinate origin sits 0.13228 m above the
+floor, and a height measured from that origin had been used as though it
+were a height above the ground. That made every figure here describe a
+camera 132 mm lower than the real one.</p>
+<p>The third was about the camera itself, and it is the one this page most
+deserved to be caught on. The vertical field of view had been recorded as
+52 degrees. <strong>The manufacturer&#x27;s datasheet says the ZED X sees at most 45
+degrees vertically</strong> — so 52 was not a rounding, it was above the stated
+maximum, and therefore wrong at every setting the camera has. It had been
+written from memory rather than read from the document. A field of view that
+is too wide tips the bottom edge of the picture further down than the lens
+can really look, so the ground appears to come into view sooner than it does.</p>
+<p>Put together, the blind band has been reported as 0.58 m, then 0.82 m, and is
+really 1.02 m. <strong>Under-reporting a blind zone is the dangerous direction to
+be wrong in</strong> — it claims the robot is blind over a shorter stretch of ground
+than it really is, and the argument that the speed cap keeps the stopping
+distance inside that stretch is built on its length. Any older document
+quoting 0.58 m, 0.82 m or 0.89 m predates the corrections. The lesson the
+project has taken from it: read the specification sheet, do not recall it.</p>
+<p><strong>Why the ground must be fitted rather than assumed.</strong> The instinct is to
+call anything above 10 cm an obstacle. Three ordinary facts defeat it, and all
+three push the same way:</p>
+<p>- Pavements carry a 1-2% *camber* — a deliberate cross-slope so water drains
+  to the gutter. Across the 8 m-wide strip the camera watches, 2% is 0.08 m of
+  genuine, drivable height change.
+- The robot pitches on its tyres under acceleration. Just 1.5 degrees of nose-
+  up tilts the whole measurement; at 8 m ahead that is 8 x tan(1.5 deg) =
+  0.21 m, twice the entire obstacle threshold.
+- Driveway aprons and kerb ramps run to 8%, which is 4.6 degrees.</p>
+<p>Each of those is, to first order, exactly a plane. So the software fits a
+plane to the measured points each frame and measures heights relative to *it*.
+Camber, pitch and gradient all live in the fitted plane and vanish from the
+residual, and what remains is what is genuinely standing proud of the
+pavement. This is the same reasoning as levelling an instrument before taking
+readings, except it is redone every tenth of a second because the &quot;instrument&quot;
+is bolted to something with suspension.</p>
+<p><strong>Why the plane fit must be told roughly where to look.</strong> The standard
+robust-fitting method (RANSAC) picks the plane supported by the most points.
+It has no concept of &quot;ground&quot;. On a narrow sidewalk with a building along one
+side, the wall routinely returns *more* points than the pavement: it faces the
+camera more squarely, so it collects far more pixels per square metre, and
+brick is better textured than plain concrete. Unconstrained, the fit happily
+declares the <strong>wall</strong> to be the ground — at which point the pavement becomes a
+10 m tall obstacle, the wall becomes drivable, and the robot turns into the
+building. This is not an exotic edge case; it is the default outcome in that
+geometry, and the self-test reproduces it deliberately: with the constraint
+removed the fit returns a plane tilted 90 degrees.</p>
+<p>The fix costs nothing, because the answer is already known approximately. The
+robot is standing on the ground, so in the robot&#x27;s own coordinate frame the
+ground passes through height zero with its normal pointing up. Candidate
+planes are therefore rejected if they tilt more than 10 degrees from
+horizontal or sit more than 0.15 m from the origin. Ten degrees comfortably
+swallows camber plus pitch plus a driveway ramp (about 7 degrees at worst) and
+misses a wall by a factor of nine. That gap — 7 degrees of real world versus
+90 degrees of wall — is what makes such a crude gate sufficient.</p>
+<p><strong>A kerb is a discontinuity, not an object.</strong> This distinction drives the
+whole detector. A kerb is not a thing resting on the ground; it is the ground
+surface itself stepping to a new level, typically 100-150 mm. So it is found
+by comparing the height of neighbouring patches of ground and looking for a
+sudden jump, not by looking for something tall.</p>
+<p>The sign of that jump matters enormously, and the two cases are not
+symmetric. A step <strong>up</strong> is a kerb the robot cannot climb: unpleasant, but a
+collision with it is a bump. A step <strong>down</strong> is the edge of the roadway, and
+it defeats obstacle detection twice over. The road surface lies *below* the
+ground plane, so a height filter finds nothing there; and the camera&#x27;s rays
+pass over the lip and land beyond it, so the usual &quot;this ray travelled through
+empty space&quot; logic actively *erases* the cells at the edge. Left alone, the
+navigation system&#x27;s considered opinion of a 150 mm drop into traffic is &quot;free
+space&quot;. Drops are therefore reported at the *near* lip rather than the far
+side, and are additionally injected as artificial obstacles at robot height so
+that even a misconfigured costmap refuses to cross them.</p>
+<p><strong>Why kerb detection stops at about 4 m, and why the obvious reason is the
+wrong one.</strong> Range error grows as the square of distance, roughly
+0.002 x Z^2 metres for this camera. The intuitive worry is height noise, but
+the grazing geometry works in our favour: a ray aimed at the ground far ahead
+is nearly horizontal, so only sin(depression angle) of the range error lands
+in the vertical direction. Working it through, the vertical noise is about
+0.002 x 0.695 x Z — <strong>linear</strong> in distance, not quadratic — giving 7 mm at
+5 m and 14 mm at 10 m. Against a 120 mm kerb, neither is fatal.</p>
+<p>What actually binds is *where along the ground* the edge appears to be. The
+same range error slides the point along the pavement by essentially its full
+magnitude: 0.05 m at 5 m, 0.20 m at 10 m, 0.45 m at 15 m. The navigation grid
+has 0.05 m cells, so at 5 m the uncertainty about <strong>where</strong> the kerb is has
+already grown to one whole cell. At 10 m it is four cells, and a kerb smeared
+across 20 cm of ground is not a barrier — it is either a phantom wall across
+the sidewalk or a hole in the real one, depending on which way the noise fell
+that frame. That argument alone would allow kerbs out to 5.0 m.</p>
+<p>A third and tighter limit is what actually sets the figure, and it comes from
+the software rather than the camera. To keep up at 10 Hz the node thins the
+cloud, keeping roughly one point in every 58, and the ground map needs at
+least three surviving points inside a 0.10 m square before it will use that
+square at all. On the pessimistic reading of how the thinning falls across
+the image, squares start coming up empty beyond 4.46 m — and an empty kerb
+report is indistinguishable from &quot;there was no kerb there&quot;. So the shipped
+setting is <strong>3.90 m</strong>, inside that bound rather than outside it. Claiming
+4 m and being reliable within it beats claiming 5 m and being unknowingly
+blind for the last metre.</p>
+<p>(These figures changed on 2026-08-29 along with the mount and field-of-view
+corrections described earlier. The vertical noise coefficient is 0.002 times
+the camera height, so correcting the height from 0.62 m to the true 0.695 m
+raised it by 12 per cent — a higher camera looks down more steeply, so more
+of each range error lands in the vertical direction. Correcting the vertical
+field of view from 52 to the datasheet&#x27;s 45 degrees moved the thinning limit
+the other way, from 4.11 m out to 4.46 m: a narrower view spreads the same
+1200 rows of pixels over less ground, so each square keeps enough points a
+little further out. The shipped 3.90 m therefore sits *further* inside its
+limit than before, which is slack rather than a problem — and it is
+deliberately left where it is, because moving a tuning value in the same
+breath as a specification correction makes it impossible to say afterwards
+which change caused what. This page previously concluded &quot;report kerbs to
+5 m&quot;, which was the depth-noise answer and overlooked the thinning limit
+entirely.)</p>
+<p>One more piece of provenance, because it decides how much to trust the
+numbers above. The 0.002 coefficient is often described in this project as a
+fit to &quot;the datasheet&#x27;s two anchor points, 0.2% at 1 m and 3.1% at 15 m&quot;.
+Neither of those points is in the datasheet. What the manufacturer actually
+publishes is an error under 0.4% out to 2 m and under 7% at 20 m. Those two
+bounds do not lie on a single curve of this shape — the near one implies a
+coefficient of 0.0020 and the far one 0.0035 — so a choice has to be made,
+and 0.002 is the near one. It is therefore the <strong>optimistic</strong> choice, and
+anyone relying on kerb ranges beyond a few metres should know that. Using
+the far bound instead would pull the depth-noise limit from 5.02 m down to
+3.81 m, which is tighter than the shipped 3.90 m setting. Which is right is
+a measurement nobody has made: park the robot a known distance from a
+measured kerb and look at how much the reported distance wanders.</p>
+</section>
+<section class="card"><h2>What it actually does</h2><ol class="steps">
+<li>Starts the ZED X camera and publishes rectified left and right images, a depth image, a point cloud, the motion sensor stream and the camera&#x27;s calibration data</li>
+<li>Keeps every topic and every coordinate frame name tagged with which camera produced it, so a second camera can be added later without a collision</li>
+<li>Measures the real frame rate against the requested frame rate over a sustained fifteen-minute run</li>
+<li>Counts dropped frames two independent ways and explains what it means when the two disagree</li>
+<li>Checks that timestamps never run backwards, never repeat, and never arrive blank</li>
+<li>Measures the spread of the gap between consecutive frames, reporting the worst case rather than the average</li>
+<li>Confirms every sensor stream is stamped from one consistent clock, and detects slow drift between clocks</li>
+<li>Checks the motion sensor is really delivering its rated four hundred readings per second</li>
+<li>Verifies the left and right images of each stereo pair carry exactly the same timestamp</li>
+<li>Reports what fraction of the depth image is actually usable rather than blank</li>
+<li>Audits coordinate frame names in a recording or a live stream, offline, with no camera attached</li>
+<li>Records drives to disk in the camera&#x27;s native format, and replays them so every algorithm sees identical input</li>
+<li>Writes a provenance record for every recording and turns it into a web page a non-technical reader can understand</li>
+<li>Fits the ground surface afresh every frame instead of assuming a flat floor, so that pavement camber and the robot rocking on its wheels are not mistaken for obstacles</li>
+<li>Constrains that fit using the known camera mounting, so a building wall can never be mistaken for the ground</li>
+<li>Publishes the points that genuinely stick up out of the pavement as the live obstacle feed the navigation system steers by</li>
+<li>Detects kerbs as sudden steps in the ground surface rather than as tall objects, and reports which way each step goes</li>
+<li>Treats a drop to the roadway as the most dangerous case, marks it at the near lip, and makes it visible to obstacle logic that would otherwise see empty space</li>
+<li>Stops reporting kerbs beyond the distance at which the camera&#x27;s own depth error makes their position untrustworthy</li>
+<li>Carries a self-test that checks the whole segmentation pipeline on synthetic data with no camera, no ROS and no numpy installed</li>
+</ol></section>
+<section class="card"><h2>Key ideas, explained twice</h2>
+<p class="note">Once in everyday words, once in the technical terms you will meet in the literature.</p>
+<div class="concept">
+<div class="cterm">Stereo disparity</div>
+<div class="cplain"><span class="tag">Plainly</span>How far a given object appears to shift between the left and right image. Hold a finger up and blink each eye in turn — it jumps. Near things jump a lot, far things barely move, and the size of that jump is what reveals distance.</div>
+<div class="ctech"><span class="tag t2">Technically</span>The horizontal pixel offset between corresponding points in a rectified stereo pair, related to depth by Z = fB/d and used to produce a dense disparity map.</div>
+</div>
+<div class="concept">
+<div class="cterm">Depth uncertainty growth</div>
+<div class="cplain"><span class="tag">Plainly</span>The camera is very precise about nearby things and increasingly vague about distant ones, and it gets worse fast — going twice as far away makes the error four times bigger, not twice.</div>
+<div class="ctech"><span class="tag t2">Technically</span>Quadratic error propagation, sigma_Z proportional to Z^2 * sigma_d / (fB), arising from differentiating the inverse relationship between depth and disparity.</div>
+</div>
+<div class="concept">
+<div class="cterm">Baseline</div>
+<div class="cplain"><span class="tag">Plainly</span>The gap between the two lenses, 120 mm on this camera. It is the single most important number for how far away the camera can still judge distance — the same reason your depth perception is better than a bird&#x27;s with eyes on the sides of its head.</div>
+<div class="ctech"><span class="tag t2">Technically</span>The stereo rig&#x27;s inter-camera translation; it scales depth resolution linearly and sets the minimum range through the shared field of view.</div>
+</div>
+<div class="concept">
+<div class="cterm">Global shutter</div>
+<div class="cplain"><span class="tag">Plainly</span>Every part of the picture is captured at the same instant, like a camera flash freezing a moment. The cheaper alternative scans down the image, so a picture taken while shaking comes out warped.</div>
+<div class="ctech"><span class="tag t2">Technically</span>Simultaneous exposure of the full pixel array, eliminating the spatio-temporal skew that rolling-shutter readout introduces under ego-motion and vibration.</div>
+</div>
+<div class="concept">
+<div class="cterm">Dropped frame</div>
+<div class="cplain"><span class="tag">Plainly</span>A picture the camera took but that never reached the software. The robot sees a small jump in time it does not know about, and has to guess what happened during the gap.</div>
+<div class="ctech"><span class="tag t2">Technically</span>A discontinuity in the publisher&#x27;s header sequence counter, indicating loss in the capture, transport or subscriber queue rather than at the sensor.</div>
+</div>
+<div class="concept">
+<div class="cterm">Jitter</div>
+<div class="cplain"><span class="tag">Plainly</span>Pictures are supposed to arrive at a perfectly steady beat. Jitter is how much that beat wobbles. An occasional long pause is far more damaging than a steady slight unevenness.</div>
+<div class="ctech"><span class="tag t2">Technically</span>Variance in inter-frame arrival intervals; the tail of the distribution matters far more than the mean because a single long stall breaks feature tracking continuity.</div>
+</div>
+<div class="concept">
+<div class="cterm">Timestamp and time base</div>
+<div class="cplain"><span class="tag">Plainly</span>The moment written on each picture saying when it was taken. If two sensors write their times using two different clocks, the software will confidently combine readings that did not happen together.</div>
+<div class="ctech"><span class="tag t2">Technically</span>The header stamp, which must derive from a single monotonic time source shared across all sensors; relative clock drift appears as a trend in the header-to-arrival latency.</div>
+</div>
+<div class="concept">
+<div class="cterm">frame_id</div>
+<div class="cplain"><span class="tag">Plainly</span>A label on every measurement saying which part of the robot it was measured from. Without it, a distance is just a number with no idea what it is measured relative to.</div>
+<div class="ctech"><span class="tag t2">Technically</span>The coordinate frame identifier in a message header, resolved against the TF tree; it must be unique per physical sensor to avoid ambiguity when several cameras exist.</div>
+</div>
+<div class="concept">
+<div class="cterm">SVO2 recording</div>
+<div class="cplain"><span class="tag">Plainly</span>A saved copy of everything the camera saw and felt during a drive, which can be played back later exactly as if it were happening live.</div>
+<div class="ctech"><span class="tag t2">Technically</span>The ZED SDK&#x27;s native container storing compressed raw stereo streams plus inertial data, replayed through the SDK so depth is re-derived rather than baked in at record time.</div>
+</div>
+<div class="concept">
+<div class="cterm">Dataset manifest</div>
+<div class="cplain"><span class="tag">Plainly</span>The written record attached to a recording saying exactly how it was made — which camera, mounted how, in what weather, using which software version. The video is unusable without it after a few months.</div>
+<div class="ctech"><span class="tag t2">Technically</span>Structured provenance metadata capturing hardware identity, software versions, calibration state, mount revision and environmental conditions, stored as YAML and JSON beside the recording.</div>
+</div>
+<div class="concept">
+<div class="cterm">Soak test</div>
+<div class="cplain"><span class="tag">Plainly</span>Running something for a long time on purpose, because some faults only show up after ten minutes — things get hot, small errors accumulate, and a weak connection eventually stumbles.</div>
+<div class="ctech"><span class="tag t2">Technically</span>Sustained-load validation revealing thermal throttling, clock drift and low-rate intermittent link errors that short smoke tests cannot distinguish from noise.</div>
+</div>
+<div class="concept">
+<div class="cterm">Ground segmentation</div>
+<div class="cplain"><span class="tag">Plainly</span>Sorting the millions of measured points into &#x27;this is the floor&#x27; and &#x27;this is something on the floor&#x27;. The floor is the boring majority and gets thrown away; what is left is what the robot must avoid.</div>
+<div class="ctech"><span class="tag t2">Technically</span>Partitioning a point cloud by signed distance to an estimated ground surface, yielding a ground-removed obstacle cloud suitable as a costmap marking source.</div>
+</div>
+<div class="concept">
+<div class="cterm">Plane fitting</div>
+<div class="cplain"><span class="tag">Plainly</span>Working out the tilt of the ground each time the camera looks, instead of assuming it is level. Rather like levelling a surveyor&#x27;s instrument before each reading — except it has to be redone ten times a second, because the thing it is bolted to has suspension.</div>
+<div class="ctech"><span class="tag t2">Technically</span>Per-frame estimation of the dominant supporting surface, refined by least squares over the consensus set; absorbs camber, chassis pitch and grade into the model so the residual isolates genuine protrusions.</div>
+</div>
+<div class="concept">
+<div class="cterm">RANSAC</div>
+<div class="cplain"><span class="tag">Plainly</span>A way of finding the pattern that most of the measurements agree on, while ignoring the ones that disagree. It guesses repeatedly from small random samples and keeps whichever guess the most measurements support, so a minority of wildly wrong readings cannot drag the answer off.</div>
+<div class="ctech"><span class="tag t2">Technically</span>Random Sample Consensus: iterative hypothesise-and-verify fitting, robust to a high outlier fraction because the model is generated from minimal samples and scored by inlier count rather than by total squared error.</div>
+</div>
+<div class="concept">
+<div class="cterm">Seeded fit</div>
+<div class="cplain"><span class="tag">Plainly</span>Telling the fitting process roughly where to look before it starts. Without that hint it will confidently pick the biggest flat thing in view, which on a narrow pavement is very often the wall of a building rather than the ground.</div>
+<div class="ctech"><span class="tag t2">Technically</span>Constraining the hypothesis space using a prior from the TF tree — rejecting candidate planes beyond a bounded tilt from vertical or offset from the origin — which eliminates the dominant-vertical-surface failure mode of unconstrained RANSAC.</div>
+</div>
+<div class="concept">
+<div class="cterm">Camber</div>
+<div class="cplain"><span class="tag">Plainly</span>The deliberate sideways slope built into a road or pavement so rainwater runs off it rather than sitting in puddles. Usually one or two percent, which sounds like nothing but adds up to several centimetres across a wide view.</div>
+<div class="ctech"><span class="tag t2">Technically</span>Transverse gradient specified for surface drainage, typically 1-2%; large enough that a fixed-height ground filter cannot distinguish it from a low obstacle at the edges of the field of view.</div>
+</div>
+<div class="concept">
+<div class="cterm">Up-step and down-step</div>
+<div class="cplain"><span class="tag">Plainly</span>Which way the ground jumps at an edge. A step up is a kerb the robot cannot climb. A step down is the drop into the road, and it is far more dangerous — because there is nothing there to see, it looks exactly like clear space.</div>
+<div class="ctech"><span class="tag t2">Technically</span>The sign of the height discontinuity across adjacent ground cells. Positive steps are untraversable geometry; negative steps are negative obstacles, invisible to height-band filters and actively cleared by raytracing, so they require dedicated marking.</div>
+</div>
+<div class="concept">
+<div class="cterm">Negative obstacle</div>
+<div class="cplain"><span class="tag">Plainly</span>A hazard made of absence — a hole, a kerb drop, a missing paving slab. Everything designed to spot obstacles looks for something being there, so a hazard defined by nothing being there slips straight through.</div>
+<div class="ctech"><span class="tag t2">Technically</span>A void or downward discontinuity in the support surface. Fails min_obstacle_height tests by construction and is reinforced rather than corrected by raytrace clearing, hence the near-lip marking and virtual-obstacle injection used here.</div>
+</div>
+<div class="concept">
+<div class="cterm">Costmap observation source</div>
+<div class="cplain"><span class="tag">Plainly</span>A feed of &#x27;here is something in the way&#x27; that the navigation system subscribes to when deciding where it is safe to drive. Each feed has its own settings for how far it is trusted and whether it is allowed to declare space empty again.</div>
+<div class="ctech"><span class="tag t2">Technically</span>A named sensor input to costmap_2d&#x27;s obstacle layer, with independent marking/clearing semantics, height band, obstacle_range, raytrace_range and staleness expectations.</div>
+</div>
+<div class="concept">
+<div class="cterm">Blind zone</div>
+<div class="cplain"><span class="tag">Plainly</span>The patch of ground too close to the robot for the camera to see, because of where it is mounted and how wide its view is. The robot drives through it on memory of what it saw a moment earlier.</div>
+<div class="ctech"><span class="tag t2">Technically</span>The near-field region excluded by the intersection of vertical FOV, mounting height and pitch, and minimum stereo range; bounded here at 1.018 m ahead of the front bumper — computed from the measured mount of 2026-08-29, with the camera height taken above the FLOOR rather than above base_link, and with the vertical FOV taken as the datasheet&#x27;s 45 degrees rather than the 52 degrees this project had been carrying from memory — and mitigated by costmap persistence plus a speed cap rather than by sensing.</div>
+</div>
+</section>
+<section class="card"><h2>Inputs and outputs</h2><div class="io">
+<div class="iobox in"><h3>Takes in</h3><ul>
+<li>The ZED X camera itself, over its GMSL2 coaxial link into the ZED Link Quad capture card</li>
+<li><code>config/zedx_front.yaml</code> — resolution, frame rate, depth quality and exposure settings for the driver</li>
+<li><code>config/validation_thresholds.yaml</code> — what counts as healthy, with the reasoning behind every number</li>
+<li>Previously recorded <code>.svo2</code> files, when replaying instead of using the live camera</li>
+<li>Rosbag files, when auditing a recording after the fact with no camera attached</li>
+<li><code>config/obstacle_segmenter.yaml</code> — every ground, obstacle and kerb threshold, each with its derivation and what measurement would confirm it</li>
+<li><code>sidewalk_bringup/config/robot_frames.yaml</code> — the authoritative camera mounting, read at startup rather than copied, so that re-measuring the robot immediately changes the geometry the segmenter reasons from</li>
+<li>The live transform tree, used to express the camera&#x27;s point cloud in the robot&#x27;s own coordinate frame before anything is measured</li>
+</ul></div>
+<div class="iobox out"><h3>Produces</h3><ul>
+<li>Rectified left and right images, a depth image and a point cloud, all namespaced per camera</li>
+<li>The motion sensor stream at its full four hundred readings per second</li>
+<li>Camera calibration data, which later phases read to configure ORB-SLAM3 rather than hardcoding numbers</li>
+<li>A pass, warn or fail verdict on stream health, with a measured number justifying every single check</li>
+<li>A machine-readable validation report in <code>logs/sidewalk_perception/</code>, for the evaluation phase to load</li>
+<li>SVO2 recordings, and optionally matching rosbags, under <code>data/recordings/</code></li>
+<li>A manifest in YAML and JSON beside every recording, plus a <code>DATASET.html</code> page anyone can read</li>
+<li>An index page listing every dataset and flagging which ones have incomplete records</li>
+<li><code>/sidewalk_perception/obstacles_cloud</code> — the ground-removed obstacle cloud, in the robot&#x27;s frame. This is the feed the local costmap steers by, and navigation preflight treats its absence as a hard failure</li>
+<li><code>/sidewalk_perception/curb_scan</code> — detected kerb and drop edges, as one distance per direction. Never used to declare space empty, only to declare it blocked</li>
+<li><code>/sidewalk_perception/curb_cloud</code> and <code>/sidewalk_perception/ground_cloud</code> — visualisation aids for RViz; nothing in the navigation stack reads them</li>
+<li>A run log recording, for every session, how many frames were processed, how many lacked a transform, and how often the ground fit fell back to its starting assumption</li>
+</ul></div>
+</div></section>
+<section class="card"><h2>How to run it</h2>
+<div class="run">
+<pre class="cmd"><code>rosrun sidewalk_perception perception_common.py</code></pre>
+<p class="rex">Run this first on any new machine. It prints what it can detect — Jetson OS version, ZED SDK version, capture card driver, whether the camera daemon is running, which video devices exist — and then prints the predicted depth uncertainty at a range of distances. It touches no hardware and changes nothing. It is the fastest way to answer whether the camera stack is installed at all.</p>
+</div>
+<div class="run">
+<pre class="cmd"><code>roslaunch sidewalk_perception zedx_front.launch</code></pre>
+<p class="rex">Starts the camera. Everything appears under <code>/zedx_front/</code>, and every coordinate frame carries that same prefix, which is what will let the rear-facing camera be added later without the two colliding.</p>
+</div>
+<div class="run">
+<pre class="cmd"><code>rosrun sidewalk_perception obstacle_segmenter.py --geometry</code></pre>
+<p class="rex">Prints the whole geometric argument with live numbers, and needs no camera, no ROS and no numpy. It reads the camera mounting from sidewalk_bringup rather than assuming it, then derives where the ground first enters view, how deep the resulting blind zone in front of the robot is, how the depth error grows with distance, and every distance at which kerb detection stops being trustworthy — including the ones that depend on how hard the point cloud is thinned, with whichever one actually binds marked. Run this before arguing with any threshold — and run it again after the robot is physically measured, because every number changes with the mounting.</p>
+</div>
+<div class="run">
+<pre class="cmd"><code>rosrun sidewalk_perception obstacle_segmenter.py --self-test</code></pre>
+<p class="rex">Runs seventy checks on synthetic point data using nothing but the Python standard library. It verifies the ground fit, the kerb classifier and the scan conversion, and several cases are deliberately adversarial — one demonstrates that an unconstrained fit really does choose a building wall as the ground, and another that a drop-off is completely invisible to a height filter. Run it after changing any threshold: it also asserts the relationships between thresholds, so it will catch a change that quietly breaks an assumption the algorithm depends on.</p>
+</div>
+<div class="run">
+<pre class="cmd"><code>roslaunch sidewalk_perception obstacle_segmenter.launch</code></pre>
+<p class="rex">Starts the segmenter against an already-running camera, publishing the obstacle cloud and the kerb scan that the navigation costmap subscribes to. This is what closes the critical navigation preflight check. It waits for the camera rather than failing if it starts first, and every ten seconds it logs the fitted ground tilt, the inlier fraction and how many kerb steps it is seeing, which is the quickest way to tell whether it is working or merely running.</p>
+</div>
+<div class="run">
+<pre class="cmd"><code>roslaunch sidewalk_perception validate_sensors.launch</code></pre>
+<p class="rex">The main event. Starts the camera and watches it for fifteen minutes, then prints a verdict on every check with the measured number behind it. Run this after any change to hardware, driver, SDK, mount or settings, and before any recording session that matters.</p>
+</div>
+<div class="run">
+<pre class="cmd"><code>roslaunch sidewalk_perception validate_sensors.launch quick:=true</code></pre>
+<p class="rex">A sixty-second version, for confirming the camera is alive after plugging it in. It is genuinely useful but it is not a substitute for the full run — thermal throttling and clock drift need ten minutes or more before they become visible, so a quick test that passes only proves nothing is catastrophically wrong.</p>
+</div>
+<div class="run">
+<pre class="cmd"><code>rosrun sidewalk_perception frame_audit.py --bag data/recordings/NAME/NAME.bag --verbose</code></pre>
+<p class="rex">Audits coordinate frame names and timestamps inside an existing recording. Needs no camera, no robot and no roscore, so it runs at a desk days after the drive. With the verbose option it prints the timestamp and frame name of each message, which is the behaviour of the earlier read_frame_id.py tool this replaces.</p>
+</div>
+<div class="run">
+<pre class="cmd"><code>roslaunch sidewalk_perception record_dataset.launch duration:=600</code></pre>
+<p class="rex">Records a ten-minute drive, both as an SVO2 and as a rosbag, and writes a manifest stub alongside them. Fill in the description afterwards with the manifest editor — several fields, especially anything that went wrong, are only known once the drive is over.</p>
+</div>
+<div class="run">
+<pre class="cmd"><code>rosrun sidewalk_perception make_manifest.py schema</code></pre>
+<p class="rex">Prints the full provenance record structure and, for the fields most often filled in badly, an explanation of what a good answer looks like and why that field turns out to matter.</p>
+</div>
+<div class="run">
+<pre class="cmd"><code>rosrun sidewalk_perception make_manifest.py validate data/recordings/NAME</code></pre>
+<p class="rex">Checks whether a recording&#x27;s provenance record is complete, and names precisely which fields are missing and why each one cannot be recovered later. A dataset that fails this should not be used to support a published result.</p>
+</div>
+<div class="run">
+<pre class="cmd"><code>rosrun sidewalk_perception svo_manager.py list</code></pre>
+<p class="rex">Lists every recording with its size and description, and flags any that have no provenance record attached.</p>
+</div>
+<div class="run">
+<pre class="cmd"><code>rosrun sidewalk_perception svo_manager.py verify data/recordings/NAME</code></pre>
+<p class="rex">Checks a recording is complete and readable before anyone builds a result on it. Catches truncated files from a full disk and rosbags that were killed rather than stopped cleanly.</p>
+</div>
+<div class="run">
+<pre class="cmd"><code>roslaunch sidewalk_perception playback_svo.launch svo_file:=/absolute/path/NAME.svo2</code></pre>
+<p class="rex">Replays a recording as if the camera were live, publishing the identical set of topics. This is the launch file that makes the three-way algorithm comparison possible — every algorithm sees exactly the same drive.</p>
+</div>
+</section>
+<section class="card"><h2>When it goes wrong</h2>
+<table class="tbl"><thead><tr><th>You see this</th><th>It usually means</th><th>Do this</th></tr></thead><tbody>
+<tr><td>Navigation preflight fails on <code>/sidewalk_perception/obstacles_cloud</code>, and the local costmap shows no live obstacles at all</td><td>The obstacle segmenter is not running. This is the exact defect the node was written to close: the navigation stack has always subscribed to that topic and marked it critical, and for a while nothing in this package published it</td><td>Start it with <code>roslaunch sidewalk_perception obstacle_segmenter.launch</code>. If it starts and immediately exits, read the one line it prints — every non-zero exit here is a named missing dependency (numpy, tf2_ros, no ROS master) rather than a crash. Note that the robot in this state is not merely degraded: it plans entirely on the recorded map and will drive into anything that was not present when the map was made.</td></tr>
+<tr><td>The segmenter runs and publishes, but the obstacle cloud is empty or nearly empty on a scene that clearly has obstacles in it</td><td>Usually the region of interest does not overlap where the ground actually is, or the ground plane fit has latched onto the wrong surface</td><td>Run the node&#x27;s geometry mode first — it prints exactly where the ground enters view (about 1.38 m ahead of the robot centre with the current mounting) and the region of interest must start inside that. Then watch the heartbeat line in the run log: it reports the fitted tilt, the offset and the inlier percentage every ten seconds. A tilt near zero with a low inlier percentage means the fit is falling back to its starting assumption every frame, which the log says explicitly.</td></tr>
+<tr><td>Kerbs appear on <code>/sidewalk_perception/curb_scan</code> in RViz but never show up in the costmap</td><td>A height-filter mismatch between this package and the navigation configuration. costmap_2d places a laser scan at the height of its frame origin and then filters it; <code>base_link</code> sits at ground level, z = 0, so if the curb source in <code>costmap_common.yaml</code> demands a height above zero, every return is discarded</td><td>The curb source in <code>sidewalk_navigation/config/costmap_common.yaml</code> originally required a height above 0.02 m and would have thrown away every kerb. It now allows down to -0.05 m, and that file explains why. If this symptom returns, check that number first, and check that the scan is still published in a frame whose origin is on the ground. This has NOT been observed on hardware — no camera is wired — but it follows directly from the two configuration files, and it fails silently, which is why it is listed first among the things to check.</td></tr>
+<tr><td>The pavement itself is suddenly marked as a solid band of obstacle near a kerb</td><td>The ground plane fit has settled on the ROADWAY rather than the sidewalk. Both surfaces are near-horizontal and both pass the offset gate, so whichever contributes more points wins, and close to an edge that can be the road</td><td>A known limitation of the current fit, stated rather than hidden. Confirm it by watching the reported plane offset in the log — it will sit roughly one kerb height below zero. Narrowing <code>roi_y_abs_max</code> so less roadway is in view is the immediate mitigation; preferring the plane the robot is actually standing on, rather than the one with the most support, is the proper fix and is not yet implemented.</td></tr>
+<tr><td>Curb detection works close in and simply stops further out, with no error message</td><td>Range limits, only one of which is deliberate. The deliberate one: past about 5 m the depth error smears the edge position by more than one costmap cell, so detection is suppressed on purpose. The undeliberate one: to keep up with the camera the node throws away all but roughly one point in sixty before it builds its ground grid, and a grid square needs at least three points to count. Depending on how that thinning lines up with the image rows, squares may start coming up empty somewhere between four and five metres — which is closer in than the limit the software thinks it is enforcing. Both are silent</td><td>Run the geometry mode. It now prints every limiting distance, including the two that depend on how aggressively the cloud is thinned, and marks whichever one actually binds. THIS IS AN OPEN ITEM, not settled behaviour: the two thinning models disagree by more than a metre and neither has been checked against a real camera. The measurement that settles it is to record a drive past a known kerb and log how many grid squares survive at each distance. Do not raise the detection range to compensate; either keep more points, at a cost in processing time that must be timed on the Jetson first, or lower the stated range to whatever the measurement supports.</td></tr>
+<tr><td>The node refuses to start, saying numpy is not installed</td><td>Deliberate. The pure-Python reference implementation is correct but roughly a hundred times too slow to keep the costmap fresh at ten frames a second</td><td>Install numpy on the Jetson (it ships with the ROS Noetic base install, so its absence usually means the wrong Python interpreter is being used). The node refuses rather than running slowly on purpose: publishing late would trip the costmap&#x27;s staleness expectation and leave navigation steering on obstacles that have moved, which is more dangerous than not publishing at all. The self-test and geometry modes do not need numpy and still work.</td></tr>
+<tr><td>The validator reports no messages arrived, and names which topics were silent</td><td>The chain from cable to driver is broken somewhere, and the tool walks that chain outward to find the first break</td><td>Read its diagnosis rather than guessing — it distinguishes four different causes. No <code>/dev/video*</code> devices means the capture card is not seen by the kernel at all, so check the card is seated and its separate 9-19 V supply is connected. Devices present but no <code>zed_x_daemon</code> means the daemon that owns the GMSL2 cameras is dead; start it with <code>sudo systemctl start zed_x_daemon</code>. No SDK under <code>/usr/local/zed</code> means the software was never installed. If all of those are fine, the driver is publishing under a different namespace — compare <code>rostopic list | grep -i zed</code> against what the validator was watching.</td></tr>
+<tr><td>Everything works, then stops after several minutes, and often recovers if left alone</td><td>The Jetson is thermally throttling under sustained load, or the GMSL2 link is marginal</td><td>Watch <code>tegrastats</code> during a soak run and see whether the clocks drop when the failures begin. This is exactly the failure a sixty-second test cannot find, which is why the default soak is fifteen minutes. If temperature is not the cause, reseat the FAKRA connector — it carries both data and power over one coax, so a marginal contact drops frames intermittently rather than failing cleanly.</td></tr>
+<tr><td>Depth looks plausible nearby but wrong far away, and the point cloud spreads out at range</td><td>This is usually correct behaviour being misread as a fault</td><td>Depth uncertainty grows with the square of distance. At 15 m this camera is expected to be roughly 0.4 m uncertain, and beyond about 20 m the spread becomes very visible. Run <code>perception_common.py</code> to print the predicted uncertainty at each distance and compare against what you are seeing. Only treat it as a fault if the observed spread is much worse than predicted.</td></tr>
+<tr><td>Large areas of the depth image are blank, especially on plain ground</td><td>Stereo matching needs visible texture, and a featureless surface provides none</td><td>Blank regions on smooth concrete, fresh asphalt, snow, standing water or sky are physics, not a fault — with nothing to match between the two images there is no disparity to measure. Wet asphalt is markedly worse than dry because it reflects rather than scatters. Record the surface conditions in the dataset manifest so the effect can be accounted for later. Treat it as a real fault only when validity approaches zero on a clearly textured scene.</td></tr>
+<tr><td>The validator fails timestamp monotonicity, and mapping had been silently producing nothing</td><td>Timestamps went backwards, and RTAB-Map discards out-of-order data without an error message</td><td>There is no acceptable rate of time running backwards, so any occurrence fails. Check whether the driver and the rest of the system are stamping from different clocks by setting <code>sensors/sensors_timestamp_sync</code> in <code>config/zedx_front.yaml</code>. If the driver runs on a different machine from the consumer, run NTP on both and confirm they agree to within a few milliseconds.</td></tr>
+<tr><td>Dropped frames counted by sequence number and by timing disagree substantially</td><td>The two methods measure different things, and the disagreement is itself the diagnosis</td><td>The validator explains which way the discrepancy points. A much higher timing estimate means frames are arriving late rather than going missing — the stream is bunching and stalling, which points at CPU contention or thermal throttling rather than the GMSL2 link. A higher sequence count means frames vanished without leaving a gap in time, which points at the driver&#x27;s queue depth. Trust the sequence count for how many frames were actually lost.</td></tr>
+<tr><td>A frame name is flagged as not carrying the camera prefix</td><td>The driver is publishing generic ZED frame names instead of per-camera ones</td><td>Set <code>general/camera_name</code> in <code>config/zedx_front.yaml</code> so frames come out as <code>zedx_front_left_camera_optical_frame</code> rather than bare <code>zed_left_camera_optical_frame</code>. Fix this now, while only one camera exists. Once the rear-facing camera is fitted and publishing the same names, the transform tree holds two different physical meanings for one name, and the resulting map is wrong with nothing crashing and no error shown.</td></tr>
+<tr><td>An image topic is flagged for not using an optical frame</td><td>Image data is being published in a body-convention frame</td><td>Image coordinates run Z forward, X right, Y down; the robot body convention runs X forward, Y left, Z up. Confusing the two rotates the entire reconstruction by 90 degrees. The frame name for an image topic should contain <code>optical</code>. This is a very common first-week bug and it produces a map that looks coherent but is oriented wrongly.</td></tr>
+<tr><td>roslaunch stops immediately with <code>resource not found: zed_wrapper</code></td><td>zed-ros-wrapper has not been built in this workspace</td><td>That wrapper is built by hand from its Noetic branch against the ZED SDK, and is deliberately not declared as a dependency so that this package still configures on a machine without the SDK. Build it, or pass <code>start_driver:=false</code> to work against a bag or an SVO replay instead.</td></tr>
+<tr><td>A recording exists but nobody can say what it contains</td><td>It was made without a manifest, and the details are no longer recoverable</td><td>Run <code>make_manifest.py create</code> on it now and fill in whatever anyone still remembers, marking the rest honestly as unknown. Nothing can recover the SDK version or exposure settings after the fact. The lesson is to record the manifest at capture time, which <code>record_dataset.launch</code> does automatically.</td></tr>
+<tr><td>The recording stopped partway through and the file is unreadable</td><td>The disk filled up mid-drive, or the process was killed rather than stopped cleanly</td><td>The recorder estimates the size before starting and refuses to begin without about thirty percent headroom, so this should be caught in advance. If a rosbag was killed with SIGKILL it will be left unindexed — repair it with <code>rosbag reindex</code>. Stop recordings with Ctrl-C, which lets the index be written.</td></tr>
+<tr><td>Everything passes, but the map is still wrong</td><td>The camera mounting offsets have not been measured</td><td>This package validates the data stream, not the geometry of how the camera is bolted on. Those offsets live in <code>sidewalk_bringup</code> and default to zero, which is certainly wrong. Measure them, and remember that angular error dominates — one degree of pitch error displaces a point 20 m away by about 35 cm.</td></tr>
+</tbody></table></section>
+<section class="card"><h2>Files in this package</h2><table class="tbl"><tbody>
+<tr><td><code>scripts/obstacle_segmenter.py</code></td><td>Turns the camera&#x27;s point cloud into the two feeds navigation consumes: obstacles with the drivable ground removed, and kerb/drop edges. Fits the ground plane every frame under a mounting-derived constraint, classifies height steps by sign, and treats drops to the roadway as the most dangerous case. Carries a self-test that exercises the whole pipeline on synthetic data with no camera, no ROS and no numpy.</td></tr>
+<tr><td><code>config/obstacle_segmenter.yaml</code></td><td>Every ground, obstacle and kerb threshold, each with the physics it was derived from and what measurement would confirm or refute it. Also records the cross-package height-filter hazard between the curb scan and the navigation costmap.</td></tr>
+<tr><td><code>launch/obstacle_segmenter.launch</code></td><td>Starts the segmenter. Does not start the camera by default, because in normal bringup the driver is already running and a second one would fight it for the device.</td></tr>
+<tr><td><code>scripts/perception_common.py</code></td><td>Shared foundation — hardware constants, environment probing, the stereo depth physics, streaming statistics, and the graceful-degradation machinery. Run it directly to see what the current machine has installed.</td></tr>
+<tr><td><code>scripts/sensor_validator.py</code></td><td>The main measurement node. Frame rate, dropped frames, timestamp monotonicity, jitter, time-base consistency, IMU rate, frame names and depth validity, judged against documented thresholds.</td></tr>
+<tr><td><code>scripts/frame_audit.py</code></td><td>Offline audit of coordinate frame names and timestamps in a bag or a live stream. Successor to the earlier read_frame_id.py, and runs with no camera or roscore.</td></tr>
+<tr><td><code>scripts/svo_manager.py</code></td><td>Record, inspect, verify and replay SVO2 files — the mechanism that lets every phase re-run on identical data instead of re-driving the robot.</td></tr>
+<tr><td><code>scripts/make_manifest.py</code></td><td>The dataset provenance system. Creates, validates and renders the record attached to every recording, including the human-readable DATASET.html page.</td></tr>
+<tr><td><code>config/zedx_front.yaml</code></td><td>ZED X driver settings, with the reasoning for each choice — why 30 FPS and not 60, why exposure is capped, why the SDK&#x27;s own tracker publishes no transform.</td></tr>
+<tr><td><code>config/validation_thresholds.yaml</code></td><td>What counts as a healthy stream. Every threshold carries the physical consequence it was derived from, so a result sitting near a limit can be interpreted rather than guessed at.</td></tr>
+<tr><td><code>config/perception.rviz</code></td><td>Visualisation layout for inspecting the stream by eye — useful for motion blur and vibration artefacts, which no metric here captures.</td></tr>
+<tr><td><code>launch/zedx_front.launch</code></td><td>Starts the camera, namespaced per camera so the second one can be added later.</td></tr>
+<tr><td><code>launch/validate_sensors.launch</code></td><td>Camera plus the full fifteen-minute validation soak.</td></tr>
+<tr><td><code>launch/record_dataset.launch</code></td><td>Records a drive to SVO2 and rosbag together, with a manifest stub.</td></tr>
+<tr><td><code>launch/playback_svo.launch</code></td><td>Replays a recording as if it were live — the foundation of the three-way comparison.</td></tr>
+</tbody></table></section>
+<section class="card"><h2>Where the logs go</h2>
+<p>Every run of this package writes a timestamped record to <code>logs/sidewalk_perception/</code>, and adds one summary line to <code>logs/RUNLOG.md</code>. If you want to know what happened during an experiment, that is where to look.</p></section>
+<footer class="ft">Generated by <code>tools/explain.py</code> on 2026-08-29 20:50 &middot; Mitacs Globalink 2026 &middot; Project 50124 &middot; THAW ZIN</footer>
+</main></body></html>

@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+<!--
+  validate_sensors.launch — measure the camera stream and report whether it is
+  fit to build research results on.
+
+  Run this after ANY change to hardware, driver, SDK, mount or settings, and
+  before any recording session that matters. It takes fifteen minutes and has
+  repeatedly turned out to be cheaper than the alternative, which is
+  discovering the problem after a day of driving.
+
+  The default is a full soak. That is deliberate: the short version exists
+  (`quick:=true`) but should not be the path of least resistance, because the
+  most damaging faults — thermal throttling, clock drift, intermittent GMSL2
+  errors — are invisible in the first minute.
+-->
+<launch>
+
+  <arg name="camera_name"  default="zedx_front"/>
+  <arg name="start_driver" default="true"
+       doc="false = validate an already-running driver, or an SVO replay"/>
+
+  <arg name="duration"     default="900"  doc="soak length in seconds (900 = 15 min)"/>
+  <arg name="quick"        default="false" doc="true = 60 s smoke test only"/>
+  <arg name="fps"          default="30"/>
+
+  <!-- 200, not 400. This is passed straight through to sensor_validator.py's
+       imu-rate option below (spelt with two leading hyphens, which cannot be
+       written inside an XML comment), and that option is the yardstick for its
+       "imu: rate" and "imu: jitter" checks — see the note on the argument in
+       build_parser().
+       It said 400 until 2026-08-29 — the ZED 2's figure, on a camera whose
+       datasheet states 200 Hz in two places. That was not a label: with
+       thresholds/imu_rate_tolerance_pct at 5 per cent in
+       config/validation_thresholds.yaml, a healthy ZED X delivering its rated
+       200 Hz scored 50 per cent off and FAILED, and its jitter check compared
+       a real 5 ms interval against a nominal 2.5 ms and WARNED. Two verdicts,
+       both wrong, both against correct hardware.
+
+       Change this ONLY if sensors/max_pub_rate in
+       sidewalk_perception/config/zedx_front.yaml has been lowered below the
+       sensor's own rate. It is presently 400.0 there, which is a ceiling above
+       the source rate and so does nothing. -->
+  <arg name="imu_rate"     default="200"/>
+  <arg name="skip_depth"   default="false"/>
+  <arg name="skip_cloud"   default="false"/>
+  <arg name="run_name"     default="sensor_validation"/>
+
+  <include file="$(find sidewalk_perception)/launch/zedx_front.launch"
+           if="$(arg start_driver)">
+    <arg name="camera_name" value="$(arg camera_name)"/>
+  </include>
+
+  <!-- required="true": if the validator exits, the whole launch tears down.
+       We do not want the camera left streaming after the measurement ends.
+
+       The argument string is built with a single $(eval) because the optional
+       flags are present-or-absent rather than valued, and roslaunch cannot
+       conditionally include a fragment of an attribute any other way. Booleans
+       are compared as strings: inside $(eval) an arg arrives as the text
+       "false", which is truthy in Python and would silently enable every
+       option if tested directly. -->
+  <node pkg="sidewalk_perception" type="sensor_validator.py"
+        name="sensor_validator" output="screen" required="true"
+        args="$(eval '--namespace /' + camera_name +
+                     ' --fps ' + str(fps) +
+                     ' --imu-rate ' + str(imu_rate) +
+                     ' --duration ' + str(duration) +
+                     ' --run-name ' + run_name +
+                     ' --frame-prefix ' + camera_name +
+                     (' --quick'      if str(quick)      == 'true' else '') +
+                     (' --skip-depth' if str(skip_depth) == 'true' else '') +
+                     (' --skip-cloud' if str(skip_cloud) == 'true' else ''))"/>
+
+</launch>

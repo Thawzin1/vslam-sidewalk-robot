@@ -1,0 +1,61 @@
+# dwa.yaml - the wheel-command chooser (dwa_local_planner/DWAPlannerROS, navigation 1.17.3).
+# Method: the dynamic window approach (Fox, Burgard, Thrun 1997, IEEE Robotics & Automation Magazine 4(1)).
+# Ten times a second it tries a grid of (forward speed, turn rate) pairs the robot can actually reach within
+# one step (the "window"), simulates each for sim_time seconds, throws away any that would touch an obstacle,
+# and scores the rest on: staying on the route, getting nearer the goal, staying away from obstacles.
+#
+#   turn rate
+#     +0.4 ┤ x  x  x  x  x      each x = one candidate (speed, turn) pair, simulated 2 s ahead
+#          │ x  x  x  x  x      pairs whose simulated footprint touches a lethal cell are dropped
+#        0 ┤ x  x  x  x  x   <- the best-scoring survivor becomes the wheel command
+#          │ x  x  x  x  x
+#     -0.4 ┤ x  x  x  x  x
+#          └─┬──┬──┬──┬──┬─ forward speed
+#            0 .08 .15 .23 .30 m/s
+#
+# SPEED LIMITS (user's brief, 27 Sept): 0.30 m/s forward, 0.40 rad/s turning (23 deg/s). The same limits are
+# enforced again by nav_cmd_sender.py (Jetson) and nav_cmd_recv.py (robot), so a wrong value here cannot
+# reach the wheels. Clearpath's own Husky config (husky_navigation planner.yaml) uses 0.5 m/s, 1.0 rad/s.
+DWAPlannerROS:
+  max_vel_trans: 0.30      # m/s, overall speed cap
+  min_vel_trans: 0.05      # m/s, below this a candidate counts as "not moving" (Clearpath: 0.1; lower
+                           # here so slow final approaches are allowed at a 0.30 cap)
+  max_vel_x: 0.30
+  min_vel_x: 0.0           # NO REVERSING: the only camera faces forward; nothing sees behind the robot.
+  max_vel_y: 0.0           # a Husky cannot move sideways
+  min_vel_y: 0.0
+  max_vel_theta: 0.40      # rad/s turning cap (23 deg/s)
+  min_vel_theta: 0.30      # rad/s: slowest turn-in-place it will ask for. A skid-steer Husky must scrub its
+                           # tyres sideways to turn on the spot, and below some wheel speed it just rocks.
+                           # Clearpath uses 0.2 (husky_navigation); in the simulator 0.2 stalled (dry run 5:
+                           # 4 s at -0.2 rad/s, heading unchanged) while 0.3 turned. 0.3 = 17 deg/s, still slow.
+  acc_lim_x: 1.0           # m/s^2: gentler than Clearpath's 2.5; 0 -> 0.30 m/s in 0.3 s
+  acc_lim_y: 0.0
+  acc_lim_theta: 1.5       # rad/s^2 (Clearpath 3.2)
+  acc_lim_trans: 1.0
+
+  sim_time: 2.0            # s simulated ahead per candidate: 0.6 m at 0.30 m/s
+  sim_granularity: 0.025   # m between collision checks along a candidate
+  angular_sim_granularity: 0.05  # rad between checks while turning
+  vx_samples: 10
+  vy_samples: 1
+  vth_samples: 21          # odd, so "exactly straight" (0 rad/s) is always a candidate
+
+  path_distance_bias: 32.0 # weight: stay on the route (package default)
+  goal_distance_bias: 20.0 # weight: head for the goal (package default)
+  occdist_scale: 0.02      # weight: keep away from obstacles (package default 0.01; doubled for 1.7 m corridors)
+  forward_point_distance: 0.325  # m ahead of the robot centre used for the heading score (package default)
+  stop_time_buffer: 0.2    # s of stopping room required before a collision (package default)
+  scaling_speed: 0.25
+  max_scaling_factor: 0.0  # package default 0.2 grows the outline used for collision checks by up to 20 % above
+                           # 0.25 m/s (to 1.31 x 0.92 m here) - too wide for the 1.0-1.4 m narrow parts of drive
+                           # 10's long corridor at x = 12.4-13.2 m. The 5 cm padding stays.
+
+  xy_goal_tolerance: 0.25  # m: "arrived" once the centre is within 25 cm of the goal (pass line N1 uses 0.5 m)
+  yaw_goal_tolerance: 0.30 # rad (17 deg): the final heading matters little; each goal's heading is set along
+                           # drive 10's direction of travel so the robot never has to turn round (section 2.13a)
+  latch_xy_goal_tolerance: true  # once within 25 cm, only turn on the spot, never creep about
+  oscillation_reset_dist: 0.05
+  prune_plan: true
+  publish_traj_pc: false
+  publish_cost_grid_pc: false

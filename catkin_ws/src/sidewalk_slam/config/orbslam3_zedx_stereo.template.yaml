@@ -1,0 +1,123 @@
+%YAML:1.0
+#===========================================================================
+# ORB-SLAM3 settings for the Stereolabs ZED X (stereo, no IMU).
+#
+# <<TEMPLATE-ONLY
+# THIS FILE IS THE TEMPLATE. Do not point ORB-SLAM3 at it directly - the
+# double-brace placeholders below are filled in at runtime by
+#   rosrun sidewalk_slam make_orbslam3_config.py
+# from the camera's live sensor_msgs/CameraInfo. Edit THIS file to change how
+# every generated configuration looks.
+# TEMPLATE-ONLY>>
+#
+# WHY IT IS GENERATED RATHER THAN WRITTEN BY HAND
+#   The intrinsics of a ZED X are not a property of the model, they are a
+#   property of the individual unit and of the resolution and rectification
+#   currently in use. They change when you change resolution, when the SDK
+#   is updated, and after a factory recalibration. A hardcoded fx that is
+#   1% wrong scales the entire reconstructed trajectory by 1% - and the
+#   trajectory still looks perfectly smooth and plausible, so nothing warns
+#   you. Generating this file from live camera_info makes stale intrinsics
+#   structurally impossible.
+#
+# STRUCTURE
+#   Mirrors ~/oak-d-params.yaml, the configuration that already worked on
+#   this Jetson with the previous OAK-D camera, so the diff between the two
+#   cameras is readable.
+#===========================================================================
+
+#---------------------------------------------------------------------------
+# Camera Parameters
+#
+# These are the parameters of the RECTIFIED LEFT camera, taken from the P
+# (projection) matrix of its camera_info - not from K. After rectification
+# the effective intrinsics are those in P; using K instead is a classic and
+# very quiet error.
+#---------------------------------------------------------------------------
+Camera.type: "PinHole"
+
+Camera.fx: {{FX}}
+Camera.fy: {{FY}}
+Camera.cx: {{CX}}
+Camera.cy: {{CY}}
+
+# Distortion is zero BY CONSTRUCTION: the ZED SDK publishes rectified images
+# on the image_rect_* topics, and rectification is precisely the operation
+# that removes lens distortion. If you feed ORB-SLAM3 raw (unrectified)
+# images with these zeros, epipolar lines are no longer horizontal, stereo
+# matching collapses and the system reports almost no map points.
+Camera.k1: 0.0
+Camera.k2: 0.0
+Camera.p1: 0.0
+Camera.p2: 0.0
+
+Camera.width: {{WIDTH}}
+Camera.height: {{HEIGHT}}
+
+Camera.fps: {{FPS}}
+
+# Camera.bf = fx * baseline_in_metres. This single number is what gives a
+# stereo system METRIC scale: the 120 mm mechanical separation between the
+# two ZED X sensors is a physical ruler built into the camera body. A
+# monocular system has no such ruler and can only ever recover shape up to
+# an unknown scale factor.
+#
+# Measured baseline for THIS unit: {{BASELINE_MM}} mm
+# (nominal for the ZED X is 120 mm; see the generator's cross-check)
+Camera.bf: {{BF}}
+
+# 1 = colour images, 0 = greyscale. ORB features are computed on the
+# greyscale channel either way; this only tells ORB-SLAM3 how to interpret
+# the incoming buffer.
+Camera.RGB: 1
+
+#---------------------------------------------------------------------------
+# Close/far stereo points threshold.
+#
+# ThDepth is expressed in MULTIPLES OF THE BASELINE, not in metres. Points
+# closer than ThDepth * baseline are trusted as fully-constrained 3D
+# observations; points beyond it are treated as bearing-only, because the
+# stereo disparity out there is a fraction of a pixel and the depth estimate
+# is dominated by matching noise.
+#
+# Depth uncertainty grows as z^2 / (f * b): doubling the range quadruples
+# the depth error. For this camera the datasheet bounds it at under 0.4% out
+# to 2 m and under 7% at 20 m, which is that same quadratic in disguise.
+# (Until 2026-08-29 this line quoted "~0.2% at 1 m and ~3.1% at 15 m" as
+# datasheet figures. They are not in the datasheet.)
+#
+#   ThDepth = {{TH_DEPTH}}  ->  far-point threshold = {{TH_DEPTH_M}} m
+#---------------------------------------------------------------------------
+ThDepth: {{TH_DEPTH}}
+
+#---------------------------------------------------------------------------
+# ORB Extractor Parameters
+#
+# nFeatures is the main quality/CPU trade. On the AGX Orin, 1200 features
+# per frame at 1920x1200 is comfortable; raise it for feature-poor indoor
+# corridors, lower it if the tracker falls behind the camera.
+#
+# iniThFAST / minThFAST are FAST corner thresholds. ORB-SLAM3 tries the
+# first, and if a cell yields too few corners it retries with the second.
+# Lowering minThFAST is the standard remedy for blank painted walls.
+#---------------------------------------------------------------------------
+ORBextractor.nFeatures: {{N_FEATURES}}
+ORBextractor.scaleFactor: 1.2
+ORBextractor.nLevels: 8
+ORBextractor.iniThFAST: 20
+ORBextractor.minThFAST: 7
+
+#---------------------------------------------------------------------------
+# Viewer Parameters (Pangolin). Harmless on a headless robot - the viewer is
+# disabled from the command line, not from here.
+#---------------------------------------------------------------------------
+Viewer.KeyFrameSize: 0.05
+Viewer.KeyFrameLineWidth: 1.0
+Viewer.GraphLineWidth: 0.9
+Viewer.PointSize: 2.0
+Viewer.CameraSize: 0.08
+Viewer.CameraLineWidth: 3.0
+Viewer.ViewpointX: 0.0
+Viewer.ViewpointY: -0.7
+Viewer.ViewpointZ: -1.8
+Viewer.ViewpointF: 500.0

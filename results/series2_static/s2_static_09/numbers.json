@@ -1,0 +1,83 @@
+{
+ "run": "s2_static_09",
+ "sources": {
+  "paths": "~/.run_records/s2_static_09/fusion.bag (/fused/odometry, /robot/ekf_odom, /rtabmap/odom, /robot/wheel_odom)",
+  "turns": "<repo>/results/series2_static/s2_static_09/turns_replayed.log (turn watcher's rule REPLAYED after the drive from fusion.bag; UTC in the file, Hamilton here)",
+  "link": "~/.run_records/s2_static_09/bridge_recv.log",
+  "rtabmap_timing": "~/slam_series2/s2_static_09.db (Statistics table, read-only)"
+ },
+ "tracking_alone_gaps": {
+  "blend": {
+   "end_to_start_m": 0.817,
+   "heading_deg": -0.19,
+   "path_m": 289.1,
+   "first": "20:52:24",
+   "last": "21:20:56"
+  },
+  "robot": {
+   "end_to_start_m": 17.251,
+   "heading_deg": -2.33,
+   "path_m": 231.1,
+   "first": "20:52:25",
+   "last": "21:15:59"
+  },
+  "camera": {
+   "end_to_start_m": 0.533,
+   "heading_deg": 6.19,
+   "path_m": 280.5,
+   "first": "20:52:24",
+   "last": "21:20:56"
+  }
+ },
+ "camera_tracking_lost": {
+  "stretches": 46,
+  "seconds_total": 60.8,
+  "longest_s": 10.0,
+  "share_of_messages_pct": 3.1,
+  "rule": "/rtabmap/odom message with covariance >= 9998 or an all-zero pose (RTAB-Map's lost signal)"
+ },
+ "blend_heading_while_still": {
+  "stops": 78,
+  "seconds_still": 250.7,
+  "signed_sum_deg": 0.089,
+  "sum_abs_net_per_stop_deg": 1.418,
+  "sum_abs_steps_deg": 14.008,
+  "largest_stop_net_deg": -0.181,
+  "rule": "robot wheel odometry speed and turn rate both zero, below 1e-6 - the log holds 1e-16 float noise, not 0.0 (nearest wheel message within 0.3 s)"
+ },
+ "turns": {
+  "n": 34,
+  "abs_blend_minus_robot_deg": {
+   "median": 0.3,
+   "p95": 0.83,
+   "max": 1.3
+  },
+  "abs_camera_minus_robot_deg": {
+   "median": 2.6,
+   "p95": 27.82,
+   "max": 44.9
+  },
+  "within_1deg_blend": 33,
+  "within_1deg_camera": 0,
+  "turns_with_no_camera_value": 1
+ },
+ "link": {
+  "down_events": 3,
+  "down_lines_hamilton": [
+   "21:02:31 STATE DOWN no bytes for 1.5 s",
+   "21:06:19 STATE DOWN no bytes for 1.5 s",
+   "21:16:00 STATE DOWN no bytes for 1.5 s"
+  ],
+  "receiver_sessions": 0,
+  "connects": 0,
+  "sessions": []
+ },
+ "processor_rtabmap": {
+  "rtabmap_ms_per_node": {
+   "n": 1334,
+   "median": 599.7,
+   "p95": 838.5,
+   "max": 5851.5
+  }
+ }
+}

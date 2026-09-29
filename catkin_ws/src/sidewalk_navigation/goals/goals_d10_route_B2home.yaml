@@ -1,0 +1,4 @@
+# Route B2, last two goals, after the manual pass through the south doorway (s2_nav_03, 27 Sept 19:00).
+goals:
+  - {name: B3_SW_widest,     x: 1.62,  y: -14.90, yaw_deg: 90,  timeout_s: 180}  # clearance 1.13 m: turn to face north
+  - {name: B4_start_mark,    x: 0.25,  y: 0.00,   yaw_deg: 0,   timeout_s: 180}  # turn to face east

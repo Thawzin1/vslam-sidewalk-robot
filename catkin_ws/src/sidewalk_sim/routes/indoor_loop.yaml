@@ -1,0 +1,26 @@
+# indoor_loop.yaml - two laps of the single-room indoor.world (12 x 10 m, walls at x +-6, y +-5), for the
+# simulation timelapse (27 Sept 2026). Start at the origin facing +X (husky_real_gazebo.launch default spawn).
+# Lanes chosen from indoor.world's geometry: x = +-4.5 and y = +3.8 / -4.2 keep >= 0.4 m from every obstacle
+# (crate_wood 2.5,2.0; pillar_a -3.0,1.5; pillar_b -2.5,-2.5; box_tall 3.5,-2.0; crate_wood2 0.5,-3.2) and the walls.
+- {forward: 4.5}      # to (4.5, 0)
+- {turn: 90}          # face north
+- {forward: 3.8}      # to (4.5, 3.8)
+- {turn: 90}          # face west
+- {forward: 9.0}      # to (-4.5, 3.8)
+- {turn: 90}          # face south
+- {forward: 8.0}      # to (-4.5, -4.2)
+- {turn: 90}          # face east
+- {forward: 9.0}      # to (4.5, -4.2)
+- {turn: 90}          # face north
+- {forward: 4.2}      # to (4.5, 0) - closes lap 1
+- {forward: 3.8}      # lap 2: same way round (recognition works best facing the same way)
+- {turn: 90}
+- {forward: 9.0}
+- {turn: 90}
+- {forward: 8.0}
+- {turn: 90}
+- {forward: 9.0}
+- {turn: 90}
+- {forward: 4.2}
+- {turn: 90}          # face west
+- {forward: 4.5}      # home to the origin

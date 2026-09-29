@@ -1,0 +1,12 @@
+# Route B2 (27 Sept 2026, after route B's front-left corner touched the wall post leaving the SE corner).
+# The same loop as route B, with every TURN ON THE SPOT placed at the widest point of its junction (clearance =
+# distance from the goal to the nearest wall on maps/d10_nav_clean, measured by the 27 Sept corridor survey), and the SE turn placed ON
+# the best line so that the robot goes STRAIGHT through the narrow stretch of the south corridor (x 11-13.5 m) on its best
+# line y = -14.62 (narrowest half-width 0.45 m: 11.5 cm spare each side of the 0.67 m robot). Guide points face the
+# direction of travel, so nothing turns there.
+goals:
+  - {name: B1_east_junction, x: 14.30, y: 0.00,   yaw_deg: -90, timeout_s: 150}  # clearance 1.11 m: turn to face south
+  - {name: B2_SE_on_line,    x: 14.60, y: -14.62, yaw_deg: 180, timeout_s: 180}  # clearance 1.22 m, ON the south corridor's best line: turn to face west, then straight on
+  - {name: W2_south_line,    x: 10.50, y: -14.62, yaw_deg: 180, timeout_s: 120}  # guide point, no turn
+  - {name: B3_SW_widest,     x: 1.62,  y: -14.90, yaw_deg: 90,  timeout_s: 180}  # clearance 1.13 m: turn to face north
+  - {name: B4_start_mark,    x: 0.25,  y: 0.00,   yaw_deg: 0,   timeout_s: 180}  # turn to face east

@@ -1,0 +1,9 @@
+{
+ "closures": 145,
+ "first_hamilton": "15:54:58",
+ "last_hamilton": "16:01:08",
+ "span_s": 370.3,
+ "joining_node_1": 0,
+ "nodes_joining_node_1": [],
+ "source": "s2_static_08.db Link table types 1 and 2, once per pair, read-only (write_results_drive8.py)"
+}

@@ -1,0 +1,3 @@
+# 2026-09-26 03:27 EDT re-run by the results pack (read-only, mode=ro): python3 ~/slam_series2/tools/db_check.py ~/slam_series2/s2_static_05.db
+# first run by the main session at 02:37 Hamilton; pass line: ~/slam_series2/tools/DEPLOYED_2026-09-26_sync0_drive5.txt line 9
+PASS ~/slam_series2/s2_static_05.db: quick_check=['ok'], 688 map nodes, 0.6 s

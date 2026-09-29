@@ -1,0 +1,39 @@
+{
+  "run": "s2_static_07",
+  "reference_kind": "cross_stack",
+  "reference_end_gap_m": 0.158,
+  "reference_valid": false,
+  "reference_verdict": "FAILED ITS OWN CHECK: ends 0.16 m from its start although the robot parked on the start mark, with 0 LiDAR loop closures - the differences below measure the reference's drift as much as the camera's",
+  "reference": "LiDAR map (robot, self_navigation rtabmap_3d.launch): wheel+IMU odometry corrected by LiDAR loop closures - an independent estimate, not ground truth",
+  "reference_exact": true,
+  "reference_loop_closures": 0,
+  "reference_nodes": 617,
+  "time_offset_applied_s": 0.0,
+  "time_offset_estimated_s": 0.6,
+  "association_tolerance_s": 0.05,
+  "reference_file": "results/series2_static/s2_static_07/lidar_reference_dense.tum",
+  "estimates": {
+    "camera_corrected": {
+      "what": "map's corrected path",
+      "source_file": "results/series2_static/s2_static_07/camera_corrected.tum",
+      "matched_pct": 100.0,
+      "n_matched": 582,
+      "disagreement_median_m": 0.445,
+      "disagreement_p95_m": 0.879,
+      "disagreement_max_m": 1.051,
+      "disagreement_rmse_m": 0.537,
+      "sim3_scale_vs_reference": 1.0778
+    },
+    "camera_tracking": {
+      "what": "tracking alone",
+      "source_file": "results/series2_static/s2_static_07/camera.tum",
+      "matched_pct": 93.0,
+      "n_matched": 678,
+      "disagreement_median_m": 0.381,
+      "disagreement_p95_m": 0.75,
+      "disagreement_max_m": 0.867,
+      "disagreement_rmse_m": 0.443,
+      "sim3_scale_vs_reference": 1.0275
+    }
+  }
+}

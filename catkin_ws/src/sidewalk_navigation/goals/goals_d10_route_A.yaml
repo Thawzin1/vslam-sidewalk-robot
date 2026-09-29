@@ -1,0 +1,9 @@
+# Route A - "long corridor, out and back" on drive 10's map (map frame: start mark = 0, 0; east = yaw 0).
+# ~28 m. Drive 10 drove this corridor in BOTH directions (01_runs/series2_static/s2_static_10/camera_corrected.tum:
+# east at 157-216 s, west at 233-289 s, and again later), so the map holds views facing both ways and turning
+# round at the far end does not leave the robot facing pictures the map never saw (ENGINEERING_NOTES.md section 2.13a).
+# Clearance = distance from the goal to the nearest wall cell on the saved map; turning on the spot needs
+# 0.65 m (outer radius 0.598 m + 0.05 m padding). Checked by check_goals.py.
+goals:
+  - {name: G1_east_junction, x: 14.30, y: 0.00, yaw_deg: 180, timeout_s: 150}  # arrive facing east, turn to face home
+  - {name: G2_start_mark,    x: 0.25,  y: 0.00, yaw_deg: 0,   timeout_s: 150}  # arrive facing west, turn to face east (parked as for every drive)

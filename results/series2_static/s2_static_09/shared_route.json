@@ -1,0 +1,190 @@
+{
+ "definition": "camera map corrected path (camera_corrected.tum; drive 9: graph re-optimised by optimize_graph_se2.py), filled in every 5 cm; drives 8 and 9 lined up on drive 4 by 2D rotation + shift (ICP, pairs < 1.0 m); a point is on the shared route if within 0.5 m of the other drive's route; direction of travel not tested",
+ "R_m": 0.5,
+ "pairs": {
+  "4_vs_8": {
+   "rotation_deg": -3.26,
+   "shift_m": [
+    0.175,
+    0.325
+   ],
+   "start_offset_after_alignment_m": 0.369,
+   "drive4_route_covered_pct": 98.1,
+   "route_m": {
+    "drive4": 84.7,
+    "drive8": 83.0
+   },
+   "shared_m": {
+    "drive4": 83.2,
+    "drive8": 75.2
+   },
+   "sensitivity_by_R": {
+    "0.3": {
+     "drive8_m": 71.4,
+     "drive4_m": 80.7
+    },
+    "0.5": {
+     "drive8_m": 75.2,
+     "drive4_m": 83.2
+    },
+    "0.75": {
+     "drive8_m": 75.9,
+     "drive4_m": 84.7
+    },
+    "1.0": {
+     "drive8_m": 76.4,
+     "drive4_m": 84.7
+    }
+   },
+   "distance_to_drive4_route_on_shared_m": {
+    "median": 0.052,
+    "p95": 0.29
+   }
+  },
+  "4_vs_9": {
+   "rotation_deg": -7.09,
+   "shift_m": [
+    0.373,
+    0.648
+   ],
+   "start_offset_after_alignment_m": 0.748,
+   "drive4_route_covered_pct": 93.0,
+   "route_m": {
+    "drive4": 84.7,
+    "drive9": 244.8
+   },
+   "shared_m": {
+    "drive4": 79.1,
+    "drive9": 98.2
+   },
+   "sensitivity_by_R": {
+    "0.3": {
+     "drive9_m": 91.0,
+     "drive4_m": 74.7
+    },
+    "0.5": {
+     "drive9_m": 98.2,
+     "drive4_m": 79.1
+    },
+    "0.75": {
+     "drive9_m": 102.4,
+     "drive4_m": 82.8
+    },
+    "1.0": {
+     "drive9_m": 104.6,
+     "drive4_m": 83.5
+    }
+   },
+   "distance_to_drive4_route_on_shared_m": {
+    "median": 0.08,
+    "p95": 0.335
+   }
+  }
+ },
+ "agreement_on_shared_route": {
+  "8_camera_corrected": {
+   "n_pairs_shared": 425,
+   "n_pairs_all": 473,
+   "refit_on_shared_median_m": 0.238,
+   "refit_on_shared_p95_m": 0.466,
+   "median_m": 0.247,
+   "p95_m": 0.467,
+   "off_route_median_m": 0.462,
+   "off_route_p95_m": 0.576,
+   "whole_median_m": 0.26,
+   "whole_p95_m": 0.508,
+   "control_whole_reproduces_agreement_json": true
+  },
+  "4vs8_camera_corrected": {
+   "n_pairs_shared": 271,
+   "n_pairs_all": 283,
+   "refit_on_shared_median_m": 0.249,
+   "refit_on_shared_p95_m": 0.47,
+   "median_m": 0.256,
+   "p95_m": 0.47,
+   "off_route_median_m": 0.485,
+   "off_route_p95_m": 0.533,
+   "whole_median_m": 0.259,
+   "whole_p95_m": 0.491,
+   "control_whole_reproduces_agreement_json": true
+  },
+  "8_camera_tracking": {
+   "n_pairs_shared": 602,
+   "n_pairs_all": 661,
+   "refit_on_shared_median_m": 0.141,
+   "refit_on_shared_p95_m": 0.387,
+   "median_m": 0.144,
+   "p95_m": 0.393,
+   "off_route_median_m": 0.076,
+   "off_route_p95_m": 0.093,
+   "whole_median_m": 0.132,
+   "whole_p95_m": 0.389,
+   "control_whole_reproduces_agreement_json": true
+  },
+  "4vs8_camera_tracking": {
+   "n_pairs_shared": 466,
+   "n_pairs_all": 483,
+   "refit_on_shared_median_m": 0.109,
+   "refit_on_shared_p95_m": 0.247,
+   "median_m": 0.111,
+   "p95_m": 0.239,
+   "off_route_median_m": 0.228,
+   "off_route_p95_m": 0.23,
+   "whole_median_m": 0.117,
+   "whole_p95_m": 0.239,
+   "control_whole_reproduces_agreement_json": true
+  },
+  "9_camera_corrected": {
+   "n_pairs_shared": 383,
+   "n_pairs_all": 892,
+   "refit_on_shared_median_m": 0.21,
+   "refit_on_shared_p95_m": 0.447,
+   "median_m": 0.435,
+   "p95_m": 0.613,
+   "off_route_median_m": 0.378,
+   "off_route_p95_m": 0.697,
+   "whole_median_m": 0.419,
+   "whole_p95_m": 0.648,
+   "control_whole_reproduces_agreement_json": true
+  },
+  "4vs9_camera_corrected": {
+   "n_pairs_shared": 244,
+   "n_pairs_all": 283,
+   "refit_on_shared_median_m": 0.217,
+   "refit_on_shared_p95_m": 0.478,
+   "median_m": 0.24,
+   "p95_m": 0.455,
+   "off_route_median_m": 0.404,
+   "off_route_p95_m": 0.514,
+   "whole_median_m": 0.259,
+   "whole_p95_m": 0.491,
+   "control_whole_reproduces_agreement_json": true
+  },
+  "9_camera_tracking": {
+   "n_pairs_shared": 566,
+   "n_pairs_all": 1200,
+   "refit_on_shared_median_m": 0.103,
+   "refit_on_shared_p95_m": 0.435,
+   "median_m": 0.283,
+   "p95_m": 0.358,
+   "off_route_median_m": 0.267,
+   "off_route_p95_m": 0.652,
+   "whole_median_m": 0.278,
+   "whole_p95_m": 0.577,
+   "control_whole_reproduces_agreement_json": true
+  },
+  "4vs9_camera_tracking": {
+   "n_pairs_shared": 419,
+   "n_pairs_all": 483,
+   "refit_on_shared_median_m": 0.087,
+   "refit_on_shared_p95_m": 0.221,
+   "median_m": 0.094,
+   "p95_m": 0.225,
+   "off_route_median_m": 0.215,
+   "off_route_p95_m": 0.27,
+   "whole_median_m": 0.117,
+   "whole_p95_m": 0.239,
+   "control_whole_reproduces_agreement_json": true
+  }
+ }
+}

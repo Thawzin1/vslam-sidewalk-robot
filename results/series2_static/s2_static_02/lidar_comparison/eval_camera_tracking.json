@@ -1,0 +1,473 @@
+{
+  "reference_name": "reference",
+  "estimate_name": "camera_tracking",
+  "reference_kind": "cross_stack",
+  "reference_validation": {
+    "n_poses": 69441,
+    "duration_s": 1388.799987077713,
+    "mean_rate_hz": 50.00000046523211,
+    "path_length_m": 296.56536632653086,
+    "max_displacement_m": 39.21957073854144,
+    "issues": []
+  },
+  "estimate_validation": {
+    "n_poses": 911,
+    "duration_s": 1343.4412879943848,
+    "mean_rate_hz": 0.6773649195779395,
+    "path_length_m": 277.4777813012268,
+    "max_displacement_m": 45.437345674722266,
+    "issues": []
+  },
+  "association": {
+    "n_associated": 911,
+    "n_reference": 69441,
+    "n_estimate": 911,
+    "associated_pct_of_estimate": 100.0,
+    "max_time_diff_s": 0.05,
+    "time_offset_s": 0.0
+  },
+  "alignment": {
+    "mode": "se3",
+    "scale_applied": 1.0,
+    "scale_estimated_sim3": 0.6143144354647699,
+    "estimate_oversize_pct": 62.78308668482342,
+    "n_used_for_alignment": 911,
+    "rotation_deg": 179.99999914622634,
+    "translation_m": 16.87098763564759,
+    "align_window_s": 0.0
+  },
+  "warnings": [
+    "Sim(3) alignment finds a correction factor of 0.6143, i.e. the estimated trajectory is 62.8% too large. On a stereo camera scale is directly observable from the 120 mm baseline, so this points at a calibration error \u2014 check that the intrinsics loaded match the resolution actually being streamed."
+  ],
+  "ate": {
+    "translation": {
+      "n": 911,
+      "rmse": 14.039123015766581,
+      "mean": 11.065968679613299,
+      "median": 8.293572887907528,
+      "std": 8.639520370578706,
+      "min": 0.16984832262385333,
+      "max": 35.762185807464284,
+      "p95": 28.725930646997057,
+      "unit": "m"
+    },
+    "rotation": {
+      "n": 911,
+      "rmse": 179.99999992077895,
+      "mean": 179.99999992077892,
+      "median": 180.0,
+      "std": 2.6858509091673823e-07,
+      "min": 179.99999829245272,
+      "max": 180.0,
+      "p95": 180.0,
+      "unit": "deg"
+    },
+    "along_track": {
+      "n": 911,
+      "rmse": 7.080825348802087,
+      "mean": 4.473130198407765,
+      "median": 2.5001564352785772,
+      "std": 5.489006635843201,
+      "min": 0.0,
+      "max": 34.50012855663002,
+      "p95": 15.352899446299574,
+      "unit": "m"
+    },
+    "cross_track": {
+      "n": 911,
+      "rmse": 12.122660080674898,
+      "mean": 8.968286023168321,
+      "median": 5.2613307105617855,
+      "std": 8.156514772758793,
+      "min": 0.03662456492766469,
+      "max": 33.06973430902895,
+      "p95": 25.170361466794148,
+      "unit": "m"
+    }
+  },
+  "rpe": {
+    "1m": {
+      "delta": 1.0,
+      "delta_unit": "m",
+      "n_pairs": 872,
+      "translation": {
+        "n": 872,
+        "rmse": 0.17450912696662035,
+        "mean": 0.11939082960685637,
+        "median": 0.08393656030154883,
+        "std": 0.12727633401555297,
+        "min": 0.008102849845388428,
+        "max": 0.9096793743667595,
+        "p95": 0.39064501045973754,
+        "unit": "m"
+      },
+      "rotation": {
+        "n": 872,
+        "rmse": 7.958541752258342,
+        "mean": 2.9238372251966838,
+        "median": 0.6051611202862395,
+        "std": 7.401997210415135,
+        "min": 0.0037192471292687088,
+        "max": 54.35270590488327,
+        "p95": 9.790225157042558,
+        "unit": "deg"
+      },
+      "translation_pct_of_delta": {
+        "n": 872,
+        "rmse": 25.64406070513026,
+        "mean": 10.536032375657307,
+        "median": 6.308438440428568,
+        "std": 23.379689288515085,
+        "min": 0.6454147515459735,
+        "max": 475.58568817886777,
+        "p95": 35.893863118530625,
+        "unit": "%"
+      },
+      "rotation_per_metre": {
+        "n": 872,
+        "rmse": 11.241538975913004,
+        "mean": 2.9395509335342287,
+        "median": 0.44060875195955346,
+        "std": 10.850402704790694,
+        "min": 0.0025084273546065196,
+        "max": 190.76583890938818,
+        "p95": 8.948970969040358,
+        "unit": "deg/m"
+      }
+    },
+    "10m": {
+      "delta": 10.0,
+      "delta_unit": "m",
+      "n_pairs": 856,
+      "translation": {
+        "n": 856,
+        "rmse": 1.8583516875744885,
+        "mean": 1.24612779936421,
+        "median": 0.8336292350934411,
+        "std": 1.3786357395493056,
+        "min": 0.09031748847656329,
+        "max": 8.861210472920906,
+        "p95": 4.272284865072418,
+        "unit": "m"
+      },
+      "rotation": {
+        "n": 856,
+        "rmse": 16.56539938851183,
+        "mean": 9.4606299605619,
+        "median": 4.232134687444731,
+        "std": 13.598122578143887,
+        "min": 0.2365702157121732,
+        "max": 57.15717401648644,
+        "p95": 55.11255649182501,
+        "unit": "deg"
+      },
+      "translation_pct_of_delta": {
+        "n": 856,
+        "rmse": 134.35329797501197,
+        "mean": 24.639938059496128,
+        "median": 8.234960166250739,
+        "std": 132.0745324776376,
+        "min": 1.1985281466949418,
+        "max": 3409.8312771372953,
+        "p95": 84.29397994108731,
+        "unit": "%"
+      },
+      "rotation_per_metre": {
+        "n": 856,
+        "rmse": 14.748248193114701,
+        "mean": 2.312774148308406,
+        "median": 0.46118187117495224,
+        "std": 14.565778403663408,
+        "min": 0.023613674427733315,
+        "max": 365.1682977942579,
+        "p95": 7.85373481507645,
+        "unit": "deg/m"
+      }
+    },
+    "50m": {
+      "delta": 50.0,
+      "delta_unit": "m",
+      "n_pairs": 779,
+      "translation": {
+        "n": 779,
+        "rmse": 16.739907403927607,
+        "mean": 12.42279029285622,
+        "median": 7.70422805970017,
+        "std": 11.220462612200421,
+        "min": 0.03482276400428392,
+        "max": 46.002935922921026,
+        "p95": 35.80590507807256,
+        "unit": "m"
+      },
+      "rotation": {
+        "n": 779,
+        "rmse": 45.24286419279126,
+        "mean": 38.453146946235975,
+        "median": 40.79475867715003,
+        "std": 23.838461575750568,
+        "min": 0.5845305039392594,
+        "max": 73.25493972090106,
+        "p95": 70.33807837422373,
+        "unit": "deg"
+      },
+      "translation_pct_of_delta": {
+        "n": 779,
+        "rmse": 110.07954237389404,
+        "mean": 69.722753298837,
+        "median": 23.54165648438647,
+        "std": 85.1835859874157,
+        "min": 0.09271464859239671,
+        "max": 598.6856204642411,
+        "p95": 249.40393574061568,
+        "unit": "%"
+      },
+      "rotation_per_metre": {
+        "n": 779,
+        "rmse": 3.6032641789803734,
+        "mean": 2.2829880454537976,
+        "median": 1.3494945955983362,
+        "std": 2.787737133920297,
+        "min": 0.03012627412824574,
+        "max": 25.297738284597912,
+        "p95": 7.397474182413709,
+        "unit": "deg/m"
+      }
+    },
+    "1s": {
+      "delta": 1.0,
+      "delta_unit": "s",
+      "n_pairs": 909,
+      "translation": {
+        "n": 909,
+        "rmse": 0.07437387297842064,
+        "mean": 0.03730078242933476,
+        "median": 0.02089546078789001,
+        "std": 0.06434380010513584,
+        "min": 1.104536101718725e-05,
+        "max": 0.6667390898304602,
+        "p95": 0.11426822271426754,
+        "unit": "m"
+      },
+      "rotation": {
+        "n": 909,
+        "rmse": 1.9164468969148918,
+        "mean": 0.4570664439203244,
+        "median": 0.1358612036954664,
+        "std": 1.8611445334892038,
+        "min": 0.0010922978630228662,
+        "max": 28.15891356048965,
+        "p95": 1.0397372097537578,
+        "unit": "deg"
+      },
+      "translation_pct_of_delta": {
+        "n": 707,
+        "rmse": 107230.3525404484,
+        "mean": 18839.49884361999,
+        "median": 7.985434291870894,
+        "std": 105562.40708353561,
+        "min": 0.07602224257024305,
+        "max": 1845621.5879183975,
+        "p95": 68941.98232239787,
+        "unit": "%"
+      },
+      "rotation_per_metre": {
+        "n": 707,
+        "rmse": 106026.28396358891,
+        "mean": 12501.480301748878,
+        "median": 0.3572031213995595,
+        "std": 105286.68425490745,
+        "min": 0.0025084273546065196,
+        "max": 2044392.2498860827,
+        "p95": 35860.74947741116,
+        "unit": "deg/m"
+      }
+    }
+  },
+  "drift": {
+    "path_length_m": 292.87582610459697,
+    "segment_lengths_m": [
+      5.0,
+      10.0,
+      20.0,
+      40.0,
+      80.0
+    ],
+    "per_segment_length": {
+      "5m": {
+        "n_segments": 865,
+        "translation_pct": {
+          "n": 865,
+          "rmse": 14.257633285575796,
+          "mean": 10.089701163144344,
+          "median": 7.0817993567112865,
+          "std": 10.073630792539628,
+          "min": 0.73406896708226,
+          "max": 77.66230762711008,
+          "p95": 26.648427189619134,
+          "unit": "%"
+        },
+        "rotation_deg_per_m": {
+          "n": 865,
+          "rmse": 2.490761021670037,
+          "mean": 1.1713207686510423,
+          "median": 0.398702711076768,
+          "std": 2.1981578933273873,
+          "min": 0.02272851022579685,
+          "max": 10.933191681434755,
+          "p95": 6.417647869384934,
+          "unit": "deg/m"
+        }
+      },
+      "10m": {
+        "n_segments": 856,
+        "translation_pct": {
+          "n": 856,
+          "rmse": 17.88104499733457,
+          "mean": 12.019074772037246,
+          "median": 7.933070032802309,
+          "std": 13.239094071003551,
+          "min": 0.8772016543263826,
+          "max": 84.04631379105527,
+          "p95": 41.58661875668674,
+          "unit": "%"
+        },
+        "rotation_deg_per_m": {
+          "n": 856,
+          "rmse": 1.6006826307762891,
+          "mean": 0.914407000505237,
+          "median": 0.4062819567758019,
+          "std": 1.3137902122850198,
+          "min": 0.023566559261858445,
+          "max": 5.616255177443691,
+          "p95": 5.315237991205698,
+          "unit": "deg/m"
+        }
+      },
+      "20m": {
+        "n_segments": 830,
+        "translation_pct": {
+          "n": 830,
+          "rmse": 21.94953909256406,
+          "mean": 14.672105691159194,
+          "median": 9.23557882748085,
+          "std": 16.325182417463267,
+          "min": 0.11271312063976456,
+          "max": 86.68779033688702,
+          "p95": 53.25183275673152,
+          "unit": "%"
+        },
+        "rotation_deg_per_m": {
+          "n": 830,
+          "rmse": 1.2607541384340668,
+          "mean": 0.8773130866333623,
+          "median": 0.4507527842343455,
+          "std": 0.905440636154833,
+          "min": 0.014541263532625288,
+          "max": 3.0048249870440484,
+          "p95": 2.9095126249650716,
+          "unit": "deg/m"
+        }
+      },
+      "40m": {
+        "n_segments": 796,
+        "translation_pct": {
+          "n": 796,
+          "rmse": 29.012650789781443,
+          "mean": 20.670480057148428,
+          "median": 12.262356215110948,
+          "std": 20.35841742515451,
+          "min": 0.7903299691669005,
+          "max": 91.98390683921001,
+          "p95": 64.83697984999651,
+          "unit": "%"
+        },
+        "rotation_deg_per_m": {
+          "n": 796,
+          "rmse": 0.9494001174673935,
+          "mean": 0.7234284870691803,
+          "median": 0.37208332934980803,
+          "std": 0.6148266480430865,
+          "min": 0.00021856018627642313,
+          "max": 1.725006846541935,
+          "p95": 1.67504759678227,
+          "unit": "deg/m"
+        }
+      },
+      "80m": {
+        "n_segments": 720,
+        "translation_pct": {
+          "n": 720,
+          "rmse": 35.039337242188026,
+          "mean": 29.60570436167456,
+          "median": 37.293322859298584,
+          "std": 18.741862864211463,
+          "min": 3.8287951957632864,
+          "max": 63.56305541507724,
+          "p95": 59.10505197197166,
+          "unit": "%"
+        },
+        "rotation_deg_per_m": {
+          "n": 720,
+          "rmse": 0.6727254570618635,
+          "mean": 0.5886851126662703,
+          "median": 0.6572010444885535,
+          "std": 0.3255908148338858,
+          "min": 0.0010991469560373951,
+          "max": 0.9902474756010743,
+          "p95": 0.9746590898887157,
+          "unit": "deg/m"
+        }
+      }
+    },
+    "overall_translation_pct": {
+      "n": 4067,
+      "rmse": 24.309550260085288,
+      "mean": 16.956866609427514,
+      "median": 9.024972460959818,
+      "std": 17.418923865661018,
+      "min": 0.11271312063976456,
+      "max": 91.98390683921001,
+      "p95": 55.435099584101565,
+      "unit": "%"
+    },
+    "overall_rotation_deg_per_m": {
+      "n": 4067,
+      "rmse": 1.5619497594366638,
+      "mean": 0.866436458334917,
+      "median": 0.42481730035678006,
+      "std": 1.2996056766082156,
+      "min": 0.00021856018627642313,
+      "max": 10.933191681434755,
+      "p95": 2.906617091863176,
+      "unit": "deg/m"
+    },
+    "final_position_error_m": 16.027544093584357,
+    "final_error_pct_of_path": 5.472470810158404
+  },
+  "loop_closure_gap": {
+    "closed": false,
+    "path_length_m": 277.47778130122697,
+    "end_to_start_gap_m": 19.36497982688402,
+    "end_to_start_yaw_gap_deg": 11.735051890093228,
+    "closest_approach_m": 10.427693982268755,
+    "closest_approach_index": 688,
+    "closest_approach_path_m": 182.71745595120944,
+    "drift_pct_of_path": 6.9789298934395045,
+    "yaw_drift_deg_per_m": 0.04229186147828456,
+    "assumption": "Assumes the robot was physically returned to its marked start pose. The gap reported here is accumulated estimator error PLUS however far off the mark the robot was actually parked; record that parking error and subtract it in interpretation.",
+    "reason": "the estimate never comes within 1.00 m of its own start after 10.0 m of travel (closest 10.43 m). Either the route was not a loop, or the drift is larger than the search radius \u2014 check the trajectory plot before concluding either."
+  },
+  "corrections": {
+    "n_corrections": 0,
+    "events": [],
+    "magnitude": {
+      "n": 0,
+      "unit": "m"
+    },
+    "largest_correction_m": 0.0,
+    "total_correction_m": 0.0,
+    "detection_threshold_m": 2.6028815038825925,
+    "assumed_max_speed_mps": 2.0,
+    "note": "Zero corrections on a route that revisits itself means loop closure never fired \u2014 check the detection threshold and the vocabulary/memory settings, not the odometry."
+  }
+}

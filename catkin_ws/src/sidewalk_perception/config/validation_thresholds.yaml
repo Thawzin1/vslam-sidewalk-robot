@@ -1,0 +1,120 @@
+# ---------------------------------------------------------------------------
+# validation_thresholds.yaml — what counts as a healthy sensor stream.
+#
+# Read by scripts/sensor_validator.py. Every number here is a judgement call,
+# so each one carries the reasoning behind it. If you change a threshold,
+# change the comment too — a threshold with no justification is just a number
+# somebody once typed, and six months later nobody can tell whether a result
+# that sits near it is fine or alarming.
+#
+# The rule this file follows: a threshold should be derived from a physical
+# consequence, not from what the hardware happened to do on a good day.
+# ---------------------------------------------------------------------------
+
+# Topic names, relative to the camera namespace. Change these only if the
+# wrapper's topic layout differs from the 4.x Noetic branch.
+topics:
+  left_image: 'left/image_rect_color'
+  right_image: 'right/image_rect_color'
+  depth_image: 'depth/depth_registered'
+  left_info: 'left/camera_info'
+  right_info: 'right/camera_info'
+  imu: 'imu/data'
+  point_cloud: 'point_cloud/cloud_registered'
+
+thresholds:
+
+  # --- Frame rate -----------------------------------------------------------
+  # Allowed deviation from the configured rate before warning. 5% of 30 FPS is
+  # 1.5 FPS. Below that, the cause is ordinary scheduling noise; above it,
+  # something is actually competing for the GPU or the link is marginal.
+  # Beyond twice this figure the check fails outright.
+  fps_tolerance_pct: 5.0
+
+  # --- Dropped frames -------------------------------------------------------
+  # Warn at 0.1%, fail at 1%.
+  #
+  # The reasoning: at 30 FPS, 0.1% is one frame lost every 33 seconds. Visual
+  # odometry survives an isolated dropped frame — it simply matches across a
+  # slightly larger baseline. What it does not survive is a *burst*, because
+  # consecutive losses mean a large unobserved motion and tracking breaks
+  # outright. 1% sustained almost always means bursts rather than scattered
+  # singles, which is why that is the failure line rather than something
+  # numerically dramatic.
+  dropped_frame_warn_pct: 0.1
+  dropped_frame_fail_pct: 1.0
+
+  # --- Jitter ---------------------------------------------------------------
+  # Expressed as a multiple of the nominal frame interval, not in milliseconds,
+  # because the same absolute jitter means completely different things at 5 FPS
+  # and 60 FPS. At 30 FPS the nominal interval is 33.3 ms, so 1.5x = 50 ms and
+  # 3.0x = 100 ms.
+  #
+  # Why the p99 and not the mean: a stream that averages a perfect 30 FPS but
+  # stalls for 300 ms once a minute is useless for SLAM, and the mean will
+  # never reveal that. The tail is the whole story.
+  #
+  # Physical consequence: at a walking pace of 1.5 m/s, a 100 ms stall means
+  # 15 cm of unobserved travel. The IMU has to bridge that gap on its own, and
+  # a consumer-grade IMU integrating for 100 ms unaided accumulates meaningful
+  # position error.
+  jitter_p99_warn_ratio: 1.5
+  jitter_p99_fail_ratio: 3.0
+
+  # --- IMU rate -------------------------------------------------------------
+  # Against the datasheet nominal held in perception_common.ZEDX["imu_rate_hz"],
+  # which is 200 Hz. At 30 FPS that is only ~7 IMU samples per frame interval;
+  # losing half of them materially degrades the inertial pre-integration that
+  # both RTAB-Map and ORB-SLAM3 rely on to bridge the gap between frames.
+  #
+  # THE TOLERANCE IS UNCHANGED AT 5%, BUT WHAT IT IS MEASURED AGAINST MOVED.
+  # The nominal was 400 Hz until 2026-08-29 (the ZED 2's figure). Combined with
+  # this 5% band, a perfectly healthy ZED X delivering its rated 200 Hz would
+  # have scored 50% off and FAILED. The threshold was never the problem; the
+  # reference was. 5% of 200 Hz is 10 Hz, which is still tight enough to catch
+  # a wrapper that is throttling and loose enough not to fire on scheduling
+  # jitter.
+  imu_rate_tolerance_pct: 5.0
+
+  # --- Stereo pair simultaneity --------------------------------------------
+  # Left and right images of a pair should carry an IDENTICAL timestamp; the
+  # ZED X triggers both global-shutter sensors together, so any non-zero skew
+  # is a software artefact.
+  #
+  # Why 10 ms is the failure line: disparity assumes both images captured the
+  # same instant. At 1.5 m/s, 10 ms of skew displaces the scene 15 mm between
+  # the two views. At 10 m range the camera's own depth precision is roughly
+  # 180 mm, so 15 mm is tolerable there — but at 1.5 m range, where precision
+  # is a few millimetres, that same skew dominates the measurement entirely.
+  stereo_sync_warn_ms: 1.0
+  stereo_sync_fail_ms: 10.0
+
+  # --- Depth validity -------------------------------------------------------
+  # Percentage of pixels carrying a usable depth within the rated 1-35 m range.
+  #
+  # These are deliberately permissive, because low validity is often physics
+  # rather than a fault. Stereo matching needs visible texture; a large
+  # featureless surface returns nothing no matter how good the camera is. Sky
+  # is always invalid. Wet asphalt reflects rather than scatters and returns
+  # far less than dry asphalt. A camera pointed at a blank wall can legitimately
+  # report under 20% valid while being in perfect working order.
+  #
+  # So treat a low number here as "characterise the scene", not "the camera is
+  # broken" — unless it is near zero, which does indicate a real fault.
+  depth_valid_warn_pct: 40.0
+  depth_valid_fail_pct: 15.0
+
+# --- Soak run defaults -----------------------------------------------------
+# Why 10-15 minutes rather than a 30-second smoke test: the failures that
+# matter most only appear with time.
+#   - Thermal throttling on the Orin takes minutes of sustained load to bite.
+#   - Clock drift between the camera and the host is a slope, and a slope needs
+#     a long baseline to distinguish from noise.
+#   - A marginal GMSL2 connection may pass thousands of frames before its first
+#     error burst.
+# A short test that passes proves only that nothing is catastrophically wrong.
+soak:
+  duration_s: 900
+  progress_period_s: 30
+  depth_sample_period_s: 1.0
+  startup_timeout_s: 20

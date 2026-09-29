@@ -1,0 +1,151 @@
+[33m[WARN] [1790509278.984317839]: Received old measurement for topic imu1_twist, but history interval is insufficiently sized. Measurement time is 1790509274.768753767, current time is 1790509278.9841337204, history length is 1.[0m
+[33m[WARN] [1790509284.089815884]: Failed to meet update rate! Took 5.1057219529999997576[0m
+[33m[WARN] [1790509300.370163839]: Received old measurement for topic imu1_twist, but history interval is insufficiently sized. Measurement time is 1790509299.2747044563, current time is 1790509300.3700845242, history length is 1.[0m
+[33m[WARN] [1790509300.389098860]: Could not revert to state with time 1790509299.2953777313. Instead reverted to state with time 1790509300.3090643883. History size was 3[0m
+[33m[WARN] [1790509322.629087445]: Received old measurement for topic imu1_twist, but history interval is insufficiently sized. Measurement time is 1790509321.5639667511, current time is 1790509322.6290147305, history length is 1.[0m
+[33m[WARN] [1790509322.649098455]: Could not revert to state with time 1790509321.5848414898. Instead reverted to state with time 1790509322.5890674591. History size was 4[0m
+[33m[WARN] [1790509430.649188116]: Received old measurement for topic imu1_twist, but history interval is insufficiently sized. Measurement time is 1790509426.4997668266, current time is 1790509430.649084568, history length is 1.[0m
+[33m[WARN] [1790509430.669125620]: Could not revert to state with time 1790509426.8816919327. Instead reverted to state with time 1790509430.5890665054. History size was 20[0m
+[WARN] [1790509275.174167]: DROP GUARD: wheels and gyroscope silent for >= 0.3 s while PARKED - publishing "not moving" and keeping camera frames out until the camera shows real motion or the robot link is back
+[WARN] [1790509299.690852]: DROP GUARD: wheels and gyroscope silent for >= 0.3 s while PARKED - publishing "not moving" and keeping camera frames out until the camera shows real motion or the robot link is back
+[WARN] [1790509321.967287]: DROP GUARD: wheels and gyroscope silent for >= 0.3 s while PARKED - publishing "not moving" and keeping camera frames out until the camera shows real motion or the robot link is back
+[WARN] [1790509344.425608]: DROP GUARD: wheels and gyroscope silent for >= 0.3 s while PARKED - publishing "not moving" and keeping camera frames out until the camera shows real motion or the robot link is back
+[WARN] [1790509426.949232]: DROP GUARD: wheels and gyroscope silent for >= 0.3 s while PARKED - publishing "not moving" and keeping camera frames out until the camera shows real motion or the robot link is back
+[WARN] [1790509923.743637]: DROP GUARD: wheels and gyroscope silent for >= 0.3 s while PARKED - publishing "not moving" and keeping camera frames out until the camera shows real motion or the robot link is back
+[WARN] [1790510121.843869]: HOLD: wheels, gyroscope and camera all silent for >= 0.3 s - publishing "not moving" until one comes back
+[WARN] [1790510779.433412]: DROP GUARD: wheels and gyroscope silent for >= 0.3 s while PARKED - publishing "not moving" and keeping camera frames out until the camera shows real motion or the robot link is back
+[WARN] [1790510850.843534]: DROP GUARD: wheels and gyroscope silent for >= 0.3 s while PARKED - publishing "not moving" and keeping camera frames out until the camera shows real motion or the robot link is back
+[INFO] [1790509072.380578]: ZED gyroscope: frame zedx_front_imu_link -> base_link found on /tf_static, turn about base_link z = -0.05735 wx +0.00910 wy +0.99831 wz
+[INFO] [1790509094.594997]: gyro offset kept at once after 20.0 s parked: 0.377 deg/min (n=392); refreshed while the stop lasts
+[INFO] [1790509118.478116]: ZED gyroscope: frame zedx_front_imu_link -> base_link found on /tf_static, turn about base_link z = -0.05735 wx +0.00910 wy +0.99831 wz
+[INFO] [1790509134.589935]: gyro offset measured over 60.0 s parked: 0.180 deg/min (n=1173)
+[INFO] [1790509138.593691]: ZED gyroscope offset kept at once after 20.0 s parked: 0.032 deg/min (n=894)
+[INFO] [1790509154.699990]: gyro offset kept at once after 20.1 s parked: 0.081 deg/min (n=393); refreshed while the stop lasts
+[INFO] [1790509178.590123]: ZED gyroscope offset measured after 60.0 s parked: 0.029 deg/min (n=2682)
+[INFO] [1790509194.694129]: gyro offset measured over 60.0 s parked: -0.017 deg/min (n=1173)
+[INFO] [1790509214.691768]: gyro offset kept at once after 20.0 s parked: 0.101 deg/min (n=392); refreshed while the stop lasts
+[INFO] [1790509238.694929]: ZED gyroscope offset measured after 60.0 s parked: -0.076 deg/min (n=2685)
+[INFO] [1790509254.798948]: gyro offset measured over 60.0 s parked: 0.182 deg/min (n=1174)
+[INFO] [1790509274.796925]: gyro offset kept at once after 20.0 s parked: 0.259 deg/min (n=392); refreshed while the stop lasts
+[INFO] [1790509278.990687]: DROP GUARD ended after 3.82 s: the gyroscope came back (held throughout)
+[INFO] [1790509278.995504]: gyro offset window ended by a gap (no gyro reading for 1.6 s): its kept 0.259 deg/min (n=392) stays; 3 readings not in it thrown away
+[INFO] [1790509299.294804]: gyro offset kept at once after 20.1 s parked: -0.216 deg/min (n=393); refreshed while the stop lasts
+[INFO] [1790509300.366129]: DROP GUARD ended after 0.68 s: the gyroscope came back (held throughout)
+[INFO] [1790509300.376251]: gyro offset window ended by a gap (no gyro reading ARRIVED for 1.0 s, stamps 0.05 s apart): its kept -0.216 deg/min (n=393) stays; 3 readings not in it thrown away
+[INFO] [1790509321.591842]: gyro offset kept at once after 20.0 s parked: 0.206 deg/min (n=392); refreshed while the stop lasts
+[INFO] [1790509322.626204]: DROP GUARD ended after 0.66 s: the wheels came back (held throughout)
+[INFO] [1790509322.635324]: gyro offset window ended by a gap (no wheel reading ARRIVED for 1.0 s, stamps 0.10 s apart): its kept 0.206 deg/min (n=392) stays; 3 readings not in it thrown away
+[INFO] [1790509343.999098]: gyro offset kept at once after 20.1 s parked: 0.130 deg/min (n=393); refreshed while the stop lasts
+[INFO] [1790509344.754911]: DROP GUARD ended after 0.33 s: the wheels came back (held throughout)
+[INFO] [1790509344.757592]: gyro offset window ended by a gap (no wheel reading ARRIVED for 0.7 s, stamps 0.10 s apart): its kept 0.130 deg/min (n=393) stays; 3 readings not in it thrown away
+[INFO] [1790509366.393881]: gyro offset kept at once after 20.0 s parked: 0.013 deg/min (n=392); refreshed while the stop lasts
+[INFO] [1790509406.389673]: gyro offset measured over 60.0 s parked: 0.064 deg/min (n=1174)
+[INFO] [1790509406.392649]: ZED gyroscope offset measured after 60.0 s parked: -0.007 deg/min (n=2688)
+[INFO] [1790509426.509913]: gyro offset kept at once after 20.1 s parked: 0.163 deg/min (n=393); refreshed while the stop lasts
+[INFO] [1790509430.644549]: DROP GUARD ended after 3.70 s: the wheels came back (held throughout)
+[INFO] [1790509430.647442]: gyro offset window ended by a gap (no wheel reading ARRIVED for 4.1 s, stamps 0.09 s apart): its kept 0.163 deg/min (n=393) stays; 3 readings not in it thrown away
+[INFO] [1790509449.696238]: gyro offset kept at once after 20.1 s parked: 0.371 deg/min (n=393); refreshed while the stop lasts
+[INFO] [1790509489.693059]: gyro offset measured over 60.0 s parked: 0.268 deg/min (n=1174)
+[INFO] [1790509489.695204]: ZED gyroscope offset measured after 60.0 s parked: -0.005 deg/min (n=2681)
+[INFO] [1790509520.394279]: gyro offset kept at once after 20.1 s parked: 0.052 deg/min (n=393); refreshed while the stop lasts
+[INFO] [1790509560.302486]: ZED gyroscope offset measured after 60.0 s parked: -0.012 deg/min (n=2685)
+[INFO] [1790509560.400884]: gyro offset measured over 60.0 s parked: 0.086 deg/min (n=1173)
+[INFO] [1790509660.798330]: gyro offset kept at once after 20.1 s parked: -0.182 deg/min (n=393); refreshed while the stop lasts
+[INFO] [1790509700.794394]: gyro offset measured over 60.0 s parked: -0.005 deg/min (n=1174)
+[INFO] [1790509700.796844]: ZED gyroscope offset measured after 60.0 s parked: 0.007 deg/min (n=2686)
+[INFO] [1790509720.900899]: gyro offset kept at once after 20.1 s parked: 0.286 deg/min (n=394); refreshed while the stop lasts
+[INFO] [1790509760.787070]: gyro offset measured over 60.0 s parked: 0.146 deg/min (n=1174)
+[INFO] [1790509760.790618]: ZED gyroscope offset measured after 60.0 s parked: -0.065 deg/min (n=2688)
+[INFO] [1790509780.896453]: gyro offset kept at once after 20.1 s parked: -0.026 deg/min (n=393); refreshed while the stop lasts
+[INFO] [1790509790.994485]: gyro offset measured over 30.0 s parked: 0.017 deg/min (n=588)
+[INFO] [1790509790.997186]: ZED gyroscope offset measured after 30.1 s parked: 0.111 deg/min (n=1349)
+[INFO] [1790509854.386835]: gyro offset kept at once after 20.1 s parked: -0.405 deg/min (n=388); refreshed while the stop lasts
+[INFO] [1790509865.880321]: gyro offset measured over 31.5 s parked: -0.159 deg/min (n=608)
+[INFO] [1790509865.883811]: ZED gyroscope offset measured after 31.5 s parked: -0.053 deg/min (n=1408)
+[INFO] [1790509923.832917]: DROP GUARD ended after 0.09 s: the gyroscope came back (held throughout)
+[INFO] [1790510138.743608]: hold ended after 16.90 s: an input came back
+[INFO] [1790510780.246432]: DROP GUARD ended after 0.81 s: the gyroscope came back (held throughout)
+[INFO] [1790510831.995320]: gyro offset kept at once after 20.0 s parked: -0.664 deg/min (n=392); refreshed while the stop lasts
+[INFO] [1790510851.644439]: DROP GUARD ended after 0.80 s: the gyroscope came back (held throughout)
+[INFO] [1790510851.647722]: gyro offset window ended by a gap (no gyro reading for 0.9 s): its kept -0.883 deg/min (n=754) stays; 2 readings not in it thrown away
+[INFO] [1790510873.595731]: gyro offset kept at once after 20.0 s parked: -0.443 deg/min (n=392); refreshed while the stop lasts
+... logging to ~/.ros/log/e0e56ee4-ba38-11f1-8c88-48e7da41463d/roslaunch-jetson-520819.log
+Checking log directory for disk usage. This may take a while.
+Press Ctrl-C to interrupt
+Done checking log file disk usage. Usage is <1GB.
+]2;<repo>/catkin_ws/src/sidewalk_slam/launch/fused_odometry.launch
+[1mstarted roslaunch server http://127.0.0.1:43273/[0m
+
+SUMMARY
+========
+
+PARAMETERS
+ * /ekf_fused/base_link_frame: base_link
+ * /ekf_fused/debug: False
+ * /ekf_fused/dynamic_process_noise_covariance: False
+ * /ekf_fused/frequency: 50
+ * /ekf_fused/history_length: 1.0
+ * /ekf_fused/imu0: /ekf_in/imu
+ * /ekf_fused/imu0_config: [False, False, Fa...
+ * /ekf_fused/imu0_differential: False
+ * /ekf_fused/imu0_nodelay: True
+ * /ekf_fused/imu0_queue_size: 20
+ * /ekf_fused/imu0_relative: False
+ * /ekf_fused/imu1: /ekf_in/zed_imu
+ * /ekf_fused/imu1_config: [False, False, Fa...
+ * /ekf_fused/imu1_differential: False
+ * /ekf_fused/imu1_nodelay: True
+ * /ekf_fused/imu1_queue_size: 100
+ * /ekf_fused/imu1_relative: False
+ * /ekf_fused/initial_estimate_covariance: ['1e-9', 0, 0, 0,...
+ * /ekf_fused/map_frame: map
+ * /ekf_fused/odom0: /ekf_in/wheel_odom
+ * /ekf_fused/odom0_config: [False, False, Fa...
+ * /ekf_fused/odom0_differential: False
+ * /ekf_fused/odom0_nodelay: True
+ * /ekf_fused/odom0_queue_size: 20
+ * /ekf_fused/odom0_relative: False
+ * /ekf_fused/odom1: /ekf_in/vo_odom
+ * /ekf_fused/odom1_config: [False, False, Fa...
+ * /ekf_fused/odom1_differential: False
+ * /ekf_fused/odom1_nodelay: True
+ * /ekf_fused/odom1_queue_size: 10
+ * /ekf_fused/odom1_relative: False
+ * /ekf_fused/odom1_twist_rejection_threshold: 6.0
+ * /ekf_fused/odom_frame: odom
+ * /ekf_fused/permit_corrected_publication: False
+ * /ekf_fused/predict_to_current_time: False
+ * /ekf_fused/print_diagnostics: True
+ * /ekf_fused/process_noise_covariance: [0.05, 0, 0, 0, 0...
+ * /ekf_fused/publish_acceleration: False
+ * /ekf_fused/publish_tf: True
+ * /ekf_fused/sensor_timeout: 0.5
+ * /ekf_fused/smooth_lagged_data: True
+ * /ekf_fused/transform_time_offset: 0.0
+ * /ekf_fused/transform_timeout: 0.0
+ * /ekf_fused/two_d_mode: True
+ * /ekf_fused/world_frame: odom
+ * /ekf_input_conditioner/hold: True
+ * /ekf_input_conditioner/hold_after_s: 0.3
+ * /ekf_input_conditioner/run: s2_loc_04
+ * /ekf_input_conditioner/vo_lin_var_floor: 4e-4
+ * /ekf_input_conditioner/vo_lin_var_scale: 8.9
+ * /ekf_input_conditioner/vo_yaw_var_floor: 4e-6
+ * /ekf_input_conditioner/vo_yaw_var_scale: 0.14
+ * /rosdistro: noetic
+ * /rosversion: 1.17.4
+
+NODES
+  /
+    ekf_fused (robot_localization/ekf_localization_node)
+    ekf_input_conditioner (sidewalk_slam/ekf_input_conditioner.py)
+
+[1mROS_MASTER_URI=http://127.0.0.1:11311[0m
+]2;<repo>/catkin_ws/src/sidewalk_slam/launch/fused_odometry.launch http://127.0.0.1:11311
+[1mprocess[ekf_input_conditioner-1]: started with pid [520926][0m
+[1mprocess[ekf_fused-2]: started with pid [520929][0m
+[ekf_fused-2] killing on exit
+[ekf_input_conditioner-1] killing on exit
+shutting down processing monitor...
+... shutting down processing monitor complete
+[1mdone[0m

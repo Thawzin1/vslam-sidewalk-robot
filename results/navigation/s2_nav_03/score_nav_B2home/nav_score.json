@@ -1,0 +1,108 @@
+{
+ "run_dir": "~/.run_records/s2_nav_03/nav_B2home",
+ "legs": [
+  {
+   "k": 0,
+   "name": "B3_SW_widest",
+   "result": "SUCCEEDED",
+   "time_s": 36.8,
+   "end_estimate_to_goal_m": 0.23,
+   "end_truth_to_goal_m": null,
+   "n_samples": 469,
+   "n_plans": 37,
+   "planned_length_m": 8.76,
+   "driven_length_estimate_m": 9.02,
+   "dev_first_median_m": 0.039,
+   "dev_first_p95_m": 0.166,
+   "dev_first_max_m": 0.199,
+   "dev_force_median_m": 0.006,
+   "dev_force_p95_m": 0.091
+  },
+  {
+   "k": 1,
+   "name": "B4_start_mark",
+   "result": "SUCCEEDED",
+   "time_s": 93.2,
+   "end_estimate_to_goal_m": 0.19,
+   "end_truth_to_goal_m": null,
+   "n_samples": 1032,
+   "n_plans": 94,
+   "planned_length_m": 15.78,
+   "driven_length_estimate_m": 16.73,
+   "dev_first_median_m": 0.142,
+   "dev_first_p95_m": 0.416,
+   "dev_first_max_m": 0.469,
+   "dev_force_median_m": 0.011,
+   "dev_force_p95_m": 0.081
+  }
+ ],
+ "N1": {
+  "pass": true,
+  "reached": 2,
+  "goals": 2,
+  "line": "every goal: move_base SUCCEEDED within its time limit, robot estimate <= 0.50 m from the goal"
+ },
+ "N2": {
+  "pass_software_part": false,
+  "unplanned_stops": [
+   {
+    "t": 34.503,
+    "goal": 0,
+    "why": "deadman button released"
+   },
+   {
+    "t": 53.404,
+    "goal": 1,
+    "why": "deadman button released"
+   },
+   {
+    "t": 56.056,
+    "goal": 1,
+    "why": "deadman button released"
+   },
+   {
+    "t": 58.254,
+    "goal": 1,
+    "why": "deadman button released"
+   },
+   {
+    "t": 61.466,
+    "goal": 1,
+    "why": "deadman button released"
+   },
+   {
+    "t": 64.653,
+    "goal": 1,
+    "why": "deadman button released"
+   },
+   {
+    "t": 82.753,
+    "goal": 1,
+    "why": "deadman button released"
+   },
+   {
+    "t": 84.304,
+    "goal": 1,
+    "why": "deadman button released"
+   }
+  ],
+  "line": "no stop by the safety layer except the planned end of each leg; collisions and hand-overs are judged by the user on the spot (PROTOCOL.md)"
+ },
+ "N3": {
+  "dev_first_median_m": 0.107,
+  "dev_first_p95_m": 0.373,
+  "dev_force_median_m": 0.009,
+  "dev_force_p95_m": 0.086,
+  "n": 1501
+ },
+ "N4": {
+  "largest_correction_step_m": 0.152,
+  "largest_correction_step_deg": 0.74,
+  "steps_over_0.3m": 0,
+  "driven_m_by_wheels_blend": 25.88,
+  "n_fixes": 81,
+  "longest_stretch_without_fix_m": 1.23,
+  "first_fix_after_m": 0.12,
+  "fixes_per_10m": 31.29
+ }
+}

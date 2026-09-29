@@ -1,0 +1,36 @@
+{
+ "run": "s2_nav_02",
+ "map_db": "~/slam_series2/localise/s2_static_10_map.db",
+ "starts": [
+  {
+   "start": 1,
+   "mark": "start_mark",
+   "t_start": 1790544942.1184568,
+   "first_fix_t": 1790544977.5228853,
+   "first_fix_kind": "uncertainty",
+   "first_fix_odom_m": 0.0,
+   "first_fix_s": 35.4,
+   "first_fix_jump_m": null,
+   "first_fix_xy": [
+    0.02,
+    0.008,
+    -1.0
+   ],
+   "fixes": 170,
+   "global": 35,
+   "proximity": 134,
+   "suspect_jumps": 0,
+   "max_later_jump_m": 0.53,
+   "odom_m": 68.13768203056594,
+   "last_fix_t": 1790545939.4191468,
+   "pending": 41,
+   "first_pending_s": 35.5,
+   "wrong_place_fixes": 0,
+   "first_fix_dist_to_mark_m": 0.022,
+   "evidence": {
+    "uncertainty": 928
+   }
+  }
+ ],
+ "written": 1790545961.4755406
+}

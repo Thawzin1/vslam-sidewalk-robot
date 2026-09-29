@@ -1,0 +1,108 @@
+# RViz layout for inspecting the ZED X stream by eye.
+#
+# Machine measurement (sensor_validator.py) is the authority on stream health —
+# the eye is bad at spotting a 0.3% frame drop. But the eye is very good at
+# things no metric here captures: motion blur, a smeared or double image under
+# vibration, a lens smudge, exposure hunting between sun and shade, and depth
+# that looks plausible but is subtly warped.
+#
+# Topics assume the `zedx_front` namespace. Change them if you launch the
+# camera under a different name.
+Panels:
+  - Class: rviz/Displays
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Global Options1
+        - /DepthCloud1
+      Splitter Ratio: 0.5
+    Tree Height: 700
+  - Class: rviz/Views
+    Name: Views
+Visualization Manager:
+  Class: ""
+  Name: root
+  Global Options:
+    Background Color: 48; 48; 48
+    Fixed Frame: zedx_front_camera_link
+    Frame Rate: 30
+  Displays:
+    - Class: rviz/Grid
+      Name: Grid
+      Enabled: true
+      Cell Size: 1
+      Plane Cell Count: 20
+      Color: 160; 160; 164
+    - Class: rviz/TF
+      Name: TF
+      Enabled: true
+      Show Names: true
+      Show Axes: true
+      Show Arrows: false
+      Marker Scale: 0.3
+    - Class: rviz/Image
+      Name: Left rectified
+      Enabled: true
+      Image Topic: /zedx_front/left/image_rect_color
+      Transport Hint: raw
+      Queue Size: 5
+      Normalize Range: true
+    - Class: rviz/Image
+      Name: Right rectified
+      Enabled: false
+      Image Topic: /zedx_front/right/image_rect_color
+      Transport Hint: raw
+      Queue Size: 5
+      Normalize Range: true
+    - Class: rviz/Image
+      Name: Depth
+      Enabled: true
+      Image Topic: /zedx_front/depth/depth_registered
+      Transport Hint: raw
+      Queue Size: 5
+      # Black holes in this view are pixels the stereo matcher could not
+      # solve — usually untextured surfaces, sky, or anything nearer than the
+      # 1 m minimum range. Some are normal; a mostly black frame is not.
+      Normalize Range: true
+    - Class: rviz/PointCloud2
+      Name: Point cloud
+      Enabled: true
+      Topic: /zedx_front/point_cloud/cloud_registered
+      Queue Size: 3
+      Size (m): 0.02
+      Style: Points
+      Color Transformer: RGB8
+      Decay Time: 0
+      # Watch the far field while the robot turns. Points beyond ~15 m should
+      # look visibly noisier in depth than points nearby: uncertainty grows
+      # with the square of distance, so that spread is physics working as
+      # expected, not a fault.
+    - Class: rviz/Imu
+      Name: IMU
+      Enabled: false
+      Topic: /zedx_front/imu/data
+      Queue Size: 10
+  Enabled: true
+  Global Options:
+    Fixed Frame: zedx_front_camera_link
+  Tools:
+    - Class: rviz/Interact
+    - Class: rviz/MoveCamera
+    - Class: rviz/Select
+  Views:
+    Current:
+      Class: rviz/Orbit
+      Name: Current View
+      Distance: 8
+      Focal Point:
+        X: 0
+        Y: 0
+        Z: 0
+      Pitch: 0.4
+      Yaw: 3.6
+      Target Frame: <Fixed Frame>
+Window Geometry:
+  Height: 1000
+  Width: 1600
+  Displays:
+    collapsed: false

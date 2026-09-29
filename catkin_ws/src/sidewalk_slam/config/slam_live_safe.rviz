@@ -1,0 +1,106 @@
+Panels:
+- Class: rviz/Displays
+  Name: Displays
+  Property Tree Widget:
+    Expanded:
+    - /Occupancy grid (2D)1
+    Splitter Ratio: 0.5
+  Tree Height: 640
+- Class: rviz/Views
+  Name: Views
+Visualization Manager:
+  Class: ''
+  Name: root
+  Global Options:
+    Background Color: 22; 22; 28
+    Default Light: true
+    Fixed Frame: map
+    Frame Rate: 30
+  Displays:
+  # Deliberately excluded, and why (docs/SOLVED.md, "Jetson livelock — RViz 11 GB",
+  # 2026-08-21): rtabmap_rviz_plugins/MapCloud on /rtabmap/mapData (unbounded
+  # accumulating 3D cloud, culprit 1) and rviz/Image on
+  # /zedx_front/zed_node/rgb/image_rect_color (duplicate full-res subscription
+  # to a topic RTAB-Map's own pipeline already consumes, culprit 2). Also
+  # excluded: rviz/PointCloud2 on /rtabmap/cloud_map (present in
+  # real_robot.rviz, same unbounded-3D-cloud shape as culprit 1, never vetted
+  # as safe). None of those three displays appear below.
+  - Class: rviz/Grid
+    Name: Reference Grid
+    Enabled: true
+    Cell Size: 1
+    Plane Cell Count: 30
+    Color: 70; 70; 80
+    Alpha: 0.35
+  - Alpha: 1
+    Class: rviz/RobotModel
+    Collision Enabled: false
+    Enabled: true
+    Links:
+      All Links Enabled: true
+      Expand Joint Details: false
+      Expand Link Details: false
+      Expand Tree: false
+      Link Tree Style: Links in Alphabetic Order
+    Name: RobotModel
+    Robot Description: robot_description
+    TF Prefix: ''
+    Update Interval: 0
+    Value: true
+    Visual Enabled: true
+  - Class: rtabmap_rviz_plugins/MapGraph
+    Name: Pose graph + loop closures
+    Enabled: true
+    Topic: /rtabmap/mapGraph
+    Global loop closure: 25; 255; 0
+    Neighbor: 100; 160; 255
+    Local loop closure: 255; 255; 0
+    Neighbor merged: 200; 200; 200
+  - Class: rviz/Path
+    Name: Trajectory
+    Enabled: true
+    Topic: /rtabmap/mapPath
+    Color: 255; 170; 0
+    Line Style: Billboards
+    Line Width: 0.05
+  - Class: rviz/TF
+    Name: Camera pose (TF)
+    Enabled: true
+    Show Names: false
+    Show Axes: true
+    Show Arrows: false
+    Marker Scale: 0.6
+  - Class: rviz/Map
+    Name: Occupancy grid (2D)
+    Enabled: true
+    Topic: /rtabmap/grid_map
+    Color Scheme: map
+    Draw Behind: true
+  Tools:
+  - Class: rviz/MoveCamera
+  - Class: rviz/Select
+  - Class: rviz/FocusCamera
+  - Class: rviz/Measure
+  Views:
+    Current:
+      Class: rviz/Orbit
+      Name: Current View
+      Target Frame: base_link
+      Distance: 6
+      Focal Point:
+        X: 0
+        Y: 0
+        Z: 0
+      Pitch: 0.42
+      Yaw: 2.35
+      Near Clip Distance: 0.05
+  Global Options Fixed Frame: map
+Window Geometry:
+  Height: 1000
+  Width: 1720
+  Hide Left Dock: false
+  Hide Right Dock: true
+  Displays:
+    collapsed: false
+  Views:
+    collapsed: true

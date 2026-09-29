@@ -1,0 +1,177 @@
+<?xml version="1.0"?>
+<robot name="husky" xmlns:xacro="http://www.ros.org/wiki/xacro">
+<!--
+  husky_real_zedx.urdf.xacro - the real robot plus the ZED X camera. Just
+  these two - the bracket/holder visual geometry was removed (it never
+  affected anything functional: the camera's position and rigidity come
+  entirely from the fixed joint below, not from what mesh is drawn there).
+
+  zedx_parent/zedx_xyz/zedx_rpy is what to edit to move the camera - see
+  ENGINEERING_NOTES.md for the guided walkthrough of editing this in VS Code.
+
+  husky_real.urdf is a flat, already-expanded URDF (not itself a xacro file).
+  xacro:include still works on it: xacro pulls in the CHILDREN of its
+  <robot> root (every link/joint/gazebo block) and discards that file's own
+  <robot> wrapper, so there is exactly one <robot> root here, not two.
+-->
+
+  <xacro:include filename="$(find sidewalk_sim)/urdf/husky_real.urdf"/>
+  <xacro:include filename="$(find sidewalk_bringup)/urdf/zedx_mount.urdf.xacro"/>
+
+  <!-- zedx_base_frame is the ZED X's own dedicated mount point, built into
+       husky_real.urdf's "ZED X Camera Integration" section - the same way
+       the sensor arch already has its own oak-d-base-frame for a different,
+       earlier camera. It isn't shared with anything else, so zedx_xyz here
+       is normally "0 0 0": the position IS the frame, tuned once and baked
+       in, rather than an offset re-applied on every launch. Change the
+       frame's own position in husky_real.urdf if the mount ever needs to
+       move for real; use zedx_xyz here only for a temporary, try-it-and-see
+       nudge. D05 (a PACS cell on the main deck) also still works as
+       zedx_parent, for an unrelated, lower mount.
+
+       WHAT THESE THREE MOVE, PRECISELY: the camera's MOUNT POINT - the
+       outside of the housing where the bracket grips it - and everything
+       inside the camera rides along with it. They are NOT the lens pose.
+       See the block below for why that distinction has already cost this
+       project a run's worth of data. -->
+  <xacro:arg name="zedx_parent" default="zedx_base_frame"/>
+  <xacro:arg name="zedx_xyz" default="0 0 0"/>
+  <xacro:arg name="zedx_rpy" default="0 0 0"/>
+
+  <!-- stereo camera mode + its image noise: see zedx_mount.urdf.xacro for
+       what these do and why. Defaults preserve the existing depth camera. -->
+  <xacro:arg name="zedx_stereo" default="false"/>
+  <xacro:arg name="zedx_noise_stddev" default="0.005"/>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       THE CAMERA'S OWN INSIDE: mount -> camera_center -> LEFT LENS.
+
+       WHY THIS CHAIN EXISTS AT ALL, AND WHY DELETING IT BREAKS SIM-VS-REAL.
+
+       A ZED X reports depth from its LEFT LENS. The left lens is not where
+       the bracket holds the camera: it sits 60 mm to the robot's LEFT and
+       16 mm ABOVE the mount point, and 10 mm back along x. Those three
+       numbers are the camera's internal geometry - they are properties of
+       the product, not of this robot, and they are the same on every ZED X.
+
+       UNTIL 2026-08-29 THIS FILE DID NOT HAVE THEM. It handed the mount
+       pose straight to the zedx_camera macro, and that macro's contract -
+       stated in its own header, in the paragraph that begins "Fixes a real
+       bug" - is that the pose it is given IS THE LEFT LENS POSE. So the
+       simulated left lens was pinned exactly on the mount point: 60 mm to
+       the RIGHT of, and 16 mm BELOW, where the real one is. That is
+       precisely the 60 mm error the macro was written to prevent,
+       reintroduced one level up by its only caller.
+
+       WHY IT MATTERS MORE THAN 60 mm SOUNDS. The entire justification for
+       the simulation is that a sim run and a real run can be compared -
+       same route, same SLAM settings, one variable changed at a time
+       (ENGINEERING_NOTES.md section 4, rule 5). A fixed 60 mm lateral offset between
+       the two cameras is not noise that averages out over a run; it is a
+       constant bias baked into every observation, on one side of the
+       comparison only. It would have shown up as a small, stubborn,
+       unexplainable sim-vs-real disagreement - the most expensive kind,
+       because there is nothing in a trajectory plot that says "your camera
+       is in the wrong place".
+
+       THE SHAPE OF THE TREE, NOT JUST THE ENDPOINT. It would have been one
+       line shorter to bolt the whole (-0.010, +0.060, +0.016) onto zedx_xyz
+       and be done. This file builds the two intermediate links instead, so
+       that the simulated transform tree has the SAME SHAPE as the one the
+       real ZED driver publishes:
+
+           zedx_base_frame            robot URDF's mount point on the arch
+             -> zedx_front_base_link      the driver's own root
+               -> zedx_front_camera_center    middle of the housing
+                 -> zedx_front_left_camera_frame       <- the left lens
+                 -> zedx_front_right_camera_frame
+                 -> ..._optical_frame for each
+
+       Three things follow from that, and none of them follow from the
+       one-line version:
+         * The frame NAMES match, so anything that names a ZED frame - an
+           RViz config, a tf_echo in a procedure, a bag audit - works
+           unchanged against sim and hardware.
+         * The one verification command the real robot uses,
+               rosrun tf tf_echo zedx_base_frame zedx_front_base_link
+           now also runs in simulation, and must read [0,0,0] in BOTH
+           translation and rotation there too (with zedx_xyz/zedx_rpy at
+           their defaults). One check, both worlds.
+         * A future correction to the camera's internals lands in one
+           obvious place instead of being smeared into a mount offset that
+           a "temporary nudge" would silently wipe out.
+
+       PROVENANCE OF THE THREE NUMBERS. Read from the LIVE transform tree
+       on the Jetson with the camera running, 2026-08-29, and recorded in
+       three places that already agree with each other:
+           sidewalk_bringup/config/robot_frames.yaml       camera_front
+           sidewalk_bringup/urdf/sidewalk_robot.urdf.xacro the FRONT CAMERA
+                                                           POSE block
+           sidewalk_perception/launch/zedx_front.launch    PHYSICAL MOUNTING
+       The base->centre part (+0.016 in z) is also half the 31.8 mm body
+       height from the Stereolabs ZED X datasheet Rev 1.6, which is an
+       independent way of arriving at the same figure.
+
+       [UNVERIFIED FROM THIS MACHINE] The split of the total into
+       base->centre and centre->lens is taken from the driver's own macro,
+           ~/catkin_ws/src/zed-ros-wrapper/zed_wrapper/urdf/zed_macro.urdf.xacro
+       on the JETSON. That file was not present where this was written, so the split
+       was not re-read here. The SUM is what every measurement above
+       constrains, and the sum is what the verification checks; if the split
+       is ever found to be different, only camera_center moves, and the lens
+       - the point that matters - does not.
+
+       DO NOT put these numbers in zedx_xyz, and do not copy
+       robot_frames.yaml's camera_front x/y/z into the mount joint in
+       husky_real.urdf. Both of those are the same mistake wearing a
+       different hat, and both are called out by name in the files above.
+       ═══════════════════════════════════════════════════════════════════ -->
+  <xacro:property name="zedx_base_to_centre_z" value="0.016"/>
+  <xacro:property name="zedx_centre_to_left_x" value="-0.010"/>
+  <xacro:property name="zedx_centre_to_left_y" value="0.060"/>
+
+  <!-- The driver's root. Coincident with the robot URDF's mount frame by
+       construction, exactly as it is on the real robot - that is the whole
+       content of the tf_echo check quoted above. zedx_xyz/zedx_rpy ride on
+       THIS joint, so a nudge moves the mount and the camera's insides
+       follow, rather than a nudge quietly cancelling the internals. -->
+  <link name="zedx_front_base_link"/>
+  <joint name="zedx_front_base_joint" type="fixed">
+    <parent link="$(arg zedx_parent)"/>
+    <child link="zedx_front_base_link"/>
+    <origin xyz="$(arg zedx_xyz)" rpy="$(arg zedx_rpy)"/>
+  </joint>
+
+  <!-- Middle of the housing. No rotation: the ZED's internal frames are all
+       axis-aligned with its base, and the mount's 3.24 deg nose-down pitch
+       is applied ONCE, upstream, on zedx_base_joint in husky_real.urdf.
+       Putting a second copy of the pitch here would double it. -->
+  <link name="zedx_front_camera_center"/>
+  <joint name="zedx_front_camera_center_joint" type="fixed">
+    <parent link="zedx_front_base_link"/>
+    <child link="zedx_front_camera_center"/>
+    <origin xyz="0 0 ${zedx_base_to_centre_z}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- The macro's xyz IS the left lens, measured from the parent given here
+       (camera_center). That is the macro's documented contract and this is
+       the call that finally honours it.
+
+       KNOWN RESIDUAL, deliberate and harmless: the macro derives the
+       housing link (zedx_front_link - the mesh, the collision box and the
+       240 g of inertia) as lens minus half the baseline in y ONLY, so it
+       lands 10 mm behind camera_center in x rather than on top of it. The
+       macro has no way to know about the lens's 10 mm optical offset. That
+       10 mm affects a visual mesh, a collision box nothing touches, and the
+       inertia of a quarter-kilo part on a 35 kg robot. It affects NO camera
+       frame and NO measurement. Fixing it properly means teaching
+       zedx_mount.urdf.xacro about the optical offset, which is a change to
+       a file shared with the real robot's model and is deliberately not
+       being made from inside the simulation package. -->
+  <xacro:zedx_camera name="zedx_front" parent="zedx_front_camera_center"
+                      xyz="${zedx_centre_to_left_x} ${zedx_centre_to_left_y} 0"
+                      rpy="0 0 0"
+                      stereo="$(arg zedx_stereo)"
+                      noise_stddev="$(arg zedx_noise_stddev)"/>
+
+</robot>

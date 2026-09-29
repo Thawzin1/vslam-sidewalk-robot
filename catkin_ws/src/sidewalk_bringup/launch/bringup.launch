@@ -1,0 +1,107 @@
+<?xml version="1.0"?>
+<!--
+  bringup.launch — the single "on switch" for the sidewalk robot.
+
+  WHAT A LAUNCH FILE IS
+    A recipe. It lists which programs to start, what settings to give each, and
+    how their names should be wired together. One command replaces remembering
+    nine.
+
+    That is not just convenience. An experiment you start by hand is an
+    experiment you cannot repeat identically, and a result you cannot repeat is
+    not a result. The launch file IS the experimental setup, written down.
+
+  USAGE
+    roslaunch sidewalk_bringup bringup.launch                  # core only
+    roslaunch sidewalk_bringup bringup.launch camera:=true     # + ZED X
+    roslaunch sidewalk_bringup bringup.launch camera:=true rviz:=true
+
+  START HERE, then layer a phase on top:
+    roslaunch sidewalk_slam rtabmap_mapping.launch      # Phase 4
+    roslaunch sidewalk_navigation navigation.launch     # Phase 6
+-->
+<launch>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       Arguments — the knobs you turn from the command line.
+       Defaults are deliberately conservative: nothing that touches hardware
+       starts unless you ask for it, so this file is always safe to run.
+       ══════════════════════════════════════════════════════════════════ -->
+  <arg name="camera"      default="false" doc="Start the ZED X camera driver"/>
+  <arg name="rviz"        default="false" doc="Start RViz visualisation"/>
+  <arg name="rear_camera" default="false" doc="Phase 7 second camera (not yet installed)"/>
+  <arg name="robot_base"  default="false" doc="Start the mobile base driver"/>
+  <arg name="log_level"   default="info"/>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       1. The robot's body map.
+
+       xacro turns the .xacro template into plain URDF, which goes onto the
+       parameter server as /robot_description. robot_state_publisher then reads
+       it and continuously broadcasts the transform tree.
+
+       Everything downstream depends on this. If it is wrong, every distance
+       the robot reports is referenced to the wrong place — and nothing will
+       announce that. It will simply produce a subtly wrong map.
+       ══════════════════════════════════════════════════════════════════ -->
+  <param name="robot_description"
+         command="$(find xacro)/xacro '$(find sidewalk_bringup)/urdf/sidewalk_robot.urdf.xacro'
+                  rear_camera_installed:=$(arg rear_camera)"/>
+
+  <node name="robot_state_publisher" pkg="robot_state_publisher"
+        type="robot_state_publisher" output="screen"/>
+
+  <!-- Publishes zeroed wheel-joint angles so the transform tree is complete
+       even with no real base attached. Without this the tree has gaps and
+       lookups fail with confusing errors.
+
+       Suppressed when the real base is running — it publishes true joint
+       states, and two publishers on one topic produce a tree that flickers
+       between two sources, which is maddening to debug. -->
+  <node unless="$(arg robot_base)"
+        name="joint_state_publisher" pkg="joint_state_publisher"
+        type="joint_state_publisher" output="screen">
+    <param name="use_gui" value="false"/>
+    <rosparam param="source_list">[]</rosparam>
+  </node>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       2. Project configuration onto the parameter server.
+       Loaded under /sidewalk/ so it cannot collide with third-party nodes.
+       ══════════════════════════════════════════════════════════════════ -->
+  <rosparam ns="sidewalk"
+            file="$(find sidewalk_bringup)/config/robot_frames.yaml"
+            command="load"/>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       3. Camera (optional).
+
+       Deferred to sidewalk_perception, which owns all ZED X configuration.
+       Kept out of this file so the camera can be started, stopped and
+       reconfigured without disturbing the transform tree.
+       ══════════════════════════════════════════════════════════════════ -->
+  <include if="$(arg camera)"
+           file="$(find sidewalk_perception)/launch/zedx_front.launch">
+    <arg name="camera_name" value="zedx_front"/>
+  </include>
+
+  <!-- Phase 7 — gated. The hardware does not exist yet; this exists so the
+       wiring is already correct when it arrives. -->
+  <include if="$(arg rear_camera)"
+           file="$(find sidewalk_perception)/launch/zedx_front.launch">
+    <arg name="camera_name" value="zedx_rear"/>
+  </include>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       4. Visualisation (optional).
+
+       Worth running once whenever a mounting number changes: load the robot
+       model together with the live point cloud and check that the ground
+       plane in the cloud lines up with the wheels in the model. A bad
+       transform is far easier to see than to read in a table.
+       ══════════════════════════════════════════════════════════════════ -->
+  <node if="$(arg rviz)" name="rviz" pkg="rviz" type="rviz"
+        args="-d $(find sidewalk_bringup)/config/sidewalk.rviz"
+        output="screen" required="false"/>
+
+</launch>

@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+<!--
+  demo_handheld_scan.launch — ONE-COMMAND live handheld VSLAM demo.
+
+  Starts EVERYTHING for a hands-on demo in a single launch:
+    1. the ZED X camera (sidewalk_perception/zedx_front.launch)
+    2. RTAB-Map mapping, configured for HANDHELD scanning (full 6-DOF, so
+       tilting / lifting the camera is mapped correctly — not the flat-floor
+       3-DOF assumption used when it's bolted to the robot)
+    3. RTAB-Map's live viewer on the monitor — the camera image, the 3-D cloud
+       growing as you scan, the pose graph, and loop closures, all in one window
+
+  PRESENTATION USE
+    Double-click the "Sidewalk VSLAM Demo" desktop icon, OR from a terminal:
+        roslaunch sidewalk_slam demo_handheld_scan.launch
+    Then pick up the camera and slowly scan the room. REVISIT places you've
+    already seen (walk a loop, or pan back over a wall) — that's what lets
+    RTAB-Map close a loop and snap the map straight.
+
+  This is the ONLY launch that starts the camera AND SLAM together, on purpose:
+  for a live demo you want one thing to run. Every other launch keeps them
+  separate (see rtabmap_common.launch for why).
+
+  WHY IT'S OK that RTAB-Map "waits" at first: the camera takes ~15-20 s to open
+  and the AI depth model may download once. RTAB-Map will print "did not receive
+  data" until frames flow, then start building. That is correct behaviour.
+-->
+<launch>
+  <arg name="camera_name" default="zedx_front"/>
+
+  <!-- Fresh map on every demo run, so a presentation always starts clean.
+       Set delete_db_on_start:=false (and a per-session database_path) if you
+       want to KEEP a scan to compare against the LiDAR data afterwards. -->
+  <arg name="delete_db_on_start" default="true"/>
+  <arg name="database_path" default="$(env HOME)/rtabmap_maps/handheld_demo.db"/>
+
+  <!-- VIEWER: the projector-friendly RViz layout (big 3-D map, live camera inset,
+       loop-closure graph) is the default. RTAB-Map's own GUI (rtabmap_viz) is off
+       by default but handy for inspection — pass rtabmap_viz:=true to add it, or
+       rviz:=false to turn the RViz view off. -->
+  <arg name="rviz"        default="true"/>
+  <arg name="rtabmap_viz" default="false"/>
+
+  <!-- 1) Camera -->
+  <include file="$(find sidewalk_perception)/launch/zedx_front.launch">
+    <arg name="camera_name" value="$(arg camera_name)"/>
+  </include>
+
+  <!-- 2) RTAB-Map mapping (handheld 6-DOF). RViz is launched separately below
+       (rviz:=false here) so it can be REQUIRED — see node (3). -->
+  <include file="$(find sidewalk_slam)/launch/rtabmap_mapping.launch">
+    <arg name="camera_name"        value="$(arg camera_name)"/>
+    <arg name="rtabmap_viz"        value="$(arg rtabmap_viz)"/>
+    <arg name="rviz"               value="false"/>
+    <arg name="force_3dof"         value="false"/>
+    <arg name="delete_db_on_start" value="$(arg delete_db_on_start)"/>
+    <arg name="database_path"      value="$(arg database_path)"/>
+  </include>
+
+  <!-- 3) Projector viewer, launched here with required="true": closing the RViz
+       window (X) then shuts the WHOLE demo down cleanly (camera + SLAM + master),
+       the terminal exits, and the next open starts a fresh scan. That's the
+       "close = done, reopen = fresh" behaviour you want for a presentation. -->
+  <node if="$(arg rviz)" name="rviz" pkg="rviz" type="rviz"
+        args="-d $(find sidewalk_slam)/config/slam_live_safe.rviz"
+        required="true" output="screen"/>
+</launch>

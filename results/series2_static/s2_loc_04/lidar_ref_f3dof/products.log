@@ -1,0 +1,37 @@
+  ~/lidar_replays/s2_loc_04/lidar_ref_f3dof/rtab_helios.db: 863 nodes, 102 loop closures
+    PASS  corrected positions saved (Admin.opt_poses)    18086 bytes
+    PASS  visual dictionary saved (Word table)           not expected in a LiDAR map
+    PASS  neighbour links stored both ways               862 forward, 862 back (863 nodes in the saved graph)
+  CLOSED PROPERLY - safe to power off.
+{
+  "source_database": "~/lidar_replays/s2_loc_04/lidar_ref_f3dof/rtab_helios.db",
+  "pose_kind": "corrected",
+  "label": "LiDAR (Helios), s2_loc_04 (Jetson replay, f3dof)",
+  "loop_closures": 102,
+  "tool": "tools/db/db_corrected_tum.py",
+  "method": "Admin.opt_poses - RTAB-Map's own saved optimisation, full 3D",
+  "exact": true,
+  "poses": 863,
+  "first_node": 1,
+  "last_node": 1774,
+  "end_gap_corrected_m": 0.0503
+}
+  /odometry/filtered -> ~/lidar_replays/s2_loc_04/lidar_ref_f3dof/wheel.tum
+  99989 poses, 1999.8 s
+{
+  "database": "~/lidar_replays/s2_loc_04/lidar_ref_f3dof/rtab_helios.db",
+  "positions": "corrected",
+  "positions_source": "corrected (after loop closures) - lidar.tum",
+  "graph_nodes_corrected": 863,
+  "nodes": 863,
+  "nodes_with_grids": 863,
+  "duration_s": 1880.1,
+  "path_m_nodes": 251.98,
+  "closed_loop_gap_m": 0.05,
+  "cells_solid": 114269,
+  "cells_free": 0,
+  "cell_size_m": 0.05,
+  "map_width_m": 57.8,
+  "map_height_m": 57.8
+}
+  571 parameters written to ~/lidar_replays/s2_loc_04/lidar_ref_f3dof/rtabmap_params_db.txt (from 2 Info rows)

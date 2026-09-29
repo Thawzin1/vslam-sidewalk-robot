@@ -1,0 +1,16 @@
+{
+  "database": "/media/administrator/USB Drive/slam_series2/s2_static_10/lidar_ref_f3dof/rtab_helios.db",
+  "positions": "corrected",
+  "positions_source": "corrected (after loop closures) - lidar.tum",
+  "graph_nodes_corrected": 947,
+  "nodes": 947,
+  "nodes_with_grids": 947,
+  "duration_s": 1769.1,
+  "path_m_nodes": 263.31,
+  "closed_loop_gap_m": 0.044,
+  "cells_solid": 113919,
+  "cells_free": 0,
+  "cell_size_m": 0.05,
+  "map_width_m": 52.0,
+  "map_height_m": 56.2
+}

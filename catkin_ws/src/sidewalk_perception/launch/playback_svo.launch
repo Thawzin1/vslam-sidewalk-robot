@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<!--
+  playback_svo.launch — replay a recorded SVO2 as if the camera were live.
+
+  This is the launch file that makes the project's central comparison possible.
+  The ZED wrapper opens the SVO instead of the camera and publishes the
+  identical topic set — same images, same depth, same IMU, same timestamps. So
+  RTAB-Map, the ZED SDK tracker and ORB-SLAM3 can each be run against exactly
+  the same drive, and any difference between their results is attributable to
+  the algorithms rather than to the weather, the pedestrians or the route.
+
+  Re-driving the robot for each algorithm would not be a comparison. It would
+  be three different experiments.
+
+  NOTE ON RATE
+    Replaying faster than real time is tempting on a long dataset, but the SLAM
+    systems downstream are not all real-time-independent: if a node cannot keep
+    up it will drop input, and it will drop *different* input than its
+    competitors did. For any run whose numbers will be reported, replay at
+    rate:=1.0.
+-->
+<launch>
+
+  <arg name="svo_file"    doc="absolute path to the .svo2 file (required)"/>
+  <arg name="camera_name" default="zedx_front"/>
+  <arg name="loop"        default="false"/>
+  <arg name="rate"        default="1.0"
+       doc="playback speed. Keep at 1.0 for any run that will be reported."/>
+  <arg name="rviz"        default="false"/>
+
+  <!-- Passing svo_file through to the driver is all that is needed: the
+       wrapper switches from live capture to file playback on its own. -->
+  <include file="$(find sidewalk_perception)/launch/zedx_front.launch">
+    <arg name="camera_name" value="$(arg camera_name)"/>
+    <arg name="svo_file"    value="$(arg svo_file)"/>
+  </include>
+
+  <param name="/use_sim_time" value="false"/>
+
+  <node if="$(arg rviz)" pkg="rviz" type="rviz" name="rviz"
+        args="-d $(find sidewalk_perception)/config/perception.rviz"/>
+
+</launch>

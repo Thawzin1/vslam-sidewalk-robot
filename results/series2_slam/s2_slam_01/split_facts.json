@@ -1,0 +1,59 @@
+{
+ "db": "~/slam_series2/s2_slam_01.db",
+ "old_max": 1558,
+ "nodes_per_map": {
+  "0": 1558,
+  "1": 1178
+ },
+ "today_nodes_valid": 495,
+ "saved_graph": {
+  "today": 495,
+  "drive10": 860,
+  "joined": true
+ },
+ "closures_by_kind": {
+  "within_today": {
+   "2": 32,
+   "1": 4
+  },
+  "today_to_drive10": {
+   "2": 213,
+   "1": 25
+  },
+  "within_drive10": {
+   "2": 176,
+   "1": 23
+  }
+ },
+ "joins": {
+  "count": 238,
+  "first": {
+   "stamp": 1790530013.225845,
+   "today_id": 1559,
+   "drive10_id": 1499,
+   "type": 1
+  },
+  "last": {
+   "stamp": 1790531470.762289,
+   "today_id": 2679,
+   "drive10_id": 1498,
+   "type": 2
+  }
+ },
+ "session_first_stamp": 1790530013.225845,
+ "join_after_s": 0.0,
+ "gap_tracking_alone_m": 0.221,
+ "gap_corrected_m": 0.044,
+ "gap_closures": {
+  "within_today": 36,
+  "today_to_drive10": 238
+ },
+ "drive10_shift_m": {
+  "median": 0.019,
+  "p95": 0.193,
+  "max": 0.331,
+  "n": 860
+ },
+ "new_area_m2": 73.4,
+ "new_path_m_outside_drive10": 54.4
+}

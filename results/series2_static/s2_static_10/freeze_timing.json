@@ -1,0 +1,17 @@
+{
+ "camera_tracker_silences_over_1p5s": [
+  {
+   "from": "02:07:22",
+   "seconds": 2.33,
+   "overlaps_zed_diagnostic_pause": true,
+   "overlaps_db_save_over_1p5s": [],
+   "restart_from_tf_within_5s_after": false
+  }
+ ],
+ "n": 1,
+ "n_overlapping_zed_diagnostic_pause": 1,
+ "n_overlapping_db_save_over_1p5s": 0,
+ "db_saves_over_1p5s": 37,
+ "longest_db_save_s": 4.23,
+ "wheel_odom_columns": "not used for motion (column meaning not checked)"
+}

@@ -1,0 +1,13 @@
+{
+  "source_database": "~/slam_series2/s2_scale_01.db",
+  "pose_kind": "corrected",
+  "label": "",
+  "loop_closures": 472,
+  "tool": "tools/db/db_corrected_tum.py",
+  "method": "Admin.opt_poses - RTAB-Map's own saved optimisation, full 3D",
+  "exact": true,
+  "poses": 420,
+  "first_node": 1,
+  "last_node": 572,
+  "end_gap_corrected_m": 0.2289
+}

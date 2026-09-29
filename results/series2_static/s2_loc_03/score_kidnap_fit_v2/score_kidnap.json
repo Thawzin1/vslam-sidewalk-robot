@@ -1,0 +1,214 @@
+{
+ "run": "s2_loc_03",
+ "fit": {
+  "kind": "v2",
+  "shift_m": [
+   0.038,
+   -0.116
+  ],
+  "rot_deg": -1.25,
+  "median_pair_m": 0.029,
+  "subset_dev_m": 0.126,
+  "subset_rot_range_deg": 0.83,
+  "within_own_check": false,
+  "drift_detail": {
+   "subsets": [
+    {
+     "name": "random0",
+     "shift_m": [
+      0.044,
+      -0.113
+     ],
+     "rot_deg": -1.29
+    },
+    {
+     "name": "random1",
+     "shift_m": [
+      0.022,
+      -0.121
+     ],
+     "rot_deg": -1.17
+    },
+    {
+     "name": "random2",
+     "shift_m": [
+      0.04,
+      -0.12
+     ],
+     "rot_deg": -1.33
+    },
+    {
+     "name": "random3",
+     "shift_m": [
+      0.045,
+      -0.107
+     ],
+     "rot_deg": -1.3
+    },
+    {
+     "name": "random4",
+     "shift_m": [
+      0.054,
+      -0.11
+     ],
+     "rot_deg": -1.26
+    },
+    {
+     "name": "random5",
+     "shift_m": [
+      0.033,
+      -0.126
+     ],
+     "rot_deg": -1.25
+    },
+    {
+     "name": "west",
+     "shift_m": [
+      0.096,
+      -0.231
+     ],
+     "rot_deg": -2.0
+    },
+    {
+     "name": "east",
+     "shift_m": [
+      0.063,
+      -0.064
+     ],
+     "rot_deg": -1.44
+    }
+   ],
+   "east_vs_west_m": 0.171,
+   "east_vs_west_deg": 0.56
+  }
+ },
+ "starts": [
+  {
+   "start": 1,
+   "mark": "start_mark",
+   "accepted_fixes": 32,
+   "recognition_events": 31,
+   "first_fix_kind": "uncertainty",
+   "first_fix_s": 34.9,
+   "first_fix_odom_m": 0.0,
+   "first_fix_xy": [
+    0.088,
+    -0.108
+   ],
+   "K1": "PASS",
+   "K2_disagreement_m": 0.064,
+   "K2_expected_xy": [
+    0.03,
+    -0.134
+   ],
+   "K2_uncertainty_m": 0.065,
+   "K2": "not scorable this session: the LiDAR reference failed its own check (wall fit v2 halves disagree)",
+   "fixes_scored": 31,
+   "K3_worst_m": 0.179,
+   "K3_worst_at": [
+    "nearby",
+    114.3
+   ],
+   "K3_median_m": 0.134,
+   "K3_over_1m": 0,
+   "P3_worst_m": 0.179,
+   "P2_disagreement_m": 0.086,
+   "P2_read_s": 108.2,
+   "P2": "not scorable this session: the LiDAR reference failed its own check (wall fit v2 halves disagree)"
+  },
+  {
+   "start": 2,
+   "mark": "A_east",
+   "accepted_fixes": 2,
+   "recognition_events": 1,
+   "first_fix_kind": "uncertainty",
+   "first_fix_s": 380.4,
+   "first_fix_odom_m": 5.042,
+   "first_fix_xy": [
+    10.563,
+    -0.016
+   ],
+   "K1": "FAIL",
+   "K2_disagreement_m": 0.246,
+   "K2_expected_xy": [
+    10.495,
+    0.22
+   ],
+   "K2_uncertainty_m": 0.073,
+   "K2": "not scorable this session: the LiDAR reference failed its own check (wall fit v2 halves disagree)",
+   "fixes_scored": 2,
+   "K3_worst_m": 0.246,
+   "K3_worst_at": [
+    "uncertainty",
+    380.4
+   ],
+   "K3_median_m": 0.246,
+   "K3_over_1m": 0,
+   "P3_worst_m": 0.246,
+   "P2_disagreement_m": 0.258,
+   "P2_read_s": 426.3,
+   "P2": "not scorable this session: the LiDAR reference failed its own check (wall fit v2 halves disagree)"
+  },
+  {
+   "start": 3,
+   "mark": "B_west",
+   "accepted_fixes": 0,
+   "recognition_events": 0,
+   "K1": "FAIL (no accepted fix)"
+  },
+  {
+   "start": 4,
+   "mark": "A_west",
+   "accepted_fixes": 29,
+   "recognition_events": 28,
+   "first_fix_kind": "uncertainty",
+   "first_fix_s": 57.2,
+   "first_fix_odom_m": 0.328,
+   "first_fix_xy": [
+    5.722,
+    0.103
+   ],
+   "K1": "PASS",
+   "K2": "not scorable: no LiDAR-derived position at the fix moment",
+   "fixes_scored": 27,
+   "K3_worst_m": 0.187,
+   "K3_worst_at": [
+    "nearby",
+    77.2
+   ],
+   "K3_median_m": 0.136,
+   "K3_over_1m": 0,
+   "P3_worst_m": 0.187,
+   "P2": "not scorable: no LiDAR pose at that moment"
+  },
+  {
+   "start": 5,
+   "mark": "C_north",
+   "accepted_fixes": 27,
+   "recognition_events": 26,
+   "first_fix_kind": "uncertainty",
+   "first_fix_s": 12.0,
+   "first_fix_odom_m": 0.376,
+   "first_fix_xy": [
+    0.29,
+    -3.73
+   ],
+   "K1": "PASS",
+   "K2": "not scorable: no LiDAR-derived position at the fix moment",
+   "fixes_scored": 23,
+   "K3_worst_m": 0.314,
+   "K3_worst_at": [
+    "nearby",
+    52.7
+   ],
+   "K3_median_m": 0.201,
+   "K3_over_1m": 0,
+   "P3_worst_m": 0.314,
+   "P2": "not scorable: no LiDAR pose at that moment"
+  }
+ ],
+ "K1": "3 of 5 starts (pass line: at least 4 of 5)",
+ "K2": "not scorable this session: the LiDAR reference failed its own check (wall fit v2 halves disagree)",
+ "K3": "not scorable this session: the LiDAR reference failed its own check (wall fit v2 halves disagree)",
+ "P2_P3": "not scorable this session: the LiDAR reference failed its own check (wall fit v2 halves disagree)"
+}

@@ -1,0 +1,502 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+<!--
+  zedx_mount.urdf.xacro - the ZED X stereo camera, parametrised so its pose
+  can be chosen at spawn time instead of hard-coded.
+
+  Fixes a real bug in the original sidewalk_robot.urdf.xacro: robot_frames.yaml
+  and the ZED SDK both measure/report the camera's pose as the LEFT LENS, not
+  the housing centre - the old xacro placed the HOUSING at the given pose and
+  then derived the left lens at +baseline/2 in y, so the left lens actually
+  landed 60mm away from the pose that was supposedly being set.
+
+  Here the macro's xyz/rpy IS the left lens pose (matching how it's measured
+  and how robot_frames.yaml documents it); the housing and right lens are
+  derived from it, not the other way around. A pure +/-baseline/2 shift along
+  y is valid regardless of pitch, because pitch rotates about the y axis
+  itself - the one rotation this mount ever uses (roll and yaw are 0 in every
+  design note so far).
+
+  Usage (see sidewalk_sim/urdf/husky_real_zedx.urdf.xacro):
+    <xacro:zedx_camera name="zedx_front" parent="zedx_front_camera_center"
+                        xyz="-0.010 0.060 0" rpy="0 0 0"/>
+
+  THE EXAMPLE ABOVE CHANGED ON 2026-08-29 AND THE OLD ONE WAS ACTIVELY
+  MISLEADING. It read rpy="0 0.087 0" — a ~5 degree pitch that was DESIGN INTENT
+  and was never real. The camera's true tilt was measured that day as 0.0565 rad
+  (3.24 degrees nose down), and it is applied ONCE, at the mount joint, not here.
+  Passing a pitch to this macro would apply it a SECOND time. The old example
+  also parented to "oak-d-base-frame", a leftover from a camera this robot does
+  not have (verified: no Movidius USB device, zero depthai topics).
+
+  The authoritative pose lives in four files that move together — see
+  sidewalk_bringup/config/robot_frames.yaml for the list and the reasoning.
+
+  ══════════════════════════════════════════════════════════════════════
+  FIELD OF VIEW CHANGED ON 2026-08-29 AND IT SPLITS THE RUN HISTORY IN TWO.
+  READ THIS BEFORE COMPARING ANY TWO SIMULATION RUNS.
+
+  Every Gazebo camera in this file carried a horizontal_fov of 1.8151 rad
+  = 104.00 degrees, from the first commit until that date. (Written without
+  the angle brackets on purpose: xacro copies comments into the expanded
+  URDF, and a stray old value in tag form would show up in anyone's grep of
+  the output.) The real ZED X this project owns is 73 degrees
+  horizontal (SKU ZED-312110, 4.6 mm lens — datasheet, "ZED X Available
+  Models"). The simulation was therefore running a camera 42 percent wider
+  than the hardware it exists to mirror.
+
+  That is not cosmetic. Field of view decides how much structure lands in
+  each frame, and that drives feature count, loop-closure recognition and
+  map coverage — the three things every measurement in this project is
+  about. At a fixed distance the old camera saw a scene 73 percent wider
+  and, the aspect ratio being unchanged, 73 percent taller than the real
+  one — roughly THREE TIMES the ground area per frame
+  (tan(52°)/tan(36.5°) = 1.7296 per axis; 1.7296² = 2.99).
+
+  CONSEQUENCE: every simulation run recorded BEFORE 2026-08-29 used a
+  104-degree camera. Those runs remain comparable WITH EACH OTHER and are
+  NOT comparable with anything recorded after this change. This is the same
+  situation as the real robot's camera pose, which was wrong in runs 1
+  through 6 — a silent change of experimental conditions across a date, not
+  a bug that "got fixed".
+  Strength of that claim, stated honestly: for every run since the tree
+  entered version control on 2026-08-22 it is VERIFIED, because git blame
+  shows the value untouched from the first commit to this one. For runs
+  older than that there is no version history to check; they used this same
+  file, which already carried 1.8151 on the day it was imported.
+
+  WHERE 1.8151 CAME FROM IS UNKNOWN, AND THAT IS THE HONEST ANSWER.
+  `git log -S1.8151` returns exactly two commits: 7673646, the initial
+  import of an already-written tree, and e8d9bfe, which merely copied the
+  same number onto the new stereo pair a few hours later. So the value
+  arrived fully formed and version control cannot say from where. It is
+  not a datasheet figure for either ZED X lens (4.6 mm is 73°, 2.2 mm is
+  110°). It is not the SDF default either (1.047 rad, 60°, which is what
+  the two overhead observation cameras in the office worlds use). It is
+  also NOT the 80° that sidewalk_perception carried for its own optics
+  until 2026-08-29 — that was a third wrong number, unrelated to this one.
+  No note anywhere in the tree explains 1.8151. Rather than invent a
+  provenance for it, this says plainly that it has none.
+  ══════════════════════════════════════════════════════════════════════
+-->
+
+  <!-- Precise datasheet figures from docs/mount/index.html - the long axis
+       (163.4mm) runs left-right across the robot (robot Y), matching the
+       mount brief and the original xacro. -->
+  <xacro:property name="zedx_depth"    value="0.0367"/> <!-- x: front-to-back -->
+  <xacro:property name="zedx_length"   value="0.1634"/> <!-- y: long axis -->
+  <xacro:property name="zedx_height"   value="0.0318"/> <!-- z -->
+  <xacro:property name="zedx_mass"     value="0.240"/>
+  <xacro:property name="zedx_baseline" value="0.120"/>
+
+  <!-- stereo:=true swaps the Gazebo sensor from the single depth camera to a
+       true two-lens stereo pair (see the long comment below for why that
+       matters); noise_stddev sets the per-camera Gaussian image noise in the
+       stereo mode, unitless in [0,1] per channel (0.005 ~ 1.3 grey levels;
+       realistic range 0.002-0.01 per ENGINEERING_NOTES.md 2.2). Both are inert when
+       stereo is false, so existing users are byte-identical. -->
+  <xacro:macro name="zedx_camera" params="name parent xyz rpy stereo:=false noise_stddev:=0.005">
+
+    <!-- The anchor: exactly the pose given, on the LEFT lens. -->
+    <link name="${name}_left_camera_frame"/>
+    <joint name="${parent}_to_${name}_left_camera_frame" type="fixed">
+      <parent link="${parent}"/>
+      <child link="${name}_left_camera_frame"/>
+      <origin xyz="${xyz}" rpy="${rpy}"/>
+    </joint>
+
+    <link name="${name}_left_camera_optical_frame"/>
+    <joint name="${name}_left_camera_optical_joint" type="fixed">
+      <parent link="${name}_left_camera_frame"/>
+      <child link="${name}_left_camera_optical_frame"/>
+      <!-- REP-103: camera optical frame is Z-forward, X-right, Y-down. -->
+      <origin xyz="0 0 0" rpy="${-pi/2} 0 ${-pi/2}"/>
+    </joint>
+
+    <!-- Right lens: baseline further along -y from the left one. -->
+    <link name="${name}_right_camera_frame"/>
+    <joint name="${name}_left_to_right_camera" type="fixed">
+      <parent link="${name}_left_camera_frame"/>
+      <child link="${name}_right_camera_frame"/>
+      <origin xyz="0 ${-zedx_baseline} 0" rpy="0 0 0"/>
+    </joint>
+
+    <link name="${name}_right_camera_optical_frame"/>
+    <joint name="${name}_right_camera_optical_joint" type="fixed">
+      <parent link="${name}_right_camera_frame"/>
+      <child link="${name}_right_camera_optical_frame"/>
+      <origin xyz="0 0 0" rpy="${-pi/2} 0 ${-pi/2}"/>
+    </joint>
+
+    <!-- Housing: centred between the two lenses, baseline/2 from the left.
+         Visual uses the real Stereolabs mesh (already installed on the
+         Jetson via zed-ros-wrapper - already in metres, already correctly
+         axis-aligned: Y is the 163.6mm long axis, Z is the 31.8mm height).
+         Its own origin sits at the housing's vertical/lateral centre but at
+         the BOTTOM face in Z, so it needs a -height/2 shift to match this
+         macro's convention of the housing frame being at its geometric
+         centre. Collision stays a simple box - cheaper, and precise contact
+         geometry doesn't matter here. -->
+    <link name="${name}_link">
+      <visual>
+        <geometry>
+          <mesh filename="package://zed_interfaces/meshes/zedx.stl"/>
+        </geometry>
+        <origin xyz="0 0 ${-zedx_height/2}" rpy="0 0 0"/>
+        <material name="zedx_black">
+          <color rgba="0.05 0.05 0.05 1.0"/>
+        </material>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="${zedx_depth} ${zedx_length} ${zedx_height}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="${zedx_mass}"/>
+        <inertia ixx="0.0003" ixy="0" ixz="0"
+                 iyy="0.0001" iyz="0"
+                 izz="0.0003"/>
+      </inertial>
+    </link>
+    <joint name="${name}_left_to_housing" type="fixed">
+      <parent link="${name}_left_camera_frame"/>
+      <child link="${name}_link"/>
+      <origin xyz="0 ${-zedx_baseline/2} 0" rpy="0 0 0"/>
+    </joint>
+
+    <link name="${name}_imu_link"/>
+    <joint name="${name}_housing_to_imu" type="fixed">
+      <parent link="${name}_link"/>
+      <child link="${name}_imu_link"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <!-- Gazebo depth camera, publishing on the real ZED wrapper's topic
+         names so sidewalk_slam needs no remapping between sim and hardware.
+         min/max depth (1.0 / 35.0 m) matches sidewalk_perception/config/
+         zedx_front.yaml, so the sim's blind zone matches the real one.
+         Used when stereo=false (the default).
+
+         The 1.0 m near clip below is CORRECT HERE and must stay: on a
+         `type="depth"` sensor <near> really is the depth blind zone, so it
+         models the real camera's min_depth honestly. Do NOT propagate this
+         value to the stereo branch further down - those are plain colour
+         cameras where <near> deletes geometry from the IMAGE instead, which
+         is a different thing entirely and blinded a whole indoor run. See
+         the long comment on the stereo left lens. -->
+    <xacro:unless value="${stereo}">
+    <gazebo reference="${name}_left_camera_frame">
+      <sensor type="depth" name="${name}_camera">
+        <update_rate>15</update_rate>
+        <camera>
+          <!-- 73.00 degrees horizontal = 1.2741 radians. THE FULL STORY,
+               including what this replaced and why every run recorded
+               before 2026-08-29 is now in a separate comparison class, is
+               in the FIELD OF VIEW banner in this file's header. Read it.
+
+               CONVERSION, so nobody has to redo it:
+                 73 deg x pi / 180 = 1.27409035 rad, kept to 4 decimal
+                 places as 1.2741 rad, which reads back as 73.0006 deg.
+               SOURCE: ZED X / ZED X Mini datasheet, "ZED X Available
+               Models" table, SKU ZED-312110 = ZED X, 4.6 mm lens, no
+               polarizer — the unit this project owns. Field of View:
+               Max. 73 deg (H) x 45 deg (V) x 87 deg (D).
+               (Previously 1.8151 rad = 104.00 deg, origin unknown.)
+
+               THE VERTICAL ANGLE IS NOT AN INPUT HERE, AND WHAT IT COMES
+               OUT AS DOES NOT MATCH THE DATASHEET. SAY SO IN ANY
+               SIM-VERSUS-REAL COMPARISON.
+               The SDF camera element has exactly one field-of-view knob,
+               <horizontal_fov> — there is no <vertical_fov>. [VERIFIED —
+               /usr/share/sdformat9/1.6/camera.sdf line 8 is the only "fov"
+               element in the file.] Gazebo derives the vertical angle from
+               the image aspect ratio:
+                 vertical = 2 * atan( tan(horizontal/2) / (width/height) )
+               [INFERENCE — that is gazebo-classic's Camera::UpdateFOV; the
+               implementation is in gazebo/rendering/Camera.cc, which the
+               runtime packages do not ship, so it was not read here. Two
+               ways to settle it, neither needing the real camera: read
+               Camera.cc in the gazebo-classic source, or start gzserver on
+               this model and compare fy in the published camera_info with
+               fx — equal fx and fy means the aspect-ratio derivation, and
+               fy = 1297.4 px is what this file now predicts.]
+               At 1920 x 1200 the aspect ratio is exactly 1.6000, so
+               73.00 deg horizontal gives 49.64 deg vertical. The real
+               camera is 45 deg vertical. THAT 4.64 DEGREE (10.3 PERCENT)
+               EXCESS IS A REAL RESIDUAL AND IT IS LEFT VISIBLE ON PURPOSE.
+
+               Why not just fix it. The datasheet's own three angles are
+               not self-consistent for the ideal pinhole lens Gazebo
+               renders: 73 and 45 imply an aspect ratio of
+               tan(36.5)/tan(22.5) = 1.7864, not the sensor's 1.6000, and
+               imply an 80.6 deg diagonal, not the 87 deg printed. That is
+               expected — the real lens distorts (the same datasheet gives
+               TV Distortion -6.7%) and the angles are stated as maxima on
+               the raw image. With square pixels, no single pinhole camera
+               can hit all three. One axis has to absorb the error:
+                 pin horizontal at 73.00 -> vertical 49.64 (4.64 too wide)
+                 pin vertical at 45.00 -> horizontal 67.07 (5.93 too
+                     narrow; 45 deg vertical would need 1.170561 rad in)
+               Horizontal is pinned, because it is the number Gazebo takes
+               as input and the one that governs left-right coverage, which
+               is what loop closure lives on.
+
+               THERE IS ONE ESCAPE HATCH AND IT IS DELIBERATELY NOT USED.
+               <camera><lens><intrinsics><fx>/<fy> exist and the spec says
+               they OVERRIDE horizontal_fov [VERIFIED — camera.sdf lines
+               140/143, "X focal length (in pixels, overrides
+               horizontal_fov)"], so an unequal fx/fy could hit 73 and 45
+               at once. That would model a sensor with non-square pixels;
+               the real ZED X has square 3 um pixels, so it would trade a
+               disclosed 4.64 deg error for an undisclosed lie about the
+               geometry, and it would change what the plugin writes into
+               camera_info. Whether Gazebo Classic 11's plain CameraSensor
+               even honours <intrinsics> is [UNVERIFIED] here. If this is
+               ever attempted it is a separate experiment with its own
+               before/after, not a tweak folded into this one. -->
+          <horizontal_fov>1.2741</horizontal_fov>
+          <image>
+            <width>1920</width>
+            <height>1200</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>1.0</near>
+            <far>35.0</far>
+          </clip>
+          <!-- NO <noise> BLOCK HERE - and that is deliberate, not an oversight.
+               Read this before adding one.
+
+               The simulated camera is noise-free, and that has a real
+               consequence for SLAM. Run #4 measured visual odometry reporting
+               standard deviations of 0.0001 m - "I know where I am to a tenth of
+               a millimetre". RTAB-Map judges each candidate loop closure against
+               that confidence, so a sane closure disagreeing by 11 cm scores as
+               a 3.5-sigma outlier and is discarded. All 224 loop closures in
+               that run were rejected for exactly this reason. The map was still
+               accurate (0.141 m ATE) because odometry drifted so little, but the
+               loop-closure half of SLAM contributed nothing.
+
+               The obvious fix is to add camera noise here. It does not work.
+               Gazebo silently ignores <camera><noise> on a <sensor type="depth">:
+               the Gaussian-noise shader lives in the plain CameraSensor render
+               path, and DepthCameraSensor bypasses it. This was measured, not
+               assumed - with stddev set to 0.5 (nominally +/-127 grey levels,
+               enough to obliterate the picture) the delivered temporal noise was
+               0.0002 grey levels and the maximum frame-to-frame difference was
+               exactly 0. The tag parses and expands into the URDF perfectly; it
+               simply has no effect.
+
+               Working alternatives, if honest covariance is needed:
+                 1. A small node that subscribes to the image, adds Gaussian
+                    noise and republishes. Reliable, but 1920x1200 at 15 Hz is
+                    ~100 MB/s of pixel work on a Jetson that is already busy, and
+                    it still leaves the DEPTH perfect.
+                 2. Split the sensor: a <sensor type="camera"> for RGB, which
+                    does honour <noise>, alongside the depth sensor. Costs an
+                    extra render pass and changes the topic wiring.
+                 3. Raise RGBD/OptimizeMaxError in rtabmap_zedx.yaml so loop
+                    closures are not rejected so aggressively. Cheapest, but it
+                    tunes around the symptom rather than modelling the sensor.
+          -->
+        </camera>
+        <plugin name="${name}_camera_controller" filename="libgazebo_ros_openni_kinect.so">
+          <baseline>${zedx_baseline}</baseline>
+          <alwaysOn>true</alwaysOn>
+          <updateRate>15.0</updateRate>
+          <cameraName>${name}/zed_node</cameraName>
+          <imageTopicName>rgb/image_rect_color</imageTopicName>
+          <cameraInfoTopicName>rgb/camera_info</cameraInfoTopicName>
+          <depthImageTopicName>depth/depth_registered</depthImageTopicName>
+          <depthImageInfoTopicName>depth/camera_info</depthImageInfoTopicName>
+          <pointCloudTopicName>point_cloud/cloud_registered</pointCloudTopicName>
+          <frameName>${name}_left_camera_optical_frame</frameName>
+          <pointCloudCutoff>1.0</pointCloudCutoff>
+          <pointCloudCutoffMax>35.0</pointCloudCutoffMax>
+          <distortionK1>0.0</distortionK1>
+          <distortionK2>0.0</distortionK2>
+          <distortionK3>0.0</distortionK3>
+          <distortionT1>0.0</distortionT1>
+          <distortionT2>0.0</distortionT2>
+          <CxPrime>0.0</CxPrime>
+          <Cx>0.0</Cx>
+          <Cy>0.0</Cy>
+          <focalLength>0.0</focalLength>
+          <hackBaseline>0.0</hackBaseline>
+        </plugin>
+      </sensor>
+    </gazebo>
+    </xacro:unless>
+
+    <!-- ==================================================================
+         STEREO MODE (stereo=true): the Phase-1 fix for the noise problem
+         documented at length above - "alternative 2", done properly.
+
+         One <sensor type="multicamera"> rather than two separate camera
+         sensors, deviating from ENGINEERING_NOTES.md 5's letter ("two plain cameras")
+         while satisfying everything that rule exists to enforce:
+           * <noise> is HONOURED - multicamera uses the plain CameraSensor
+             render path (ENGINEERING_NOTES.md 2.2 lists it beside type="camera"), the
+             one the depth sensor bypasses.
+           * both lenses render from a single sensor update, so left/right
+             stamps are identical -> exact-sync (approx_sync=false), which
+             the SLAM launch's own comments call the stricter, better mode.
+           * the plugin writes <hackBaseline> into the RIGHT camera's
+             P-matrix only, and stamps BOTH camera_infos with the same left
+             optical frame - the two hand-written requirements of the rule,
+             enforced by construction.
+         The delivered noise and stamp identity are MEASURED at validation
+         time, not assumed (the depth-noise trap above was also "obviously
+         fine" until measured).
+
+         Topic names match the real zed-ros-wrapper layout
+         (left|right/image_rect_color + camera_info under ${name}/zed_node),
+         so sim and hardware stay interchangeable and existing consumers
+         (system_monitor, ORB-SLAM3 configs) keep working. Gazebo cameras
+         are ideal pinhole (D=0, R=I): the images are born rectified, hence
+         publishing straight to *_rect names and
+         Rtabmap/ImagesAlreadyRectified=true in rtabmap_zedx.yaml.
+
+         There is deliberately NO depth sensor in this mode - depth comes
+         from stereo disparity inside RTAB-Map, like the real camera. One
+         sensor per mode, one render pipeline to reason about.
+         ================================================================== -->
+    <xacro:if value="${stereo}">
+    <gazebo reference="${name}_left_camera_frame">
+      <sensor type="multicamera" name="${name}_stereo_camera">
+        <update_rate>15</update_rate>
+        <camera name="left">
+          <!-- 73.00 deg horizontal = 1.2741 rad (73 x pi / 180 =
+               1.27409035, to 4 dp 1.2741 = 73.0006 deg). ZED X datasheet,
+               "ZED X Available Models", SKU ZED-312110 (4.6 mm lens, no
+               polarizer — our unit): Max. 73 (H) x 45 (V) x 87 (D) deg.
+               WAS 1.8151 rad = 104.00 deg until 2026-08-29, which is the
+               camera every earlier run in this project was recorded with.
+               Full reasoning, the vertical-FOV residual and the run-history
+               consequence: the FIELD OF VIEW banner in the header of this
+               file, and the long comment on the depth sensor above. Do not
+               change this number without reading both.
+               Vertical is not an input: the SDF camera element has no
+               <vertical_fov>, so Gazebo derives it from the aspect ratio.
+               At 1920 x 1200 (1.6000) that gives 49.64 deg vertical
+               against the real 45 deg — a known 4.64 deg excess that must
+               be disclosed, not tuned out. -->
+          <horizontal_fov>1.2741</horizontal_fov>
+          <image>
+            <width>1920</width>
+            <height>1200</height>
+            <format>R8G8B8</format>
+          </image>
+          <!-- NEAR CLIP: 0.1, NOT 1.0. Read this before "restoring" it.
+
+               These are plain COLOUR cameras. <near> here is a RENDER clip:
+               geometry closer than it is not drawn AT ALL. It is NOT the
+               depth blind zone - in stereo mode depth is computed from
+               disparity inside RTAB-Map, and its floor is set by
+               Stereo/MaxDisparity=128 in rtabmap_zedx.yaml
+               (focal length in pixels * 0.120 m / 128).
+
+               ***THAT FLOOR MOVED ON 2026-08-29 AND NOTHING WAS RETUNED.***
+               This paragraph used to read "750 px * 0.120 / 128 = 0.70 m".
+               750 px was never independent - it is what the OLD 104-degree
+               field of view implied: (1920/2) / tan(104/2) = 750.1 px.
+               Now that the horizontal field of view is the real 73 degrees,
+               the simulated focal length is
+                 (1920/2) / tan(73/2) = 960 / 0.740027 = 1297.3 px
+               and the stereo depth floor becomes
+                 1297.3 * 0.120 / 128 = 1.216 m,   not 0.70 m.
+               So the simulated stereo blind zone has gone from comfortably
+               BELOW the real camera's 1.0 m min_depth to ABOVE it. The sim
+               is once again harsher than the hardware up close, which is
+               exactly the failure mode the rest of this comment describes.
+
+               Stereo/MaxDisparity IS DELIBERATELY LEFT AT 128 HERE. Field
+               of view and disparity range are two variables and this change
+               is allowed to move one. To restore a ~1.0 m floor the
+               arithmetic is 1297.3 * 0.120 / 1.0 = 155.7, i.e.
+               Stereo/MaxDisparity ~= 156 (rounded up, 160 for headroom);
+               matching the old 0.70 m floor would need
+               1297.3 * 0.120 / 0.70 = 222.4. Neither is applied. Whoever
+               takes that on runs it as its own before/after experiment.
+               The value lives at rtabmap_zedx.yaml:282, and docs/SOLVED.md
+               (the "<near>1.0 on the stereo cameras" entry) still quotes
+               the stale 750 px / 0.70 m pair.
+
+               The depth-camera branch above DOES use <near>1.0</near>
+               correctly, because there <near> really is the depth blind
+               zone. Copying that value here looked consistent but does
+               something entirely different, and it cost a whole run.
+
+               MEASURED 2026-08-23 with near=1.0, robot facing a wall head-on:
+                 3.00 m -> 981 ORB features      1.20 m -> 454
+                 2.00 m -> 772                   1.00 m ->  31  (tracking floor is ~50)
+                 1.50 m -> 336                   0.90 m ->   0  (wall gone; contrast 24->7)
+               Below 1 m the wall vanished from the image entirely. In a
+               13x11 m office the robot is inside that zone constantly, which
+               produced 170 odometry resets in one drive (14.1 per 100 m
+               against a gate of 2). A real ZED X still SEES a surface at
+               0.5 m - it just returns no depth for it - so the 1.0 render
+               clip made the simulation harsher than the hardware, indoors
+               only. Outdoors nothing is ever that close, which is why
+               Phase 1 never caught it. -->
+          <clip>
+            <near>0.1</near>
+            <far>35.0</far>
+          </clip>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>${noise_stddev}</stddev>
+          </noise>
+        </camera>
+        <camera name="right">
+          <!-- Right lens sits -baseline along the sensor frame's y, matching
+               the URDF joint above. The camera child names MUST be literally
+               "left"/"right": the plugin keys both the topic suffixes and
+               the right-only hackBaseline off them. -->
+          <pose>0 ${-zedx_baseline} 0 0 0 0</pose>
+          <!-- MUST MATCH THE LEFT LENS EXACTLY — 73.00 deg = 1.2741 rad,
+               same datasheet line, same 2026-08-29 change from 1.8151 rad
+               (104.00 deg). Two lenses with different fields of view do not
+               form a stereo pair: the disparity search would be comparing
+               images at different scales. See the left lens comment. -->
+          <horizontal_fov>1.2741</horizontal_fov>
+          <image>
+            <width>1920</width>
+            <height>1200</height>
+            <format>R8G8B8</format>
+          </image>
+          <!-- Must MATCH the left lens exactly (see its comment above).
+               A mismatched near clip between the two lenses would silently
+               break disparity in the overlap region. -->
+          <clip>
+            <near>0.1</near>
+            <far>35.0</far>
+          </clip>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>${noise_stddev}</stddev>
+          </noise>
+        </camera>
+        <plugin name="${name}_stereo_controller" filename="libgazebo_ros_multicamera.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>0.0</updateRate>
+          <cameraName>${name}/zed_node</cameraName>
+          <imageTopicName>image_rect_color</imageTopicName>
+          <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+          <frameName>${name}_left_camera_optical_frame</frameName>
+          <hackBaseline>${zedx_baseline}</hackBaseline>
+          <distortionK1>0.0</distortionK1>
+          <distortionK2>0.0</distortionK2>
+          <distortionK3>0.0</distortionK3>
+          <distortionT1>0.0</distortionT1>
+          <distortionT2>0.0</distortionT2>
+        </plugin>
+      </sensor>
+    </gazebo>
+    </xacro:if>
+
+  </xacro:macro>
+</robot>

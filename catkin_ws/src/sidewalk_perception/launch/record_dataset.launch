@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<!--
+  record_dataset.launch — capture a dataset for the algorithm comparison.
+
+  Produces an SVO2 (raw sensor data, replayable through the ZED SDK), optionally
+  a rosbag (derived ROS topics), and a manifest stub describing how it was made.
+
+  WHY BOTH FORMATS
+    SVO2 stores the raw stereo streams, so replaying it re-runs the ZED depth
+    engine — depth settings can be changed later and the data re-derived. A
+    rosbag stores whatever was computed at record time, which is what you want
+    when a ROS node needs byte-identical input, and it is readable without the
+    ZED SDK. They answer different questions, so the default records both.
+
+  WHY THE PROSE FIELDS ARE NOT ARGUMENTS HERE
+    Descriptions of the weather, the route and anything that went wrong are
+    free text. Passing free text through a roslaunch `args` string is fragile:
+    roslaunch splits the string on whitespace, so an apostrophe or an unlucky
+    space silently truncates the value or breaks the launch. Rather than build
+    something delicate, this launch records the run and writes a manifest stub,
+    and the prose is added straight afterwards by running, in a normal shell:
+
+        rosrun sidewalk_perception make_manifest.py edit data/recordings/NAME
+
+    passing one repeated "field" option per entry, for example
+    environment/description, environment/trajectory, ground_truth/source,
+    mount/revision and known_anomalies. Run the script with the "schema"
+    command to see the full list and the guidance for each field. (The exact
+    option syntax is omitted here because an XML comment may not contain a
+    double hyphen.)
+
+    That ordering also matches how the work actually happens: several of those
+    fields, the anomalies especially, are only known once the drive is over.
+    The manifest "validate" command then reports exactly what is still missing,
+    and the dataset's HTML page lists the gaps in red until they are filled.
+-->
+<launch>
+
+  <arg name="camera_name"  default="zedx_front"/>
+  <arg name="name"         default=""    doc="dataset name; defaults to a timestamp"/>
+  <arg name="duration"     default="600" doc="recording length in seconds"/>
+  <arg name="with_bag"     default="true"/>
+  <arg name="compression"  default="h265"
+       doc="h265 uses the Jetson hardware encoder and is ~40% smaller than h264"/>
+  <arg name="start_driver" default="true"/>
+
+  <include file="$(find sidewalk_perception)/launch/zedx_front.launch"
+           if="$(arg start_driver)">
+    <arg name="camera_name" value="$(arg camera_name)"/>
+  </include>
+
+  <!-- required="true" so that when the recording ends the camera driver is
+       torn down with it, rather than being left streaming unattended. -->
+  <node pkg="sidewalk_perception" type="svo_manager.py"
+        name="svo_recorder" output="screen" required="true"
+        args="$(eval 'record' +
+                     ' --namespace /' + camera_name +
+                     ' --duration ' + str(duration) +
+                     ' --compression ' + compression +
+                     (' --with-bag' if str(with_bag) == 'true' else '') +
+                     ((' --name ' + name) if name else ''))"/>
+
+</launch>

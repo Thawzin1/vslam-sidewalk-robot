@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Sidewalk robot</title>
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<nav class="top" id="nav"></nav>
+<div id="drawerr" class="band"></div>
+<div id="fresh" class="grey">Connecting...<span class="sub">waiting for the first answer</span></div>
+<h1>Sidewalk robot - SLAM project (Mitacs)</h1>
+<div class="s">SLAM (building a map while working out where you are in it) with a ZED X stereo camera on a Husky robot.
+Three pages, one link key:</div>
+<a class="card" id="c_status" href="/status.html"><b>Computer status</b><span>The Jetson (camera computer) and the robot's own computer: memory, processor, temperatures, every disk including the USB stick and the robot's card, and the robot's battery voltage. Live, every 2 s.</span></a>
+<a class="card" id="c_map" href="/map.html"><b>Live map</b><span>The floor map the camera is building during a drive, the drive's status lines, and the robot's LiDAR view. Live, every 2 s.</span></a>
+<a class="card" id="c_results" href="/results.html"><b>Results</b><span>Each finished drive: headline numbers, figures and timelapse videos. Updated after each drive.</span></a>
+<div class="grid" id="rows"></div>
+<footer>All times are Hamilton time (America/Toronto). The Jetson sends outward to this website; nothing on the lab network is opened.</footer>
+<script src="/common.js"></script>
+<script>
+'use strict'
+nav('index.html')
+const q = K ? '?k=' + encodeURIComponent(K) : ''
+for (const id of ['c_status', 'c_map', 'c_results']){ const a = document.getElementById(id); a.href = a.getAttribute('href') + q }
+window.stateQuery = () => '&only=status'
+window.onBody = b => {
+  const J = b.jetson || {}, M = J.memory || {}
+  const n = v => (typeof v === 'number' && isFinite(v)) ? String(v) : '?'
+  document.getElementById('rows').innerHTML = rowsHtml([
+    ['drive shown on the live map', b.run || 'none yet'],
+    ['Jetson memory free', M.avail_pct != null ? n(M.avail_pct) + ' %' : null],
+    ['Jetson processor', J.cpu && J.cpu.total_pct != null ? n(J.cpu.total_pct) + ' % busy' : null],
+    ['robot battery voltage (a reading, not a charge level)', (() => { try { const x = robotBattery(J); return x.volts ? x.volts + ' - ' + x.text : x.text } catch (e) { return null } })()],
+    ['robot computer', J.robot ? (J.robot.health && J.robot.health.memory ? 'reporting' : (J.robot.why || 'not reporting')) : null],
+  ])
+}
+startPolling()
+</script>
+</body>
+</html>

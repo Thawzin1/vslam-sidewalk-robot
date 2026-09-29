@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+<!--
+  zed_baseline.launch — BASELINE 1: the ZED SDK's own positional tracking.
+
+  There is no SLAM node here. The tracker runs inside the ZED wrapper, on the
+  GPU, as closed-source SDK code. All this launch file does is:
+
+    1. put the right parameters on the parameter server, and
+    2. record the resulting pose into the project's common TUM format.
+
+  ORDER MATTERS - THIS IS THE ONE THING THAT GOES WRONG
+      A ROS node reads its parameters ONCE, when it is constructed. So this
+      launch file must run BEFORE the ZED wrapper starts. If you start the
+      camera first and this second, the parameters land on the server, nobody
+      reads them, and the wrapper quietly uses its own defaults - which may have
+      positional tracking disabled entirely. The run then produces either no
+      poses or poses from a differently-configured tracker, and nothing warns
+      you.
+
+      Correct order:
+          roslaunch sidewalk_slam zed_baseline.launch record:=false   # params
+          roslaunch sidewalk_perception <camera launch>               # camera
+          roslaunch sidewalk_slam zed_baseline.launch run_id:=...     # record
+
+      Or simply let slam_runner.py do it, which is why slam_runner.py exists.
+
+  WHY WE RECORD THE TOPIC AND NOT TF
+      The wrapper is configured with publish_tf:=false so it never competes
+      with RTAB-Map for the map -> odom edge of the TF tree. Two publishers on
+      one TF edge is one of the nastiest failure modes in ROS, because nothing
+      errors: lookups just return whichever update arrived most recently.
+-->
+<launch>
+
+  <arg name="camera_name" default="zedx_front"/>
+  <arg name="node_name"   default="zed_node"/>
+
+  <arg name="load_params" default="true"
+       doc="Load config/zed_positional_tracking.yaml into the wrapper's
+            namespace. Only has an effect if done BEFORE the wrapper starts."/>
+  <arg name="record" default="true"
+       doc="Start the trajectory recorder."/>
+  <arg name="run_id" default="zed_baseline"
+       doc="Identifier shared with the other stacks in the same comparison."/>
+  <arg name="pose_topic"
+       default="/$(arg camera_name)/$(arg node_name)/pose"
+       doc="geometry_msgs/PoseStamped from the SDK tracker. Use .../odom
+            instead to record the pre-loop-closure odometry."/>
+  <arg name="pose_type" default="pose"
+       doc="pose | odom | pose_cov - must match the topic's message type."/>
+  <arg name="use_sim_time" default="false"/>
+  <arg name="input_name" default=""/>
+
+  <param name="/use_sim_time" value="$(arg use_sim_time)"/>
+
+  <!-- Parameters for the ZED wrapper node, in ITS namespace, not ours. -->
+  <group if="$(arg load_params)">
+    <rosparam command="load"
+              ns="/$(arg camera_name)/$(arg node_name)"
+              file="$(find sidewalk_slam)/config/zed_positional_tracking.yaml"/>
+  </group>
+
+  <node if="$(arg record)"
+        pkg="sidewalk_slam" type="trajectory_recorder.py"
+        name="zed_baseline_recorder" output="screen"
+        args="--stack zed_sdk
+              --run-id $(arg run_id)
+              --source topic
+              --topic $(arg pose_topic)
+              --type $(arg pose_type)
+              --input-name $(arg input_name)"/>
+
+</launch>

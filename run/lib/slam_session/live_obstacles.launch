@@ -1,0 +1,22 @@
+<launch>
+  <!-- 27 Sept 2026. The SAME camera-obstacle step the navigation uses
+       (navigation_2026-09-27/nav_run.launch: nav_points + nav_obstacles, config/obstacles.yaml), run during SLAM
+       and mapping sessions so live_map_server.py can draw /nav/obstacles_cloud. UNMASKED depth: people show here
+       even though the map's own input blanks them. Light: 1 in 8 pixels each way, 5 cm voxels, 4 m range. -->
+  <arg name="here" default="$(find sidewalk_navigation)"/>
+  <node pkg="nodelet" type="nodelet" name="live_points" args="standalone rtabmap_util/point_cloud_xyz">
+    <remap from="depth/image"       to="/zedx_front/zed_node/depth/depth_registered"/>
+    <remap from="depth/camera_info" to="/zedx_front/zed_node/depth/camera_info"/>
+    <remap from="cloud"             to="/nav/camera_cloud"/>
+    <param name="decimation"  value="8"/>
+    <param name="voxel_size"  value="0.05"/>
+    <param name="max_depth"   value="4.0"/>
+    <param name="approx_sync" value="false"/>
+  </node>
+  <node pkg="nodelet" type="nodelet" name="live_obstacles" args="standalone rtabmap_util/obstacles_detection">
+    <rosparam command="load" file="$(arg here)/config/obstacles.yaml"/>
+    <remap from="cloud"     to="/nav/camera_cloud"/>
+    <remap from="obstacles" to="/nav/obstacles_cloud"/>
+    <remap from="ground"    to="/nav/ground_cloud"/>
+  </node>
+</launch>

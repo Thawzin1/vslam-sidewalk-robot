@@ -1,0 +1,127 @@
+<?xml version="1.0"?>
+<!--
+  ingest_navigation.launch — evaluate a run driven by sidewalk_navigation.
+
+  This launch file starts NO ROS communication. It exists so that a navigation
+  run can be evaluated the same way as everything else in the project, and so
+  the parameters of an evaluation are written down in a file rather than
+  retyped on a command line and forgotten.
+
+  WHERE THE INPUT COMES FROM
+  sidewalk_navigation/waypoint_runner.py writes one directory per run:
+
+      logs/sidewalk_navigation/runs/<run_id>/
+          run_summary.json    metrics with units, plus which map and which route
+          trajectory.tum      the executed path, TUM format
+
+  The schema is documented in a comment block duplicated verbatim in
+  sidewalk_navigation/scripts/nav_run_io.py and
+  sidewalk_evaluation/scripts/nav_run.py. Change one, change the other.
+
+  WHAT CAN AND CANNOT BE MEASURED FROM ONE OF THESE
+  The recorded trajectory is the robot's OWN ESTIMATE, produced by the same
+  localisation system that was steering it. It supports repeatability across
+  runs, planner comparison, and self-consistency checks. It does NOT support an
+  accuracy claim: that needs a reference which does not share the estimator.
+
+  Verify the ingestion path against synthetic runs, no hardware, no ROS:
+      roslaunch sidewalk_evaluation ingest_navigation.launch self_test:=true
+
+  One run, self-consistency only (the normal case):
+      roslaunch sidewalk_evaluation ingest_navigation.launch \
+          run:=~/Mitacs\ Internship/logs/sidewalk_navigation/runs/20260801-101500_waypoint_demo
+
+  One run against wheel odometry recorded during the SAME drive by
+  record_trajectories.launch — the only mode that yields an error figure:
+      roslaunch sidewalk_evaluation ingest_navigation.launch \
+          run:=.../runs/20260801-101500_waypoint_demo \
+          ref:=.../20260801-101500_record/wheel_odom.tum \
+          reference_kind:=wheel_odometry
+
+  Repeatability over three drives of the identical route:
+      roslaunch sidewalk_evaluation ingest_navigation.launch \
+          run:=.../runs/RUN1 run2:=.../runs/RUN2 run3:=.../runs/RUN3 \
+          repeatability:=true
+-->
+<launch>
+
+  <arg name="self_test" default="false"
+       doc="verify the ingestion path against synthetic navigation runs, then
+            exit. Needs no hardware and no ROS."/>
+
+  <arg name="run" default=""
+       doc="navigation run directory written by waypoint_runner.py"/>
+  <arg name="run2" default="" doc="a second run, for repeatability"/>
+  <arg name="run3" default="" doc="a third run, for repeatability"/>
+
+  <arg name="repeatability" default="false"
+       doc="compare the runs against each other. Measures how consistently the
+            system reproduces its own answer — NOT accuracy."/>
+
+  <arg name="baseline" default=""
+       doc="run_id used as the repeatability reference (default: earliest)"/>
+
+  <!-- An INDEPENDENT reference recorded during the same drive. Wheel odometry
+       is the realistic one: it shares no sensor, no calibration and no failure
+       mode with the visual localisation being measured. -->
+  <arg name="ref" default="" doc="reference trajectory in TUM format"/>
+
+  <!-- WHAT you are calling truth. Recorded verbatim in the output and it is
+       the first question a reader asks. Set it honestly. -->
+  <arg name="reference_kind" default="wheel_odometry"
+       doc="motion_capture | rtk_gnss | simulator_ground_truth |
+            closed_loop | cross_stack | wheel_odometry |
+            nav_repeat_run | synthetic_ground_truth | unspecified.
+            simulator_ground_truth = Gazebo model_states truth;
+            synthetic_ground_truth is SELF-TEST ONLY and reports
+            refuse to render robot data labelled with it."/>
+
+  <arg name="align" default="se3"
+       doc="se3 | sim3 | origin | none — see config/evaluation.yaml"/>
+
+  <arg name="name" default=""
+       doc="label for the results directory and the report title"/>
+
+  <arg name="describe" default="false"
+       doc="print what each run contains and exit without computing anything"/>
+
+  <arg name="config"
+       default="$(find sidewalk_evaluation)/config/evaluation.yaml"/>
+
+  <!-- Self-test path: no data required, no hardware required. -->
+  <group if="$(arg self_test)">
+    <node pkg="sidewalk_evaluation" type="ingest_navigation_run.py"
+          name="ingest_navigation_self_test" output="screen" required="true"
+          args="--self-test"/>
+  </group>
+
+  <!--
+    Real ingestion.
+
+    The whole argument string is built by a SINGLE $(eval ...) expression, for
+    the same reason evaluate.launch does: roslaunch requires that an
+    $(eval ...) span the entire attribute value and forbids mixing it with
+    literal text or with $(arg ...). Splitting it into several evals parses
+    cleanly and then fails at launch time with a confusing message.
+
+    EVERY PATH IS SINGLE-QUOTED. This repository lives at a path containing a
+    space ("<repo folder>"), roslaunch tokenises a node's args with shlex,
+    and an unquoted path would arrive at argparse split into two arguments.
+    eval_common.unquote() strips any quotes that survive, so the script is
+    correct either way.
+
+    Booleans arrive as strings, hence the str().lower() comparisons.
+
+    If you prefer, call the script directly — it is a plain command-line tool
+    that needs no ROS, and that is the intended way to use it. The full command
+    with all its flags is in this package's README.md; it cannot be written in
+    this comment, because XML forbids two consecutive hyphens inside a comment
+    and every one of those flags starts with a pair.
+  -->
+  <group unless="$(arg self_test)">
+    <node pkg="sidewalk_evaluation" type="ingest_navigation_run.py"
+          name="ingest_navigation_run" output="screen" required="true"
+          args="$(eval ' '.join(['--config', &quot;'&quot; + config + &quot;'&quot;, '--align', align, '--reference-kind', reference_kind] + (['--describe'] if str(describe).lower() in ('true', '1') else []) + (['--repeatability'] if str(repeatability).lower() in ('true', '1') else []) + (['--name', &quot;'&quot; + name + &quot;'&quot;] if name else []) + (['--ref', &quot;'&quot; + ref + &quot;'&quot;] if ref else []) + (['--baseline', baseline] if baseline else []) + [tok for r in (run, run2, run3) if r for tok in ('--run', &quot;'&quot; + r + &quot;'&quot;)]))"/>
+  </group>
+
+</launch>

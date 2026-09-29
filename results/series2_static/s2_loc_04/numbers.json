@@ -1,0 +1,234 @@
+{
+ "run": "s2_loc_04",
+ "pass_lines": "run/lib/localise/PASS_LINES_whole_floor.md",
+ "N": "1 session (start 2 scored; start 1 for information)",
+ "W1": {
+  "start": 2,
+  "t_start_hamilton": "07:43:12",
+  "first_fix_hamilton": "07:46:44",
+  "first_fix_s": 212.1,
+  "first_fix_kind": "recognised",
+  "first_fix_loop_id": 167,
+  "first_fix_prox_id": 0,
+  "first_fix_inliers": 122,
+  "first_fix_score": 0.082731,
+  "first_fix_map_xy": [
+   5.895,
+   -0.1647
+  ],
+  "first_fix_dist_to_drive10_path_m": 0.135,
+  "driven_wheels_m": 6.26,
+  "driven_blend_m_watcher": 6.069,
+  "watcher_first_fix_s": 213.1,
+  "pass": false,
+  "start1_for_information": {
+   "t_start_hamilton": "07:39:23",
+   "accepted_s_diag": 2.8,
+   "driven_m": 0.0,
+   "note": "accepted at about 2.8 s (DIAG.md section 6, fact 1: one 'waiting' warning at mapping.log line 1485, both links in the short memory in the first recorded /rtabmap/info; INFERENCE from the rule, the bag begins 18 s into start 1). The watcher's 34.8 s is when it first saw the uncertainty. Start 1 was also given the off-map guess (40, 40). Start 1 ended when start 2 was begun at 07:43:12; the drive was made in start 2."
+  }
+ },
+ "W2": {
+  "stops": 3,
+  "ok": 3,
+  "missed": 0,
+  "pass": true,
+  "rule": "still >= 15 s within 3 m (along the path) of a walkway end (travel direction turns >= 60 deg), after driving began, not the park",
+  "driving_began_s": 182.6,
+  "driving_began_hamilton": "07:46:14"
+ },
+ "W3": {
+  "fixes_checked_against_wheels": 502,
+  "wrong_over_1.5m": 0,
+  "median_m": 0.022,
+  "p95_m": 0.101,
+  "max_m": 1.08,
+  "max_at_s": 1156.3,
+  "max_at_hamilton": "08:02:28",
+  "max_motion_m": 10.756,
+  "max_compared_with_fix": 398,
+  "over_0.5m": 2,
+  "checked_across_a_wifi_gap": 27,
+  "heading_abs_median_deg": 0.07,
+  "heading_abs_max_deg": 2.54,
+  "fixes_inside_wifi_gaps": 73,
+  "inside_gaps_checked_against_blend_max_m": 0.069,
+  "inside_gaps_over_1.5m": 0,
+  "first_fix_excluded": "fix 1 of start 2 (the jump from the (40, 40) guess, W1's subject)",
+  "pass": true
+ },
+ "W4": {
+  "status": "PENDING - needs this session's LiDAR Force3DoF replay (robot battery died twice during it)"
+ },
+ "report_also": {
+  "session_start2_hamilton": "07:43:12",
+  "session_end_hamilton": "08:07:51",
+  "start2_duration_s": 1479.3,
+  "time_not_localised_s": 212.1,
+  "time_localised_s": 1267.2,
+  "unlocalised_messages_after_first_fix": 0,
+  "driven_wheels_m_start2": 252.8,
+  "driven_wheels_m_after_first_fix": 246.5,
+  "driven_blend_m_watcher": 245.8,
+  "localised_path_length_m": 234.6,
+  "fixes_start2": 576,
+  "fixes_by_kind": {
+   "recognised": 1,
+   "nearby": 506,
+   "both": 69
+  },
+  "fixes_recognised_again_incl_both": 70,
+  "fixes_nearby_only": 506,
+  "fix_inliers_min": 21,
+  "fixes_per_10m_after_first_fix": 23.4,
+  "per_10m_piece_counts": [
+   41,
+   24,
+   24,
+   28,
+   6,
+   21,
+   27,
+   25,
+   27,
+   41,
+   26,
+   8,
+   20,
+   17,
+   16,
+   38,
+   9,
+   15,
+   21,
+   16,
+   19,
+   27,
+   28,
+   24,
+   28
+  ],
+  "pieces_10m": 25,
+  "pieces_10m_with_zero_fixes": 0,
+  "per_10m_piece_min": 6,
+  "per_10m_piece_median": 24.0,
+  "longest_without_fix_by_distance": {
+   "m": 10.76,
+   "s": 43.0,
+   "from_hamilton": "08:01:45",
+   "to_hamilton": "08:02:28",
+   "from_s": 1113.3,
+   "to_s": 1156.3,
+   "from_xy": [
+    0.08,
+    -4.78
+   ],
+   "to_xy": [
+    0.05,
+    -14.41
+   ]
+  },
+  "longest_without_fix_by_time": {
+   "s": 153.2,
+   "m": 0.17,
+   "from_hamilton": "07:47:18",
+   "to_hamilton": "07:49:51",
+   "from_s": 246.3,
+   "to_s": 399.4,
+   "from_xy": [
+    9.23,
+    -0.12
+   ]
+  },
+  "before_first_fix": {
+   "s": 212.1,
+   "m_wheels": 6.26
+  },
+  "stretches_between_fixes_over_5m": 4,
+  "stretches_over_5m_list": [
+   {
+    "m": 7.91,
+    "s": 25.8,
+    "from_hamilton": "07:53:04",
+    "from_s": 592.5,
+    "to_s": 618.4,
+    "from_xy": [
+     -0.56,
+     -14.47
+    ],
+    "to_xy": [
+     -0.32,
+     -14.48
+    ]
+   },
+   {
+    "m": 6.71,
+    "s": 45.1,
+    "from_hamilton": "07:58:28",
+    "from_s": 916.4,
+    "to_s": 961.5,
+    "from_xy": [
+     14.47,
+     -12.77
+    ],
+    "to_xy": [
+     13.4,
+     -14.94
+    ]
+   },
+   {
+    "m": 6.05,
+    "s": 26.6,
+    "from_hamilton": "07:59:54",
+    "from_s": 1002.6,
+    "to_s": 1029.2,
+    "from_xy": [
+     -0.67,
+     -14.47
+    ],
+    "to_xy": [
+     -0.08,
+     -14.34
+    ]
+   },
+   {
+    "m": 10.76,
+    "s": 43.0,
+    "from_hamilton": "08:01:45",
+    "from_s": 1113.3,
+    "to_s": 1156.3,
+    "from_xy": [
+     0.08,
+     -4.78
+    ],
+    "to_xy": [
+     0.05,
+     -14.41
+    ]
+   }
+  ],
+  "stretches_between_fixes_over_10m": 1,
+  "wifi_gaps_over_0.5s_start2": 31,
+  "wifi_gaps_over_5s_start2": 6,
+  "wifi_gap_total_s_start2": 141.0,
+  "wifi_gap_longest_s": 32.76,
+  "wifi_gap_longest_from_hamilton": "07:57:17",
+  "wifi_gap_longest_from_s": 845.2,
+  "wifi_gap_longest_xy": [
+   14.66,
+   3.79
+  ],
+  "blend_start2_to_end_m": 0.633,
+  "blend_start2_to_end_deg": -0.4,
+  "park_localised_xy_yaw": [
+   0.03,
+   -0.041,
+   -1.4
+  ],
+  "park_localised_dist_to_start_mark_m": 0.051,
+  "robot_wheels_gyro_start2_to_end_m": 1.688,
+  "robot_wheels_gyro_start2_to_end_deg": -8.4
+ },
+ "tool": "loc04_score.py (project records)",
+ "written_hamilton": "2026-09-27 10:08 EDT"
+}

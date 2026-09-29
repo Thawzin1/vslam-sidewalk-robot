@@ -1,0 +1,20 @@
+{
+ "nodes": 544,
+ "closures": 87,
+ "gap_floor_m": 0.02,
+ "gap_3d_m": 0.02,
+ "tilt_max_deg": 0.0,
+ "z_min": 0.0,
+ "z_max": 0.0,
+ "height_range_m": 0.0,
+ "vs_camera_SE2_med_p95": [
+  0.26,
+  0.51
+ ],
+ "camera_pairs": 473,
+ "vs_wheels_SE2_med_p95": [
+  0.31,
+  0.47
+ ],
+ "flatness_pass": true
+}

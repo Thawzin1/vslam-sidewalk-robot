@@ -1,0 +1,154 @@
+{
+ "run": "s2_static_03",
+ "sources": {
+  "paths": "~/.run_records/s2_static_03/fusion.bag (/fused/odometry, /robot/ekf_odom, /rtabmap/odom, /robot/wheel_odom)",
+  "turns": "~/.run_records/s2_static_03/turns.log (live turn watcher; UTC in the file, Hamilton here)",
+  "link": "~/.run_records/s2_static_03/bridge_recv.log",
+  "cpu": "~/.run_records/s2_static_03/cpu_jetson.json",
+  "rtabmap_timing": "~/slam_series2/s2_static_03.db (Statistics table, read-only)"
+ },
+ "tracking_alone_gaps": {
+  "blend": {
+   "end_to_start_m": 5.597,
+   "heading_deg": -44.77,
+   "path_m": 154.2,
+   "first": "04:30:31",
+   "last": "04:58:25"
+  },
+  "robot": {
+   "end_to_start_m": 0.28,
+   "heading_deg": 1.34,
+   "path_m": 144.8,
+   "first": "04:30:31",
+   "last": "04:58:25"
+  },
+  "camera": {
+   "end_to_start_m": 5.64,
+   "heading_deg": -41.04,
+   "path_m": 187.9,
+   "first": "04:30:31",
+   "last": "04:58:25"
+  }
+ },
+ "camera_tracking_lost": {
+  "stretches": 21,
+  "seconds_total": 56.4,
+  "longest_s": 30.2,
+  "share_of_messages_pct": 3.3,
+  "rule": "/rtabmap/odom message with covariance >= 9998 or an all-zero pose (RTAB-Map's lost signal)"
+ },
+ "blend_heading_while_still": {
+  "stops": 167,
+  "seconds_still": 962.2,
+  "signed_sum_deg": 0.531,
+  "sum_abs_net_per_stop_deg": 6.117,
+  "sum_abs_steps_deg": 69.319,
+  "largest_stop_net_deg": 0.628,
+  "rule": "robot wheel odometry speed and turn rate both zero, below 1e-6 - the log holds 1e-16 float noise, not 0.0 (nearest wheel message within 0.3 s)"
+ },
+ "turns": {
+  "n": 52,
+  "abs_blend_minus_robot_deg": {
+   "median": 0.5,
+   "p95": 2.42,
+   "max": 25.2
+  },
+  "abs_camera_minus_robot_deg": {
+   "median": 3.4,
+   "p95": 20.9,
+   "max": 63.7
+  },
+  "within_1deg_blend": 41,
+  "within_1deg_camera": 3,
+  "turns_with_no_camera_value": 3
+ },
+ "link": {
+  "down_events": 1,
+  "down_lines_hamilton": [
+   "04:36:46 STATE DOWN no bytes for 1.5 s"
+  ],
+  "receiver_sessions": 1,
+  "connects": 2,
+  "sessions": [
+   {
+    "elapsed_s": 1710.9,
+    "per_topic": {
+     "/husky_velocity_controller/odom": {
+      "robot_read": 17297,
+      "robot_sent": 16662,
+      "published_on_jetson": 16318,
+      "pct_of_sent": 97.94,
+      "pct_of_robot_read": 94.34,
+      "missed_while_down": 400,
+      "stale": 350,
+      "lost": 1
+     },
+     "/imu/data": {
+      "robot_read": 33731,
+      "robot_sent": 32489,
+      "published_on_jetson": 31829,
+      "pct_of_sent": 97.97,
+      "pct_of_robot_read": 94.36,
+      "missed_while_down": 779,
+      "stale": 674,
+      "lost": 3
+     },
+     "/imu/data_raw": {
+      "robot_read": 33731,
+      "robot_sent": 32489,
+      "published_on_jetson": 31829,
+      "pct_of_sent": 97.97,
+      "pct_of_robot_read": 94.36,
+      "missed_while_down": 779,
+      "stale": 674,
+      "lost": 3
+     },
+     "/odometry/filtered": {
+      "robot_read": 86501,
+      "robot_sent": 83318,
+      "published_on_jetson": 81625,
+      "pct_of_sent": 97.97,
+      "pct_of_robot_read": 94.36,
+      "missed_while_down": 1998,
+      "stale": 1729,
+      "lost": 8
+     }
+    }
+   }
+  ]
+ },
+ "processor_fusion": {
+  "total": {
+   "seconds": 1703,
+   "median_cores": 0.11,
+   "p99_cores": 0.14,
+   "max_cores": 1.043
+  },
+  "gate": "PASS",
+  "per_process": {
+   "robot_bridge_recv": {
+    "median_cores": 0.05,
+    "p99_cores": 0.06,
+    "max_cores": 1.043
+   },
+   "ekf_input_conditioner": {
+    "median_cores": 0.04,
+    "p99_cores": 0.05,
+    "max_cores": 0.06
+   },
+   "ekf_fused": {
+    "median_cores": 0.03,
+    "p99_cores": 0.04,
+    "max_cores": 0.05
+   }
+  }
+ },
+ "processor_rtabmap": {
+  "rtabmap_ms_per_node": {
+   "n": 1128,
+   "median": 667.6,
+   "p95": 922.4,
+   "max": 3353.3
+  }
+ }
+}

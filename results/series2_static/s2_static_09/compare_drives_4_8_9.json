@@ -1,0 +1,750 @@
+{
+ "plain_verdict": "**In plain words: partly. It came home as well as drive 4, but its typical (median) distance from the LiDAR estimate is larger on every agreement row: 1.4-1.7 times the combined spread - more than the spread, less than the 3 times that would make it a clear difference. Its 95th percentiles sit inside the band, but that band is wide (0.38 m, from only 3 drives), so that test says little.** On the part of the route both drives covered (98 m of drive 9's 245 m lies within 0.5 m of drive 4's route, covering 93 % of drive 4's), drive 9's corrected camera map sits a median 0.43 m (95th percentile 0.61 m) from its LiDAR estimate, against drive 4's 0.24 / 0.46 m on the same part - median 1.7 times, 95th percentile 0.4 times the combined spread. Over its whole 247 m route drive 9 reads 0.42 / 0.65 m (drive 4, whole 85 m: 0.26 / 0.49 m) - median differs by 1.39 times, 95th percentile agrees within 0.38 m. Drive 9's camera map came home to 0.01 m with 305 loop closures (0 joining the start) against drive 4's 0.05 m with 181 (3); its LiDAR estimate to 0.01 m with 379 closures. For information, drive 8 against its own no-tipping LiDAR replay: 0.26 / 0.51 m. With the alignment refitted on the shared part alone, drive 9 reads 0.21 / 0.45 m against drive 4's 0.22 / 0.48 m - for information only: a subset fit always lowers the distance, and more so for drive 9 (43 % of its pairs refitted against drive 4's 86 %); [INFERENCE] consistent with the single alignment being spread over a 3x longer route, but a genuinely bent longer map is equally possible (off the shared route drive 9 reads 0.38 m, lower than on it).",
+ "summary": "**Verdict, drive 9 against drive 4 (computed): of 17 judged rows about the camera, the blend, the agreement with the LiDAR estimate and the mapping program, 9 agree within the combined uncertainty, 7 differ by 1-3 times it, and 1 differ by more than 3 times it: camera map loop closures per 10 m of its route (5.1 times).** Counted separately: the robot's own wheels + gyroscope (0 / 2 / 0 agree / 1-3 times / over 3 times) and the LiDAR estimate itself (1 / 0 / 1).",
+ "kept_quality_on_shared_route": false,
+ "grade": "partly",
+ "by_group": {
+  "camera and blend": {
+   "rows": 9,
+   "agree_diff1to3_diffover3": [
+    5,
+    3,
+    1
+   ],
+   "over3": [
+    "camera map loop closures per 10 m of its route (5.1 times)"
+   ]
+  },
+  "robot's wheels + gyroscope": {
+   "rows": 2,
+   "agree_diff1to3_diffover3": [
+    0,
+    2,
+    0
+   ],
+   "over3": []
+  },
+  "LiDAR map": {
+   "rows": 2,
+   "agree_diff1to3_diffover3": [
+    1,
+    0,
+    1
+   ],
+   "over3": [
+    "LiDAR estimate loop closures per 10 m (5.2 times)"
+   ]
+  },
+  "agreement with the LiDAR estimate": {
+   "rows": 7,
+   "agree_diff1to3_diffover3": [
+    4,
+    3,
+    0
+   ],
+   "over3": []
+  },
+  "processor": {
+   "rows": 1,
+   "agree_diff1to3_diffover3": [
+    0,
+    1,
+    0
+   ],
+   "over3": []
+  },
+  "for information": {
+   "rows": 3,
+   "agree_diff1to3_diffover3": [
+    3,
+    0,
+    0
+   ],
+   "over3": []
+  }
+ },
+ "shared_route": {
+  "definition": "camera map corrected path (camera_corrected.tum; drive 9: graph re-optimised by optimize_graph_se2.py), filled in every 5 cm; drives 8 and 9 lined up on drive 4 by 2D rotation + shift (ICP, pairs < 1.0 m); a point is on the shared route if within 0.5 m of the other drive's route; direction of travel not tested",
+  "R_m": 0.5,
+  "pairs": {
+   "4_vs_8": {
+    "rotation_deg": -3.26,
+    "shift_m": [
+     0.175,
+     0.325
+    ],
+    "start_offset_after_alignment_m": 0.369,
+    "drive4_route_covered_pct": 98.1,
+    "route_m": {
+     "drive4": 84.7,
+     "drive8": 83.0
+    },
+    "shared_m": {
+     "drive4": 83.2,
+     "drive8": 75.2
+    },
+    "sensitivity_by_R": {
+     "0.3": {
+      "drive8_m": 71.4,
+      "drive4_m": 80.7
+     },
+     "0.5": {
+      "drive8_m": 75.2,
+      "drive4_m": 83.2
+     },
+     "0.75": {
+      "drive8_m": 75.9,
+      "drive4_m": 84.7
+     },
+     "1.0": {
+      "drive8_m": 76.4,
+      "drive4_m": 84.7
+     }
+    },
+    "distance_to_drive4_route_on_shared_m": {
+     "median": 0.052,
+     "p95": 0.29
+    }
+   },
+   "4_vs_9": {
+    "rotation_deg": -7.09,
+    "shift_m": [
+     0.373,
+     0.648
+    ],
+    "start_offset_after_alignment_m": 0.748,
+    "drive4_route_covered_pct": 93.0,
+    "route_m": {
+     "drive4": 84.7,
+     "drive9": 244.8
+    },
+    "shared_m": {
+     "drive4": 79.1,
+     "drive9": 98.2
+    },
+    "sensitivity_by_R": {
+     "0.3": {
+      "drive9_m": 91.0,
+      "drive4_m": 74.7
+     },
+     "0.5": {
+      "drive9_m": 98.2,
+      "drive4_m": 79.1
+     },
+     "0.75": {
+      "drive9_m": 102.4,
+      "drive4_m": 82.8
+     },
+     "1.0": {
+      "drive9_m": 104.6,
+      "drive4_m": 83.5
+     }
+    },
+    "distance_to_drive4_route_on_shared_m": {
+     "median": 0.08,
+     "p95": 0.335
+    }
+   }
+  },
+  "agreement_on_shared_route": {
+   "8_camera_corrected": {
+    "n_pairs_shared": 425,
+    "n_pairs_all": 473,
+    "refit_on_shared_median_m": 0.238,
+    "refit_on_shared_p95_m": 0.466,
+    "median_m": 0.247,
+    "p95_m": 0.467,
+    "off_route_median_m": 0.462,
+    "off_route_p95_m": 0.576,
+    "whole_median_m": 0.26,
+    "whole_p95_m": 0.508,
+    "control_whole_reproduces_agreement_json": true
+   },
+   "4vs8_camera_corrected": {
+    "n_pairs_shared": 271,
+    "n_pairs_all": 283,
+    "refit_on_shared_median_m": 0.249,
+    "refit_on_shared_p95_m": 0.47,
+    "median_m": 0.256,
+    "p95_m": 0.47,
+    "off_route_median_m": 0.485,
+    "off_route_p95_m": 0.533,
+    "whole_median_m": 0.259,
+    "whole_p95_m": 0.491,
+    "control_whole_reproduces_agreement_json": true
+   },
+   "8_camera_tracking": {
+    "n_pairs_shared": 602,
+    "n_pairs_all": 661,
+    "refit_on_shared_median_m": 0.141,
+    "refit_on_shared_p95_m": 0.387,
+    "median_m": 0.144,
+    "p95_m": 0.393,
+    "off_route_median_m": 0.076,
+    "off_route_p95_m": 0.093,
+    "whole_median_m": 0.132,
+    "whole_p95_m": 0.389,
+    "control_whole_reproduces_agreement_json": true
+   },
+   "4vs8_camera_tracking": {
+    "n_pairs_shared": 466,
+    "n_pairs_all": 483,
+    "refit_on_shared_median_m": 0.109,
+    "refit_on_shared_p95_m": 0.247,
+    "median_m": 0.111,
+    "p95_m": 0.239,
+    "off_route_median_m": 0.228,
+    "off_route_p95_m": 0.23,
+    "whole_median_m": 0.117,
+    "whole_p95_m": 0.239,
+    "control_whole_reproduces_agreement_json": true
+   },
+   "9_camera_corrected": {
+    "n_pairs_shared": 383,
+    "n_pairs_all": 892,
+    "refit_on_shared_median_m": 0.21,
+    "refit_on_shared_p95_m": 0.447,
+    "median_m": 0.435,
+    "p95_m": 0.613,
+    "off_route_median_m": 0.378,
+    "off_route_p95_m": 0.697,
+    "whole_median_m": 0.419,
+    "whole_p95_m": 0.648,
+    "control_whole_reproduces_agreement_json": true
+   },
+   "4vs9_camera_corrected": {
+    "n_pairs_shared": 244,
+    "n_pairs_all": 283,
+    "refit_on_shared_median_m": 0.217,
+    "refit_on_shared_p95_m": 0.478,
+    "median_m": 0.24,
+    "p95_m": 0.455,
+    "off_route_median_m": 0.404,
+    "off_route_p95_m": 0.514,
+    "whole_median_m": 0.259,
+    "whole_p95_m": 0.491,
+    "control_whole_reproduces_agreement_json": true
+   },
+   "9_camera_tracking": {
+    "n_pairs_shared": 566,
+    "n_pairs_all": 1200,
+    "refit_on_shared_median_m": 0.103,
+    "refit_on_shared_p95_m": 0.435,
+    "median_m": 0.283,
+    "p95_m": 0.358,
+    "off_route_median_m": 0.267,
+    "off_route_p95_m": 0.652,
+    "whole_median_m": 0.278,
+    "whole_p95_m": 0.577,
+    "control_whole_reproduces_agreement_json": true
+   },
+   "4vs9_camera_tracking": {
+    "n_pairs_shared": 419,
+    "n_pairs_all": 483,
+    "refit_on_shared_median_m": 0.087,
+    "refit_on_shared_p95_m": 0.221,
+    "median_m": 0.094,
+    "p95_m": 0.225,
+    "off_route_median_m": 0.215,
+    "off_route_p95_m": 0.27,
+    "whole_median_m": 0.117,
+    "whole_p95_m": 0.239,
+    "control_whole_reproduces_agreement_json": true
+   }
+  }
+ },
+ "rows": [
+  {
+   "row": "route: shared length (drive's own / drive 4's, within 0.5 m)",
+   "scope": "route",
+   "drive4": "-",
+   "drive8": "75.2 of 83.0 m / 83.2 of 84.7 m",
+   "drive9": "98.2 of 244.8 m / 79.1 of 84.7 m",
+   "spread": "-",
+   "spread_source": "-",
+   "verdict_9_vs_4": "not judged: defines the comparison (shared_route.json)",
+   "ratio_9": null,
+   "verdict_8_vs_4": "-",
+   "ratio_8": null,
+   "group": "context"
+  },
+  {
+   "row": "distance driven - camera map corrected / robot's own wheels + gyroscope / LiDAR estimate",
+   "scope": "whole drive",
+   "drive4": "85.1 m / 90.1 m / 88.8 m",
+   "drive8": "83.5 m / 88.6 m / 87.3 m",
+   "drive9": "246.6 m / 256.9 m / 255.0 m",
+   "spread": "-",
+   "spread_source": "-",
+   "verdict_9_vs_4": "not judged: a description of the route; the wheels read about 6 % long (tape test)",
+   "ratio_9": null,
+   "verdict_8_vs_4": "-",
+   "ratio_8": null,
+   "group": "context"
+  },
+  {
+   "row": "drive duration",
+   "scope": "whole drive",
+   "drive4": "619 s",
+   "drive8": "850 s",
+   "drive9": "1734 s",
+   "spread": "-",
+   "spread_source": "-",
+   "verdict_9_vs_4": "not judged: description",
+   "ratio_9": null,
+   "verdict_8_vs_4": "-",
+   "ratio_8": null,
+   "group": "context"
+  },
+  {
+   "row": "LiDAR yardstick used",
+   "scope": "whole drive",
+   "drive4": "colleague-mode LiDAR replay",
+   "drive8": "Force3DoF LiDAR replay (for information)",
+   "drive9": "Force3DoF LiDAR replay",
+   "spread": "-",
+   "spread_source": "-",
+   "verdict_9_vs_4": "not judged: which LiDAR estimate each drive is compared with",
+   "ratio_9": null,
+   "verdict_8_vs_4": "-",
+   "ratio_8": null,
+   "group": "context"
+  },
+  {
+   "row": "camera tracker setting / start",
+   "scope": "whole drive",
+   "drive4": "GEN_2, camera freshly started",
+   "drive8": "GEN_2",
+   "drive9": "GEN_2, fresh Jetson boot",
+   "spread": "-",
+   "spread_source": "-",
+   "verdict_9_vs_4": "not judged: setting",
+   "ratio_9": null,
+   "verdict_8_vs_4": "-",
+   "ratio_8": null,
+   "group": "context"
+  },
+  {
+   "row": "start-to-end gap, camera tracking alone (0 closures)",
+   "scope": "whole drive",
+   "drive4": "0.25 m",
+   "drive8": "1.53 m",
+   "drive9": "0.53 m",
+   "spread": "0.20 m",
+   "spread_source": "where the robot parked: s2_scale_01 found stops at one mark up to 0.19 m apart even with a wheel stop (its RESULTS.md); drives 4, 8 and 9 ended on the start mark by eye (tape-mark parking is only +-0.2-0.5 m)",
+   "verdict_9_vs_4": "**differs** by 1.00 times (difference 0.28 m, combined 0.28 m)",
+   "ratio_9": 1.0005560953789647,
+   "verdict_8_vs_4": "**differs** by 4.52 times (difference 1.28 m, combined 0.28 m)",
+   "ratio_8": 4.52194786568797,
+   "group": "camera and blend"
+  },
+  {
+   "row": "start-to-end gap, map nodes tracking alone (= blend)",
+   "scope": "whole drive",
+   "drive4": "0.06 m",
+   "drive8": "0.60 m",
+   "drive9": "0.83 m",
+   "spread": "0.20 m",
+   "spread_source": "where the robot parked: s2_scale_01 found stops at one mark up to 0.19 m apart even with a wheel stop (its RESULTS.md); drives 4, 8 and 9 ended on the start mark by eye (tape-mark parking is only +-0.2-0.5 m)",
+   "verdict_9_vs_4": "**differs** by 2.72 times (difference 0.77 m, combined 0.28 m)",
+   "ratio_9": 2.722361107568207,
+   "verdict_8_vs_4": "**differs** by 1.92 times (difference 0.54 m, combined 0.28 m)",
+   "ratio_8": 1.9233304448274087,
+   "group": "camera and blend"
+  },
+  {
+   "row": "start-to-end gap, robot's own wheels + gyroscope, tracking alone",
+   "scope": "whole drive",
+   "drive4": "0.27 m",
+   "drive8": "0.98 m",
+   "drive9": "0.69 m",
+   "spread": "0.20 m",
+   "spread_source": "where the robot parked: s2_scale_01 found stops at one mark up to 0.19 m apart even with a wheel stop (its RESULTS.md); drives 4, 8 and 9 ended on the start mark by eye (tape-mark parking is only +-0.2-0.5 m)",
+   "verdict_9_vs_4": "**differs** by 1.51 times (difference 0.43 m, combined 0.28 m)",
+   "ratio_9": 1.5132085117392111,
+   "verdict_8_vs_4": "**differs** by 2.52 times (difference 0.71 m, combined 0.28 m)",
+   "ratio_8": 2.520835674930041,
+   "group": "robot's wheels + gyroscope"
+  },
+  {
+   "row": "heading gap, robot's own wheels + gyroscope",
+   "scope": "whole drive",
+   "drive4": "+2.3 deg",
+   "drive8": "+8.4 deg",
+   "drive9": "-3.6 deg",
+   "spread": "3.0 deg",
+   "spread_source": "parking heading by eye, working figure (not measured)",
+   "verdict_9_vs_4": "**differs** by 1.39 times (difference 5.9 deg, combined 4.2 deg)",
+   "ratio_9": 1.3930003589374984,
+   "verdict_8_vs_4": "**differs** by 1.44 times (difference 6.1 deg, combined 4.2 deg)",
+   "ratio_8": 1.4448548562245116,
+   "group": "robot's wheels + gyroscope"
+  },
+  {
+   "row": "start-to-end gap, **camera map corrected** (floor)",
+   "scope": "whole drive",
+   "drive4": "0.05 m",
+   "drive8": "0.10 m",
+   "drive9": "0.01 m",
+   "spread": "0.20 m",
+   "spread_source": "where the robot parked: s2_scale_01 found stops at one mark up to 0.19 m apart even with a wheel stop (its RESULTS.md); drives 4, 8 and 9 ended on the start mark by eye (tape-mark parking is only +-0.2-0.5 m)",
+   "verdict_9_vs_4": "**agrees** within 0.28 m (difference 0.03 m) - closures beside it (rule 20): drive 4 181 (3 join the start), drive 8 145 (0), drive 9 305 (0); drive 9's corrected path is the graph RE-OPTIMISED by optimize_graph_se2.py (database not closed)",
+   "ratio_9": 0.12020815280171307,
+   "verdict_8_vs_4": "**agrees** within 0.28 m (difference 0.05 m)",
+   "ratio_8": 0.19091883092036777,
+   "group": "camera and blend"
+  },
+  {
+   "row": "camera map loop closures per 10 m of its route",
+   "scope": "whole drive",
+   "drive4": "21.3",
+   "drive8": "17.4",
+   "drive9": "12.4",
+   "spread": "0.7",
+   "spread_source": "counting spread, the square root of each count (Poisson, the least spread a count of chance events has), scaled",
+   "verdict_9_vs_4": "**differs** by 5.14 times (difference 8.9, combined 1.7) - counts: 181 / 145 / 305; drive 9 includes 147 m of new corridors driven once, where a map cannot yet recognise anything, so fewer per metre is expected [INFERENCE]",
+   "ratio_9": 5.137906083084153,
+   "verdict_8_vs_4": "**differs** by 1.82 times (difference 3.9, combined 2.1)",
+   "ratio_8": 1.8179329301876705,
+   "group": "camera and blend"
+  },
+  {
+   "row": "start-to-end gap, **LiDAR estimate corrected** (floor)",
+   "scope": "whole drive",
+   "drive4": "0.03 m",
+   "drive8": "0.02 m",
+   "drive9": "0.01 m",
+   "spread": "0.20 m",
+   "spread_source": "where the robot parked: s2_scale_01 found stops at one mark up to 0.19 m apart even with a wheel stop (its RESULTS.md); drives 4, 8 and 9 ended on the start mark by eye (tape-mark parking is only +-0.2-0.5 m)",
+   "verdict_9_vs_4": "**agrees** within 0.28 m (difference 0.02 m) - LiDAR closures 75 / 87 / 379",
+   "ratio_9": 0.07637674036258725,
+   "verdict_8_vs_4": "**agrees** within 0.28 m (difference 0.01 m)",
+   "ratio_8": 0.04774074351571084,
+   "group": "LiDAR map"
+  },
+  {
+   "row": "LiDAR estimate loop closures per 10 m",
+   "scope": "whole drive",
+   "drive4": "8.4",
+   "drive8": "10.0",
+   "drive9": "14.9",
+   "spread": "0.8",
+   "spread_source": "counting spread, the square root of each count (Poisson, the least spread a count of chance events has), scaled",
+   "verdict_9_vs_4": "**differs** by 5.18 times (difference 6.4, combined 1.2) - drive 4's LiDAR estimate is the colleague-mode replay, drive 9's the Force3DoF replay: not the same replay mode (drive 8 in Force3DoF: 87 closures)",
+   "ratio_9": 5.183554371213788,
+   "verdict_8_vs_4": "**differs** by 1.05 times (difference 1.5, combined 1.4)",
+   "ratio_8": 1.0541037247655984,
+   "group": "LiDAR map"
+  },
+  {
+   "row": "LiDAR yardstick passes its own check",
+   "scope": "whole drive",
+   "drive4": "yes",
+   "drive8": "yes",
+   "drive9": "yes",
+   "spread": "-",
+   "spread_source": "-",
+   "verdict_9_vs_4": "not judged: a pass/fail check",
+   "ratio_9": null,
+   "verdict_8_vs_4": "-",
+   "ratio_8": null,
+   "group": "LiDAR map"
+  },
+  {
+   "row": "camera freezes (tracker silent > 1.5 s), per 10 min",
+   "scope": "whole drive",
+   "drive4": "1.0",
+   "drive8": "10.6",
+   "drive9": "2.1",
+   "spread": "0.8",
+   "spread_source": "counting spread, the square root of each count (Poisson, the least spread a count of chance events has) (at least 1), scaled",
+   "verdict_9_vs_4": "**agrees** within 1.3 (difference 1.1) - counts: 1 / 15 / 6; drive 8's crash outage and drive 9's hang outage are not counted as freezes",
+   "ratio_9": 0.8599794322303661,
+   "verdict_8_vs_4": "**differs** by 3.32 times (difference 9.6, combined 2.9)",
+   "ratio_8": 3.316338045878797,
+   "group": "camera and blend"
+  },
+  {
+   "row": "camera tracking restarts from the blend, per 10 min",
+   "scope": "whole drive",
+   "drive4": "25.2",
+   "drive8": "7.1",
+   "drive9": "34.9",
+   "spread": "3.5",
+   "spread_source": "counting spread, the square root of each count (Poisson, the least spread a count of chance events has) (at least 1), scaled",
+   "verdict_9_vs_4": "**differs** by 1.61 times (difference 9.8, combined 6.0) - counts: 26 / 10 / 101",
+   "ratio_9": 1.6143639562971326,
+   "verdict_8_vs_4": "**differs** by 3.34 times (difference 18.1, combined 5.4)",
+   "ratio_8": 3.344998714624634,
+   "group": "camera and blend"
+  },
+  {
+   "row": "camera tracking lost, seconds per 10 min",
+   "scope": "whole drive",
+   "drive4": "25.4 s",
+   "drive8": "10.1 s",
+   "drive9": "21.0 s",
+   "spread": "6.9 s",
+   "spread_source": "drive-to-drive spread (sample standard deviation) of lost seconds per 10 min, drives 3, 4, 5, 6",
+   "verdict_9_vs_4": "**agrees** within 9.8 s (difference 4.3 s) - counts only time the tracker SAID it was lost; silences with no messages (drive 9's 43 s hang, drive 8's outage) are not in it",
+   "ratio_9": 0.44511695381683924,
+   "verdict_8_vs_4": "**differs** by 1.57 times (difference 15.3 s, combined 9.8 s)",
+   "ratio_8": 1.565073052688674,
+   "group": "camera and blend"
+  },
+  {
+   "row": "camera program outages",
+   "scope": "whole drive",
+   "drive4": "none",
+   "drive8": "1, recovered: 15:52:57, back after 12.7 s (camera guard); mapping carried on",
+   "drive9": "0 crashes; 1 camera HANG, recovered: 21:12:29, back after 28.3 s (camera guard); mapping carried on",
+   "spread": "-",
+   "spread_source": "-",
+   "verdict_9_vs_4": "not judged: one event is not a rate",
+   "ratio_9": null,
+   "verdict_8_vs_4": "-",
+   "ratio_8": null,
+   "group": "context"
+  },
+  {
+   "row": "turns: abs(camera - robot), median of all turns",
+   "scope": "whole drive",
+   "drive4": "2.3 deg",
+   "drive8": "3.2 deg",
+   "drive9": "2.6 deg",
+   "spread": "1.0 deg",
+   "spread_source": "drive-to-drive spread (sample standard deviation) of the per-turn median, drives 4, 5, 6",
+   "verdict_9_vs_4": "**agrees** within 1.5 deg (difference 0.3 deg) - turns: 16 / 26 / 34",
+   "ratio_9": 0.2059599027472827,
+   "verdict_8_vs_4": "**agrees** within 1.5 deg (difference 0.9 deg)",
+   "ratio_8": 0.6178797082418478,
+   "group": "camera and blend"
+  },
+  {
+   "row": "turns: abs(blend - robot), median of all turns",
+   "scope": "whole drive",
+   "drive4": "0.2 deg",
+   "drive8": "0.2 deg",
+   "drive9": "0.3 deg",
+   "spread": "0.2 deg",
+   "spread_source": "drive-to-drive spread (sample standard deviation) of the per-turn median, drives 4, 5, 6",
+   "verdict_9_vs_4": "**agrees** within 0.2 deg (difference 0.1 deg)",
+   "ratio_9": 0.4629100498862756,
+   "verdict_8_vs_4": "**agrees** within 0.2 deg (difference 0.0 deg)",
+   "ratio_8": 0.2314550249431378,
+   "group": "camera and blend"
+  },
+  {
+   "row": "**agreement with the LiDAR estimate, ON THE SHARED ROUTE**, camera map corrected: median (SE(3))",
+   "scope": "shared route",
+   "drive4": "0.24 m",
+   "drive8": "0.25 m",
+   "drive9": "0.43 m",
+   "spread": "0.08 m",
+   "spread_source": "drive-to-drive spread (sample standard deviation) of the camera map's whole-drive agreement on drives 3, 4, 5, whose LiDAR estimate passed its own check; different routes, so it may overstate the spread for a repeat",
+   "verdict_9_vs_4": "**differs** by 1.69 times (difference 0.20 m, combined 0.12 m) - drive 4's figure is over its part shared with drive 9 (with drive 8: 0.26 m); pairs 244 / 425 / 383",
+   "ratio_9": 1.6926046029880564,
+   "verdict_8_vs_4": "**agrees** within 0.12 m (difference 0.01 m)",
+   "ratio_8": 0.06076016523546874,
+   "group": "agreement with the LiDAR estimate"
+  },
+  {
+   "row": "**agreement with the LiDAR estimate, ON THE SHARED ROUTE**, camera map corrected: 95th percentile (SE(3))",
+   "scope": "shared route",
+   "drive4": "0.46 m",
+   "drive8": "0.47 m",
+   "drive9": "0.61 m",
+   "spread": "0.27 m",
+   "spread_source": "drive-to-drive spread (sample standard deviation) of the camera map's whole-drive agreement (95th percentile) on drives 3, 4, 5, whose LiDAR estimate passed its own check; different routes, so it may overstate the spread for a repeat",
+   "verdict_9_vs_4": "**agrees** within 0.38 m (difference 0.16 m)",
+   "ratio_9": 0.41339448629689646,
+   "verdict_8_vs_4": "**agrees** within 0.38 m (difference 0.01 m)",
+   "ratio_8": 0.03139704959216938,
+   "group": "agreement with the LiDAR estimate"
+  },
+  {
+   "row": "**agreement with the LiDAR estimate, ON THE SHARED ROUTE**, map nodes (= blend) tracking alone: median (SE(3))",
+   "scope": "shared route",
+   "drive4": "0.09 m",
+   "drive8": "0.14 m",
+   "drive9": "0.28 m",
+   "spread": "0.08 m",
+   "spread_source": "drive-to-drive spread (sample standard deviation) of the camera map's whole-drive agreement on drives 3, 4, 5, whose LiDAR estimate passed its own check; different routes, so it may overstate the spread for a repeat",
+   "verdict_9_vs_4": "**differs** by 1.64 times (difference 0.19 m, combined 0.12 m) - drive 4's figure is over its part shared with drive 9 (with drive 8: 0.11 m); pairs 419 / 602 / 566",
+   "ratio_9": 1.6405244613576544,
+   "verdict_8_vs_4": "**agrees** within 0.12 m (difference 0.05 m)",
+   "ratio_8": 0.43400118025334766,
+   "group": "agreement with the LiDAR estimate"
+  },
+  {
+   "row": "**agreement with the LiDAR estimate, ON THE SHARED ROUTE**, map nodes (= blend) tracking alone: 95th percentile (SE(3))",
+   "scope": "shared route",
+   "drive4": "0.23 m",
+   "drive8": "0.39 m",
+   "drive9": "0.36 m",
+   "spread": "0.27 m",
+   "spread_source": "drive-to-drive spread (sample standard deviation) of the camera map's whole-drive agreement (95th percentile) on drives 3, 4, 5, whose LiDAR estimate passed its own check; different routes, so it may overstate the spread for a repeat",
+   "verdict_9_vs_4": "**agrees** within 0.38 m (difference 0.13 m)",
+   "ratio_9": 0.34798396631321027,
+   "verdict_8_vs_4": "**agrees** within 0.38 m (difference 0.17 m)",
+   "ratio_8": 0.439558694290371,
+   "group": "agreement with the LiDAR estimate"
+  },
+  {
+   "row": "for information, agreement with the LiDAR estimate ON THE SHARED ROUTE, camera map corrected, alignment REFITTED on the shared part only: median",
+   "scope": "shared route",
+   "drive4": "0.22 m",
+   "drive8": "0.24 m",
+   "drive9": "0.21 m",
+   "spread": "0.08 m",
+   "spread_source": "drive-to-drive spread (sample standard deviation) of the camera map's whole-drive agreement on drives 3, 4, 5, whose LiDAR estimate passed its own check; different routes, so it may overstate the spread for a repeat (borrowed)",
+   "verdict_9_vs_4": "**agrees** within 0.12 m (difference 0.01 m) - NOT a fair comparison: a fit to a subset always lowers the leftover distance, and drive 9 refits on 383 of its 892 pairs (43 %) against drive 4's 244 of 283 (86 %), so drive 9 gains more. [INFERENCE] consistent with the whole-route alignment being spread over a 3x longer route, but equally with the longer map being genuinely bent",
+   "ratio_9": 0.06076016523546874,
+   "verdict_8_vs_4": "**agrees** within 0.12 m (difference 0.02 m)",
+   "ratio_8": 0.18228049570640598,
+   "group": "for information"
+  },
+  {
+   "row": "for information, same, 95th percentile",
+   "scope": "shared route",
+   "drive4": "0.48 m",
+   "drive8": "0.47 m",
+   "drive9": "0.45 m",
+   "spread": "0.27 m",
+   "spread_source": "drive-to-drive spread (sample standard deviation) of the camera map's whole-drive agreement (95th percentile) on drives 3, 4, 5, whose LiDAR estimate passed its own check; different routes, so it may overstate the spread for a repeat (borrowed)",
+   "verdict_9_vs_4": "**agrees** within 0.38 m (difference 0.03 m)",
+   "ratio_9": 0.08110904477977075,
+   "verdict_8_vs_4": "**agrees** within 0.38 m (difference 0.01 m)",
+   "ratio_8": 0.03139704959216924,
+   "group": "for information"
+  },
+  {
+   "row": "agreement with the LiDAR estimate, camera map corrected, whole drive: median (SE(3))",
+   "scope": "whole drive",
+   "drive4": "0.26 m",
+   "drive8": "0.26 m",
+   "drive9": "0.42 m",
+   "spread": "0.08 m",
+   "spread_source": "drive-to-drive spread (sample standard deviation) of the camera map's whole-drive agreement on drives 3, 4, 5, whose LiDAR estimate passed its own check; different routes, so it may overstate the spread for a repeat",
+   "verdict_9_vs_4": "**differs** by 1.39 times (difference 0.16 m, combined 0.12 m) - drive 9's whole drive is 247 m against drive 4's 85 m",
+   "ratio_9": 1.3888037768107127,
+   "verdict_8_vs_4": "**agrees** within 0.12 m (difference 0.00 m)",
+   "ratio_8": 0.008680023605066964,
+   "group": "agreement with the LiDAR estimate"
+  },
+  {
+   "row": "agreement with the LiDAR estimate, camera map corrected, whole drive: 95th percentile (SE(3))",
+   "scope": "whole drive",
+   "drive4": "0.49 m",
+   "drive8": "0.51 m",
+   "drive9": "0.65 m",
+   "spread": "0.27 m",
+   "spread_source": "drive-to-drive spread (sample standard deviation) of the camera map's whole-drive agreement on drives 3, 4, 5, whose LiDAR estimate passed its own check; different routes, so it may overstate the spread for a repeat",
+   "verdict_9_vs_4": "**agrees** within 0.38 m (difference 0.16 m) - drive 9's whole drive is 247 m against drive 4's 85 m",
+   "ratio_9": 0.41077806549754914,
+   "verdict_8_vs_4": "**agrees** within 0.38 m (difference 0.02 m)",
+   "ratio_8": 0.044479153588906625,
+   "group": "agreement with the LiDAR estimate"
+  },
+  {
+   "row": "for information, size fitted (Sim(3)): camera map corrected, whole drive, median",
+   "scope": "whole drive",
+   "drive4": "0.09 m",
+   "drive8": "0.08 m",
+   "drive9": "0.13 m",
+   "spread": "0.08 m",
+   "spread_source": "drive-to-drive spread (sample standard deviation) of the camera map's whole-drive agreement on drives 3, 4, 5, whose LiDAR estimate passed its own check; different routes, so it may overstate the spread for a repeat (borrowed)",
+   "verdict_9_vs_4": "**agrees** within 0.12 m (difference 0.03 m)",
+   "ratio_9": 0.27776075536214256,
+   "verdict_8_vs_4": "**agrees** within 0.12 m (difference 0.02 m)",
+   "ratio_8": 0.13888037768107128,
+   "group": "for information"
+  },
+  {
+   "row": "best-fit size factor, camera map corrected vs LiDAR estimate (not applied)",
+   "scope": "whole drive",
+   "drive4": "1.063",
+   "drive8": "1.062",
+   "drive9": "1.052",
+   "spread": "0.015",
+   "spread_source": "drive-to-drive spread (sample standard deviation) of drives 3, 4, 5 (valid LiDAR estimates)",
+   "verdict_9_vs_4": "**agrees** within 0.021 (difference 0.012)",
+   "ratio_9": 0.5615869726154283,
+   "verdict_8_vs_4": "**agrees** within 0.021 (difference 0.001)",
+   "ratio_8": 0.0726190050795743,
+   "group": "agreement with the LiDAR estimate"
+  },
+  {
+   "row": "RTAB-Map time per map snapshot, median",
+   "scope": "whole drive",
+   "drive4": "510 ms",
+   "drive8": "515 ms",
+   "drive9": "600 ms",
+   "spread": "49 ms",
+   "spread_source": "drive-to-drive spread (sample standard deviation) of drives 4, 5, 6 (numbers.json processor_rtabmap)",
+   "verdict_9_vs_4": "**differs** by 1.29 times (difference 90 ms, combined 70 ms)",
+   "ratio_9": 1.2860885816210346,
+   "verdict_8_vs_4": "**agrees** within 70 ms (difference 5 ms)",
+   "ratio_8": 0.07328549459516456,
+   "group": "processor"
+  },
+  {
+   "row": "total power, median",
+   "scope": "whole drive",
+   "drive4": "29.8 W",
+   "drive8": "29.6 W",
+   "drive9": "29.9 W",
+   "spread": "-",
+   "spread_source": "-",
+   "verdict_9_vs_4": "not judged: the drive-to-drive spread of drives 4, 5 (camera-alive part) and 6 (0.3 W) comes from 3 drives and is too small to trust as a yardstick",
+   "ratio_9": null,
+   "verdict_8_vs_4": "-",
+   "ratio_8": null,
+   "group": "processor"
+  },
+  {
+   "row": "hottest point on the chip (tj), peak",
+   "scope": "whole drive",
+   "drive4": "61.6 C",
+   "drive8": "61.5 C",
+   "drive9": "62.1 C",
+   "spread": "-",
+   "spread_source": "-",
+   "verdict_9_vs_4": "not judged: the drive-to-drive spread of drives 4, 5 (camera-alive part) and 6 (0.1 C) comes from 3 drives and is too small to trust as a yardstick",
+   "ratio_9": null,
+   "verdict_8_vs_4": "-",
+   "ratio_8": null,
+   "group": "processor"
+  },
+  {
+   "row": "processor load, mean of 12 cores, median",
+   "scope": "whole drive",
+   "drive4": "41.2 %",
+   "drive8": "39.3 %",
+   "drive9": "40.6 %",
+   "spread": "-",
+   "spread_source": "-",
+   "verdict_9_vs_4": "not judged: the drive-to-drive spread of drives 4, 5 (camera-alive part) and 6 (0.2 %) comes from 3 drives and is too small to trust as a yardstick",
+   "ratio_9": null,
+   "verdict_8_vs_4": "-",
+   "ratio_8": null,
+   "group": "processor"
+  }
+ ],
+ "spreads": {
+  "gap_m": 0.2,
+  "heading_deg": 3.0,
+  "agreement_median_m": 0.081,
+  "agreement_p95_m": 0.27,
+  "lost_s_per_10min": 6.9,
+  "scale": 0.0146,
+  "turn_camera_median_deg": 1.03,
+  "turn_blend_median_deg": 0.15,
+  "rtabmap_ms": 49.2,
+  "valid_lidar_drives": [
+   3,
+   4,
+   5
+  ]
+ }
+}

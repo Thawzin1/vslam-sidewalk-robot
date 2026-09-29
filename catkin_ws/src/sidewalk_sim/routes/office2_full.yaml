@@ -1,0 +1,435 @@
+# office2_full.yaml — full-floor mapping drive for the SECOND office layout
+# (catkin_ws/src/sidewalk_sim/worlds/office2.world, the 24 x 18 m building).
+#
+# *** NOT YET SHAKEDOWN-TESTED. NOBODY HAS DRIVEN THIS. ***
+# Every clearance figure below was computed by reading office2.world's
+# collision geometry and walking these primitives on paper. That is the same
+# evidence mcity_building_loop.yaml had, and that route wedged the robot
+# against a kerb for 150 s at a time while its own accounting reported the
+# segment complete (docs/SOLVED.md, the wheel-slip entry). Run it once at
+# --speed 0.4 with someone watching, before it is trusted for anything.
+#
+# ---------------------------------------------------------------------------
+# SPAWN POSE — THE ROUTE IS MEANINGLESS FROM ANY OTHER START
+# ---------------------------------------------------------------------------
+# A route file has no absolute coordinates. Every primitive is relative to the
+# one before it, so the entire path hangs off one starting pose.
+#
+#   spawn_x:=0.0   spawn_y:=-8.0   spawn_z:=0.1   spawn_yaw:=1.5708
+#
+# Those are the defaults declared in husky_office2_gazebo.launch (confirmed by
+# reading it). The robot starts in the entrance foyer just inside the main
+# door, facing +Y (north) into the building.
+#
+#   roslaunch sidewalk_sim husky_office2_gazebo.launch \
+#       gui:=false rviz:=false zedx:=true zedx_stereo:=true
+#   rosrun sidewalk_sim route_player.py \
+#       --route $(rospack find sidewalk_sim)/routes/office2_full.yaml --speed 0.4
+#
+# Reset the robot to the spawn pose before every recorded run (ENGINEERING_NOTES.md rule
+# 10): RTAB-Map anchors its map frame wherever the robot starts, so a
+# different start silently offsets every error reading.
+#
+# ---------------------------------------------------------------------------
+# WHAT IT DRIVES
+# ---------------------------------------------------------------------------
+# 95 primitives, 117.9 m of forward travel, 50 in-place turns. About 6 minutes
+# at 0.4 m/s. It ends back on the spawn point facing north — the same pose it
+# started in, which gives the mapping system a genuine same-viewpoint revisit
+# at the end of the run instead of a stop wherever the path ran out.
+#
+# The path is the world's own closed corridor loop, driven once anti-clockwise
+# with the rooms hung off it: entrance foyer westwards, north up the west
+# lobby and west branch, east along the whole north corridor, south down the
+# east branch, and back west along the foyer to the start. No corridor segment
+# is retraced except the short stubs into rooms, which is exactly the geometry
+# office2.world was built for (see its own header on why the loop is closed).
+#
+# Visit order, with what each visit actually achieves:
+#
+#    1. entrance foyer, west               driven
+#    2. RECEPTION            doorway view only — see the blocked list below
+#    3. west lobby                          driven, full width
+#    4. FEMALE TOILET        doorway view only
+#    5. west branch corridor                driven
+#    6. MALE TOILET          doorway view only
+#    7. OFFICE 1                            driven, 4.75 m deep
+#    8. PANTRY / KITCHEN     doorway view only, from inside office 1
+#    9. OPEN OFFICE A        doorway depth only (0.14 m past the wall face)
+#   10. OFFICE 2                            driven, 4.75 m deep
+#   11. MEETING ROOM         shallow, 0.44 m past the wall face
+#   12. OPEN OFFICE B        doorway depth only
+#   13. OFFICE 3                            driven, full depth
+#   14. SERVER / IT ROOM                    driven, 1.8 m across, via office 3
+#   15. STORAGE             doorway view only, from the corridor's east end
+#   16. COPY / PRINT        doorway depth only (0.24 m past the wall face)
+#   17. east branch corridor and east lobby  driven, full width
+#   18. OFFICE 5                            driven, 1.7 m deep
+#   19. OFFICE 4                            driven, 1.7 m deep
+#   20. entrance foyer, back to the start   driven
+#
+# ---------------------------------------------------------------------------
+# THE FIVE ROOMS THIS ROUTE CANNOT ENTER, AND WHY
+# ---------------------------------------------------------------------------
+# The coverage the human asked for is "the corridor circuit plus entering every
+# room". Five of the fifteen rooms cannot be entered by this robot at any
+# safe clearance, and one more only barely. This is a property of the world,
+# not of the route: the figures below are the best that ANY path could do,
+# from a widest-path search over a 5 cm grid built from the world's own
+# collision shapes, so no cleverer route exists.
+#
+# The Husky sweeps a circle 1.196 m across just turning on the spot
+# (0.99 x 0.67 m footprint, 0.598 m circumscribed radius, from
+# sidewalk_navigation/config/costmap_common.yaml, which flags the footprint as
+# `measured: false`). The standing project rule is 0.8 to 1.0 m of clearance
+# along the whole path (docs/SOLVED.md). Measured best-possible clearance to
+# reach the interior of each room:
+#
+#   PANTRY / KITCHEN     0.424 m   BLOCKED. Its only door opens into office 1,
+#                                  and o1_chair (-7.8, 7.3) plus o1_desk
+#                                  (-7.8, 8.0) stand right against that
+#                                  doorway on the office-1 side. The gap left
+#                                  is 0.85 m — narrower than the robot's own
+#                                  turning circle. Not enterable at all.
+#   RECEPTION            0.522 m   BLOCKED. reception_chair (-3.75, -6.2) sits
+#                                  exactly on the doorway centreline, 0.8 m
+#                                  inside a room only 2.88 m deep, leaving
+#                                  0.70 m either side of it. This is the same
+#                                  defect the world's author already fixed for
+#                                  office 4 and office 5 (o4_desk, o4_chair,
+#                                  o5_desk and o5_chair were relocated for
+#                                  precisely this reason, see office2.world's
+#                                  comments) — reception_chair was missed.
+#   OPEN OFFICE A        0.552 m   BLOCKED past the doorway. Both its doors are
+#   OPEN OFFICE B        0.552 m   blocked by the four-desk cluster: on the
+#                                  north door, ooa_desk_2 / oob_desk_1 sit
+#                                  just under 1 m inside and span all but
+#                                  0.6 m of the 1.8 m opening; on the
+#                                  west/east door the desk
+#                                  cluster leaves a 1.10 m diagonal gap. The
+#                                  room's own interior is fine (0.85 m along
+#                                  y = -1.9) — it is only the way in that is
+#                                  impossible. This route drives 0.14 m past
+#                                  the wall face and stops, which still puts
+#                                  the camera inside the room.
+#   MALE TOILET          0.650 m   BLOCKED past the doorway. mt_partition
+#   FEMALE TOILET        0.650 m   / ft_partition stand 0.79 m in front of the
+#                                  door, across the whole room.
+#   STORAGE              0.650 m   BLOCKED past the doorway. shelf_1 stands
+#                                  0.89 m in front of the door.
+#   COPY / PRINT         0.540 m   BLOCKED past 0.24 m. The copier leaves a
+#                                  1.04 m band beside it and a 1.09 m band
+#                                  above it, both under the rule. This route
+#                                  drives 0.24 m in and stops.
+#   MEETING ROOM         0.620 m   BLOCKED past 0.44 m. mtg_chair_1/2/3 stand
+#                                  1.24 m in front of the south wall. This
+#                                  route drives 0.44 m in and stops, which
+#                                  puts the camera about 0.9 m inside.
+#
+# and the ones that are genuinely drivable:
+#
+#   OFFICE 1, 2, 3       0.875 m   full depth, comfortable
+#   SERVER / IT ROOM     0.800 m   via office 3, 1.8 m of interior driven
+#   OFFICE 4, 5          0.800 m   1.7 m in, which is 0.64 m past the wall
+#                                  face of a 2.88 m deep room
+#   all corridors        0.800 m   and mostly 0.9 to 1.3 m
+#
+# For the five blocked rooms the route stops in the corridor with the camera
+# pointing straight through the open 1.80 m doorway, close enough to map a
+# useful part of the interior but without driving into a gap the robot does
+# not fit through. Those camera-only visits are the primitives commented
+# "doorway view" below.
+#
+# If the human wants all fifteen rooms actually driven, the world needs six
+# props moved — reception_chair, o1_chair, mt_partition, ft_partition,
+# shelf_1, and either ooa_desk_2/oob_desk_1 or the copier. ENGINEERING_NOTES.md forbids
+# the Jetson operator moving or deleting anything, so that is a decision for the human;
+# this file simply refuses to drive into a gap that does not fit.
+#
+# ---------------------------------------------------------------------------
+# TIGHTEST POINTS OF THE ROUTE AS WRITTEN
+# ---------------------------------------------------------------------------
+# Measured at 1 cm intervals along every straight leg (not just endpoints) and
+# at every pivot point:
+#
+#   worst clearance on a straight leg   0.791 m   primitives 56 and 62, easing
+#                                                 through the server room
+#                                                 doorway past w017's corner
+#                                                 at (8.28, 7.11)
+#   worst clearance at an in-place turn 0.800 m   several turns tie exactly:
+#                                                 the corner at the top of the
+#                                                 west lobby (primitive 8) and
+#                                                 the about-faces in the open
+#                                                 office, meeting room and
+#                                                 copy/print doorway stubs
+#   the 0.80 m cluster                  0.800 m   both open-office doorway
+#                                                 stubs, the copy/print stub,
+#                                                 the meeting room stub, both
+#                                                 office 1 and office 2 legs,
+#                                                 both office 4 and office 5
+#                                                 legs
+#
+# So this route holds the project's 0.8 m rule everywhere to within 9 mm, and
+# every in-place turn has at least 0.20 m of margin over the robot's own
+# 0.598 m turning radius. That is a much healthier world to drive than the
+# first office layout, whose worst point is 0.650 m.
+#
+# ---------------------------------------------------------------------------
+# IN-PLACE TURNS: WHERE THEY ARE UNAVOIDABLE
+# ---------------------------------------------------------------------------
+# Turning on the spot is where visual tracking is most likely to drop
+# (docs/PHASE1_RESULTS.md), so the corridor legs are long and straight and
+# the route never turns twice where once will do. The 50 turns break down as:
+#
+#   * 10 are full 180-degree about-faces, one for each place the robot drives
+#     into and has to reverse out of: office 1, open office A, office 2, the
+#     meeting room, open office B, the server room, copy/print, office 5,
+#     office 4, and the corridor's own west dead end. Every room in this
+#     building is a dead end off the corridor with exactly one door, and
+#     route_player.py has no reversing primitive, so there is no way to avoid
+#     these.
+#   * 34 are 90-degree turns: the closed loop's own four corners, plus
+#     turning on and off each room's doorway centreline.
+#   * 6 are the shallow-angle turns in and out of office 3 and the server
+#     room (37, 69 and 17 degrees and their inverses). Those are deliberately
+#     NOT right angles: the straight-line alternative squeezes past o3_chair
+#     and the server room door frame at about 0.65 m, and the angled version
+#     holds 0.79 m.
+#
+# Six of the 90-degree turns produce no net change of heading at all: they are
+# three "doorway view" pairs — turn to face a doorway the robot cannot drive
+# into, then turn straight back — at reception, the female toilet and the
+# pantry. Each is done standing still in the widest spot available (0.87 m of
+# clearance at reception, 1.19 m at the female toilet, 1.06 m at the pantry).
+# They exist because a camera pointed through an open 1.8 m door is the only
+# coverage those rooms will ever get. The male toilet's view costs one extra
+# turn rather than two (see below), and storage costs none at all — the robot
+# is already pointing at it when it reaches the corridor's east dead end.
+#
+# The single 180-degree turn at (-7.25, 3.25) — primitives 15 and 16, written
+# as +90 then +180 — is the one turn that is larger than it looks. It faces
+# the camera west into the corridor's dead-end at the male toilet door, then
+# swings all the way round to head east. It is a 270-degree rotation in
+# total, done in the corridor's widest spot (1.20 m clear), and it is the
+# price of mapping that dead end at all.
+#
+# ---------------------------------------------------------------------------
+# HOW THE GEOMETRY WAS CHECKED
+# ---------------------------------------------------------------------------
+# A throwaway script parsed every <collision> shape out of office2.world
+# (89 of them: 43 wall segments plus 46 props) and walked this exact primitive
+# list from the spawn pose the way route_player.py does, measuring the
+# distance from the robot's centre path to the nearest shape at 1 cm intervals
+# along every straight leg and at every pivot. The visual-only floor skin was
+# ignored on purpose — it carries no <collision>.
+#
+# Two caveats the paper check cannot cover, and the shakedown run must:
+#   * it assumes the robot follows the commanded path. route_player.py takes
+#     heading from the inertial measurement unit and distance from the wheel
+#     encoders; skid-steer turns scrub, and tracking error over 118 m is not
+#     zero.
+#   * wheel-encoder distance cannot tell "driving" apart from "stuck with the
+#     wheels still turning". If the shakedown stalls anywhere, re-run with
+#     --recover-on-stuck and compare wheel-odometry distance against ground
+#     truth displacement over the stall window.
+# Also note the modelled path drifts up to 1 degree from the ideal because
+# turn angles are written as whole degrees. That does not accumulate on the
+# real robot — route_player.py servos every turn against the live inertial
+# measurement unit heading with a 2-degree tolerance, so each turn is
+# corrected against reality rather than against the previous command.
+#
+# ---------------------------------------------------------------------------
+# READING THE COMMENTS BELOW
+# ---------------------------------------------------------------------------
+# Each "forward" comment gives the world coordinate the robot should be
+# standing on when that primitive finishes, so the geometry can be checked by
+# reading (same convention as mcity_building_loop.yaml). Headings: 0 degrees
+# is +X (east), 90 is +Y (north), turns are counter-clockwise-positive.
+
+# ===== entrance foyer, westwards ==========================================
+- {turn: 90}          # from the spawn heading (north) to west
+- {forward: 3.75}     # to (-3.75, -8.00) — the foyer's own centre lane;
+                      #   0.875 m off the south wall, 0.94 m off the north
+                      #   wall. This x is the reception doorway centreline.
+- {turn: -90}         # DOORWAY VIEW: face north, straight through the
+                      #   reception doorway, 0.94 m from the opening.
+                      #   Reception itself is not enterable — reception_chair
+                      #   sits on this same centreline just inside.
+- {turn: 90}          # back to west
+- {forward: 6.75}     # to (-10.50, -8.00) — on into the open west lobby
+
+# ===== west lobby (an empty 5.8 x 8.4 m hall, nothing in it) ==============
+- {turn: -90}         # face north
+- {forward: 6.64}     # to (-10.50, -1.36) — the full length of the lobby,
+                      #   stopping 0.80 m short of the female toilet's south
+                      #   wall (w012)
+- {turn: -90}         # face east — pivot clearance 0.80 m, the tightest
+                      #   pivot on the whole route
+- {forward: 3.25}     # to (-7.25, -1.36) — east onto the west branch
+                      #   corridor's centreline
+
+# ===== west branch corridor, northwards ===================================
+- {turn: 90}          # face north
+- {forward: 2.36}     # to (-7.25, 1.00) — 1.19 m clear on both sides, which
+                      #   is the centre of the 2.38 m branch. Stops level with
+                      #   the female toilet doorway.
+- {turn: 90}          # DOORWAY VIEW: face west through the female toilet
+                      #   doorway, 1.19 m from the opening. Not enterable —
+                      #   ft_partition stands 0.79 m inside.
+- {turn: -90}         # back to north
+- {forward: 2.25}     # to (-7.25, 3.25) — into the north corridor, on its
+                      #   own centre lane (1.19 m clear north and south)
+- {turn: 90}          # DOORWAY VIEW: face west down the corridor's dead end
+                      #   at the male toilet doorway, 1.20 m away. Not
+                      #   enterable — mt_partition stands 0.79 m inside.
+- {turn: 180}         # swing round to east. Together with the turn above this
+                      #   is a 270-degree rotation; it is done here because
+                      #   this is the widest spot available.
+
+# ===== OFFICE 1, and the pantry doorway from inside it ====================
+- {forward: 0.85}     # to (-6.40, 3.25) — onto the office 1 doorway
+                      #   centreline. x = -6.40 rather than the doorway's own
+                      #   midpoint (-6.50): it splits the difference between
+                      #   the east door frame and o1_desk, and holds 0.80 m
+                      #   against both.
+- {turn: 90}          # face north
+- {forward: 3.75}     # to (-6.40, 7.00) — in through the doorway (0.80 m off
+                      #   both frames) and up the middle of the room
+- {turn: 90}          # DOORWAY VIEW: face west through the pantry doorway,
+                      #   about 2.1 m away. The pantry is not enterable — the
+                      #   gap between the door frame and o1_chair is 0.85 m.
+- {turn: -90}         # back to north
+- {forward: 1.00}     # to (-6.40, 8.00) — up to the far wall, 0.80 m off
+                      #   o1_desk and 0.875 m off the north wall
+- {turn: 180}         # about-face
+- {forward: 4.75}     # back to (-6.40, 3.25) — out of office 1, retracing the
+                      #   way in, which is a second look at the same scene
+
+# ===== OPEN OFFICE A: doorway depth only ==================================
+- {turn: 90}          # face east
+- {forward: 3.40}     # to (-3.00, 3.25) — east along the north corridor onto
+                      #   the open office A doorway centreline
+- {turn: -90}         # face south
+- {forward: 1.45}     # to (-3.00, 1.80) — 0.14 m past the wall face, and no
+                      #   further: ooa_desk_2 spans the full width of this
+                      #   doorway 1.0 m inside, leaving 0.80 m here and less
+                      #   beyond. The camera is inside the room; the robot is
+                      #   barely.
+- {turn: 180}         # about-face — pivot clearance 0.80 m
+- {forward: 1.45}     # back to (-3.00, 3.25)
+
+# ===== OFFICE 2 ===========================================================
+- {turn: -90}         # face east
+- {forward: 0.60}     # to (-2.40, 3.25) — onto the office 2 doorway
+                      #   centreline (again offset from the doorway midpoint,
+                      #   to hold 0.80 m against o2_desk)
+- {turn: 90}          # face north
+- {forward: 4.75}     # to (-2.40, 8.00) — the full depth of office 2, 0.80 m
+                      #   off the door frame on the way in and off o2_desk at
+                      #   the end
+- {turn: 180}         # about-face
+- {forward: 4.75}     # back to (-2.40, 3.25)
+
+# ===== MEETING ROOM: shallow, the chairs stop the robot ===================
+- {turn: 90}          # face east
+- {forward: 4.15}     # to (1.75, 3.25) — east along the north corridor onto
+                      #   the meeting room doorway centreline
+- {turn: 90}          # face north
+- {forward: 1.75}     # to (1.75, 5.00) — 0.44 m past the wall face and no
+                      #   further: mtg_chair_2 is 0.80 m ahead. The camera is
+                      #   about 0.9 m inside, looking down the length of the
+                      #   conference table.
+- {turn: 180}         # about-face — pivot clearance 0.80 m
+- {forward: 1.75}     # back to (1.75, 3.25)
+
+# ===== OPEN OFFICE B: doorway depth only (mirror of open office A) ========
+- {turn: 90}          # face east
+- {forward: 1.25}     # to (3.00, 3.25) — onto the open office B doorway
+                      #   centreline
+- {turn: -90}         # face south
+- {forward: 1.45}     # to (3.00, 1.80) — 0.14 m past the wall face;
+                      #   oob_desk_1 blocks anything deeper
+- {turn: 180}         # about-face
+- {forward: 1.45}     # back to (3.00, 3.25)
+
+# ===== OFFICE 3 and the SERVER / IT ROOM behind it ========================
+- {turn: -90}         # face east
+- {forward: 3.00}     # to (6.00, 3.25) — onto the office 3 doorway centreline
+- {turn: 90}          # face north
+- {forward: 1.95}     # to (6.00, 5.20) — in through the doorway, 0.90 m off
+                      #   both frames, stopping where the room opens out
+- {turn: -37}         # shallow turn, not a right angle: it is what keeps the
+                      #   next leg 0.82 m off o3_chair instead of 0.65 m
+- {forward: 2.64}     # to (7.59, 7.31) — diagonally across office 3, between
+                      #   o3_chair on the left and the wall on the right, to
+                      #   line up on the server room door
+- {turn: -69}         # swing east-south-east
+- {forward: 1.47}     # to (9.00, 6.90) — through the server room doorway.
+                      #   TIGHTEST LEG OF THE ROUTE at 0.791 m, easing round
+                      #   the south door frame corner at (8.06, 6.35) while
+                      #   already dropping south of rack_1.
+- {turn: 17}          # straighten up to east
+- {forward: 1.80}     # to (10.80, 6.93) — east across the server room, 0.87 m
+                      #   below rack_1 and rack_2 and 1.07 m off the east wall
+- {turn: 180}         # about-face — pivot clearance 0.89 m
+- {forward: 1.80}     # back to (9.00, 6.90)
+- {turn: -17}         # line up on the doorway again
+- {forward: 1.46}     # back to (7.60, 7.31) — out through the doorway, same
+                      #   0.791 m pinch
+- {turn: 69}          # swing south-west
+- {forward: 2.64}     # back to (6.01, 5.20) — across office 3
+- {turn: 37}          # face south
+- {forward: 1.95}     # back to (6.01, 3.25) — out of office 3 onto the
+                      #   corridor
+
+# ===== corridor east dead end, then the COPY / PRINT doorway ==============
+- {turn: 90}          # face east
+- {forward: 0.99}     # to (7.00, 3.25) — the corridor's east dead end. The
+                      #   robot is already pointing at the storage doorway
+                      #   1.1 m ahead, so no extra turn is spent on it.
+                      #   Storage is not enterable — shelf_1 stands 0.89 m
+                      #   inside.
+- {turn: -90}         # face south
+- {forward: 2.00}     # to (7.00, 1.25) — down the east branch onto the
+                      #   copy/print doorway centreline
+- {turn: 90}          # face east
+- {forward: 1.30}     # to (8.30, 1.25) — 0.24 m past the wall face and no
+                      #   further: the copier is 0.80 m ahead. Camera inside,
+                      #   robot on the threshold.
+- {turn: 180}         # about-face — pivot clearance 0.80 m
+- {forward: 1.30}     # back to (7.00, 1.25)
+
+# ===== east branch and east lobby, southwards =============================
+- {turn: 90}          # face south
+- {forward: 2.25}     # to (7.00, -1.00) — down the east branch, 0.94 m clear
+                      #   both sides. Passes the open office B east doorway.
+- {turn: 90}          # face east
+- {forward: 3.50}     # to (10.50, -1.00) — east into the open east lobby
+- {turn: -90}         # face south
+- {forward: 7.00}     # to (10.50, -8.00) — the full length of the east lobby,
+                      #   down to the foyer's own lane
+
+# ===== entrance foyer, back westwards, with offices 5 and 4 ===============
+- {turn: -90}         # face west
+- {forward: 6.25}     # to (4.25, -8.00) — west along the foyer onto the
+                      #   office 5 doorway centreline
+- {turn: -90}         # face north
+- {forward: 1.70}     # to (4.25, -6.30) — into office 5, stopping 0.80 m
+                      #   short of o5_chair. That is 0.64 m past the wall
+                      #   face of a room 2.88 m deep.
+- {turn: 180}         # about-face — pivot clearance 0.80 m
+- {forward: 1.70}     # back to (4.25, -8.00)
+- {turn: -90}         # face west
+- {forward: 3.75}     # to (0.50, -8.00) — onto the office 4 doorway
+                      #   centreline
+- {turn: -90}         # face north
+- {forward: 1.70}     # to (0.50, -6.30) — into office 4, stopping 0.80 m
+                      #   short of o4_chair
+- {turn: 180}         # about-face
+- {forward: 1.70}     # back to (0.50, -8.00)
+
+# ===== home ===============================================================
+- {turn: -90}         # face west
+- {forward: 0.50}     # to (0.00, -8.00) — the spawn point
+- {turn: -90}         # face north, restoring the exact spawn heading and
+                      #   closing the loop on the pose the run started from

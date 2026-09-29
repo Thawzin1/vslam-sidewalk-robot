@@ -1,0 +1,56 @@
+# =============================================================================
+# rtabmap_localization.yaml — overrides that turn RTAB-Map from a MAPPER into a
+# LOCALISER on an existing map.
+#
+# Loaded AFTER rtabmap_zedx.yaml, so it only has to state what differs.
+#
+# THE DIFFERENCE IN ONE SENTENCE
+#   Mapping asks "where am I, and what does it look like here?" and writes the
+#   answer down. Localisation asks only "where am I on the map I already have?"
+#   and writes nothing.
+#
+# WHY THAT MATTERS PRACTICALLY
+#   A robot that is doing a delivery run does not want to spend CPU extending
+#   the map, and it definitely does not want to permanently record the van that
+#   was parked across the path this morning. Localisation mode makes the map
+#   read-only, which also makes the run repeatable: two localisation runs over
+#   the same route are comparable because the map did not change underneath
+#   them.
+# =============================================================================
+
+# THE key parameter. With incremental memory off, RTAB-Map stops adding nodes
+# and stops modifying the graph. Everything else here follows from it.
+Mem/IncrementalMemory: "false"
+
+# Load the ENTIRE map into working memory at startup instead of paging nodes in
+# as they become relevant.
+#
+# The trade is startup time and RAM against the ability to relocalise instantly
+# from anywhere. With this false, a robot switched on in a part of the map that
+# is not in working memory cannot recognise where it is until it happens to
+# wander somewhere that is. For a building-sized map on 29 GB of RAM, loading
+# it all is the right call. For a city-scale map it would not be.
+Mem/InitWMWithAllNodes: "true"
+
+# Do not let the localiser silently start a brand-new map when it cannot find
+# itself. If it is lost, it should say so, not quietly begin mapping the world
+# again from scratch under a second map id - which looks like successful
+# operation right up until you try to navigate.
+RGBD/StartAtOrigin: "false"
+Rtabmap/StartNewMapOnLoopClosure: "false"
+
+# Publish the localisation pose even before the first successful match, so the
+# rest of the system can tell the difference between "not localised yet" and
+# "no node running at all".
+Rtabmap/PublishRAMUsage: "true"
+
+# Be stricter about accepting a match than during mapping. A wrong loop closure
+# while mapping distorts the map; a wrong relocalisation while navigating puts
+# the robot's belief about itself in the wrong building, and the planner will
+# then confidently drive it into a wall.
+Rtabmap/LoopThr: "0.15"
+Vis/MinInliers: "25"
+
+# Localisation does not need to keep raw depth and colour in memory for nodes
+# it will never write back, but it DOES need the visual words to match against.
+Mem/BinDataKept: "false"

@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Results - sidewalk robot</title>
+<link rel="stylesheet" href="/site.css">
+<style>
+.pack{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:10px 0}
+.pack h2{margin:0 0 2px;font-size:16px}
+.head{margin:8px 0;font-size:13.5px}
+.figs{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-top:8px}
+.figs figure{margin:0} .figs figcaption{font-size:12px;color:var(--dim);margin-top:3px}
+.figs img,.figs video{width:100%;height:auto;border:1px solid var(--line);border-radius:6px;background:#000;image-rendering:auto}
+details{margin-top:8px} summary{cursor:pointer;color:var(--dim);font-size:13px}
+details pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;background:#0b0e13;border:1px solid var(--line);border-radius:6px;padding:8px;max-height:70vh;overflow:auto}
+.sec{margin-top:12px;border-top:1px solid var(--line);padding-top:8px}
+.sec h3{font-size:14px;margin:0 0 2px}
+.sec.lidar{border-left:3px solid #4aa3df;padding-left:10px;border-top:none}
+.sec.camera{border-left:3px solid #e0875f;padding-left:10px;border-top:none}
+.sec.compare{border-left:3px solid #9b8ce0;padding-left:10px;border-top:none}
+.note{font-size:12.5px;color:var(--warnfg);background:var(--warnbg);border-radius:6px;padding:6px 10px;margin-top:10px}
+</style>
+</head>
+<body>
+<nav class="top" id="nav"></nav>
+<h1>Results - one pack per drive</h1>
+<div class="s">Numbers, figures and timelapse videos from each finished drive and rehearsal. Updated after each drive, not live.</div>
+<div class="note">How to read these: the LiDAR (a laser scanner on the robot) is a second opinion, not ground truth (the exact true path) -
+figures say "agreement with the LiDAR estimate". "Tracking alone" = where the camera thought it was without any map corrections;
+"corrected" = after the map recognised places it had seen and pulled itself straight (loop closures). Lines: robot / LiDAR solid, camera and blend dashed.</div>
+<div id="packs"><div class="s">loading...</div></div>
+<footer>All times are Hamilton time (America/Toronto). Source: the results packs in results/series2_static and results/series2_slam, copied here by build_results.py.</footer>
+<script src="/common.js"></script>
+<script>
+'use strict'
+nav('results.html')
+async function load(){
+  const el = document.getElementById('packs')
+  try {
+    const r = await fetch('/results/results.json', {cache: 'no-store'})
+    if (!r.ok) throw new Error('HTTP ' + r.status)
+    const j = await r.json()
+    const SEC_NOTE = {
+      camera: 'What the camera built by itself, on the Jetson.',
+      lidar: 'What the LiDAR (a laser scanner on the robot) built, through the colleague\'s LiDAR mapping on the robot. Its path is the robot\'s wheels + gyroscope, corrected only where the LiDAR recognised a place or lined up with nearby scans.',
+      compare: 'Both paths lined up. The LiDAR is a second opinion, not ground truth: this is agreement with the LiDAR estimate.',
+      timelapse: '',
+    }
+    const n = v => (typeof v === 'number' && isFinite(v)) ? v : null
+    el.innerHTML = (j.packs || []).map(p => {
+      const fig = f => {
+        const src = '/results/' + encodeURIComponent(p.run) + '/' + encodeURIComponent(f.file)
+        if (f.kind === 'link'){
+          const href = '/results/' + encodeURIComponent(p.run) + '/' + encodeURIComponent(f.file)
+          const pv = f.preview ? '/results/' + encodeURIComponent(p.run) + '/' + encodeURIComponent(f.preview) : ''
+          return '<figure><a href="' + href + '" target="_blank" rel="noopener">' +
+            (pv ? '<img loading="lazy" src="' + pv + '" alt="open the 3D viewer">' : '') +
+            '<div class="head" style="margin-top:6px">&#9654; Open the 3D viewer (spins by itself; drag to turn, pinch or scroll to zoom)</div></a>' +
+            '<figcaption>' + esc(f.caption) + '</figcaption></figure>'
+        }
+        const media = f.kind === 'video'
+          ? '<video controls preload="metadata" playsinline src="' + src + '"></video>'
+          : '<a href="' + src + '" target="_blank" rel="noopener"><img loading="lazy" src="' + src + '" alt="' + esc(f.caption) + '"></a>'
+        return '<figure>' + media + '<figcaption>' + esc(f.caption) + '</figcaption></figure>'
+      }
+      const L = p.lidar || {}
+      const lrows = rowsHtml([
+        ['LiDAR positions', n(L.nodes) != null ? n(L.nodes) + ' over ' + (n(L.duration_s) != null ? Math.round(L.duration_s / 60) + ' min' : '?') : null],
+        ['LiDAR path length', n(L.path_m_nodes) != null ? L.path_m_nodes.toFixed(1) + ' m' : null],
+        ['LiDAR loop closures', n(L.loop_closures) != null ? L.loop_closures + ' (places it recognised)' : null],
+        ['LiDAR end-to-start gap, after the map\'s corrections', n(L.end_gap_corrected_m) != null ? L.end_gap_corrected_m.toFixed(2) + ' m with ' +
+          (n(L.loop_closures) != null ? L.loop_closures : '?') + ' loop closures (the robot parked on its start mark, so a good map ends near 0)' +
+          (L.loop_closures === 0 ? ' - no place was recognised, so this is close to tracking alone (wheels + gyroscope)' : '') : null],
+        ['from', L.files ? L.files.join(', ') : null],
+      ])
+      const secs = (j.sections || []).map(([key, title]) => {
+        const fs = (p.files || []).filter(f => (f.section || 'camera') === key)
+        const extra = key === 'lidar' ? (lrows ? '<div class="grid">' + lrows + '</div>' : '') : ''
+        if (!fs.length && !extra){
+          if (key === 'lidar') return '<div class="sec lidar"><h3>' + esc(title) + '</h3><div class="s off">No LiDAR map for this run yet.</div></div>'
+          return ''
+        }
+        return '<div class="sec ' + esc(key) + '"><h3>' + esc(title) + '</h3>' +
+          (SEC_NOTE[key] ? '<div class="s">' + esc(SEC_NOTE[key]) + '</div>' : '') + extra +
+          (fs.length ? '<div class="figs">' + fs.map(fig).join('') + '</div>' : '') + '</div>'
+      }).join('')
+      return '<div class="pack"><h2>' + esc(p.name) + ' <span class="s">(' + esc(p.run) + ')</span></h2>' +
+        '<div class="s">' + esc(p.when) + (p.kind ? ' - ' + esc(p.kind) : '') + '</div>' +
+        (p.headline && p.headline !== '-' ? '<div class="head">' + esc(p.headline) + '</div>' : '') +
+        (p.video_note && /pending/i.test(p.video_note) ? '<div class="s off">Timelapse: ' + esc(p.video_note.replace(/`/g, '')) + '</div>' : '') +
+        (secs || '<div class="s">No figures in this pack yet.</div>') +
+        (p.results_md ? '<details><summary>Full results text (RESULTS.md)</summary><pre>' + esc(p.results_md) + '</pre></details>' : '') +
+        '</div>'
+    }).join('') || '<div class="s">No results packs yet.</div>'
+  } catch (e){
+    el.innerHTML = '<div class="band red" style="display:block">Could not load the results list: ' + esc(e.message) + '</div>'
+  }
+}
+load()
+</script>
+</body>
+</html>

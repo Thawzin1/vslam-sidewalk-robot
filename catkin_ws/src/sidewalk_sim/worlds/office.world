@@ -1,0 +1,458 @@
+<?xml version="1.0"?>
+<!--
+  office.world — a small, fully OFFLINE multi-room office floor for the
+  Husky VSLAM sim. Same offline-only approach as before (shapes + Gazebo's
+  built-in materials, no fuel.gazebosim.org downloads).
+
+  Floor plan (top-down, +X east, +Y north), 14 x 12 m overall:
+
+      Y=6  +================+================+
+           |   NW Office    |  NE Meeting Rm |
+      Y=2  +======+                  +=======+
+           |                                 |
+           |         corridor (3.8 m)        |
+           |                                 |
+      Y=-2 +======+                  +=======+
+           |   SW Office    |  SE Break Room |
+      Y=-6 +================+================+
+          X=-7             X=0              X=7
+
+  The robot spawns at the origin, in the corridor. Each room opens onto the
+  corridor through a 2.4 m doorway; rooms are not directly connected to each
+  other, only via the corridor - so driving between rooms and back is what
+  gives RTAB-Map real loop-closure opportunities instead of one long straight
+  pass.
+
+  ===========================================================================
+  WHY EVERY SURFACE HERE IS TEXTURED - and why that is the whole point
+  ===========================================================================
+
+  A stereo camera does not measure distance the way a LiDAR does. It finds
+  small, recognisable PATTERNS in the left and right images, matches them, and
+  works out depth and motion from how they shift. Those patterns are called
+  "features". No features means no matching, which means no odometry at all -
+  the camera literally cannot tell whether it moved.
+
+  An earlier version of this file gave every wall a DIFFERENT material to stop
+  RTAB-Map confusing one room for another. That fixed the confusion, but it
+  used flat paint colours (pure red, pure cyan, pure yellow...). A flat colour
+  has no pattern anywhere on it: every pixel looks like its neighbours. When
+  we measured the running simulation, the feature detector found just
+  13 usable points in a whole 1920x1200 image - and RTAB-Map needs at least
+  20 to compute a single pose. Odometry failed on every frame, and the map
+  came out bent and wavy.
+
+  So every surface below now uses a material with a real image texture -
+  brickwork, wood grain, paving, tiling - and every one of the 12 wall
+  segments still uses a DIFFERENT one. That satisfies both requirements at
+  once:
+
+    * TEXTURED  -> plenty of features, so odometry can track motion
+    * DISTINCT  -> each place looks unique, so loop closure does not weld two
+                   different rooms together
+
+  Two practical notes on texture SCALE, which matters as much as presence:
+
+    * Gazebo paints one copy of a texture across each face of a box. A single
+      14 m wall therefore shows one very stretched image, whereas a 0.5 m crate
+      shows the full image at full detail. That is why the floor below is built
+      from a grid of tiles rather than one big slab, and why the small props
+      matter more than their size suggests - they are the richest, sharpest
+      feature sources in the scene.
+    * The props also give each room its own look, which is what loop-closure
+      recognition actually keys on.
+-->
+<sdf version="1.6">
+  <world name="office">
+    <include><uri>model://sun</uri></include>
+    <include><uri>model://ground_plane</uri></include>
+
+    <!-- ==== textured floor ==============================================
+         VISUAL ONLY - there is deliberately no <collision> here. The physics
+         floor is still the ground_plane included above, exactly as before, so
+         the robot's contact and friction behaviour is unchanged. This is a
+         thin 4 mm skin laid 2 mm over it purely so the camera has something
+         to look at pointing down the corridor.
+
+         Split into a 4 x 4 grid because one 13.8 m slab would stretch a single
+         copy of the wood texture across the whole room and wash out the detail;
+         each ~3.4 x 3.0 m tile instead carries a full, sharp copy.
+    -->
+    <model name="floor_skin">
+      <static>true</static>
+      <link name="tiles">
+        <visual name="f00"><pose>-5.175 -4.425 0.002 0 0 0</pose><geometry><box><size>3.45 2.95 0.004</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodFloor</name></script></material></visual>
+        <visual name="f01"><pose>-1.725 -4.425 0.002 0 0 0</pose><geometry><box><size>3.45 2.95 0.004</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual>
+        <visual name="f02"><pose>1.725 -4.425 0.002 0 0 0</pose><geometry><box><size>3.45 2.95 0.004</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual>
+        <visual name="f03"><pose>5.175 -4.425 0.002 0 0 0</pose><geometry><box><size>3.45 2.95 0.004</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+        <visual name="f10"><pose>-5.175 -1.475 0.002 0 0 0</pose><geometry><box><size>3.45 2.95 0.004</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual>
+        <visual name="f11"><pose>-1.725 -1.475 0.002 0 0 0</pose><geometry><box><size>3.45 2.95 0.004</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+        <visual name="f12"><pose>1.725 -1.475 0.002 0 0 0</pose><geometry><box><size>3.45 2.95 0.004</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodFloor</name></script></material></visual>
+        <visual name="f13"><pose>5.175 -1.475 0.002 0 0 0</pose><geometry><box><size>3.45 2.95 0.004</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual>
+        <visual name="f20"><pose>-5.175 1.475 0.002 0 0 0</pose><geometry><box><size>3.45 2.95 0.004</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual>
+        <visual name="f21"><pose>-1.725 1.475 0.002 0 0 0</pose><geometry><box><size>3.45 2.95 0.004</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodFloor</name></script></material></visual>
+        <visual name="f22"><pose>1.725 1.475 0.002 0 0 0</pose><geometry><box><size>3.45 2.95 0.004</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+        <visual name="f23"><pose>5.175 1.475 0.002 0 0 0</pose><geometry><box><size>3.45 2.95 0.004</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual>
+        <visual name="f30"><pose>-5.175 4.425 0.002 0 0 0</pose><geometry><box><size>3.45 2.95 0.004</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+        <visual name="f31"><pose>-1.725 4.425 0.002 0 0 0</pose><geometry><box><size>3.45 2.95 0.004</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual>
+        <visual name="f32"><pose>1.725 4.425 0.002 0 0 0</pose><geometry><box><size>3.45 2.95 0.004</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual>
+        <visual name="f33"><pose>5.175 4.425 0.002 0 0 0</pose><geometry><box><size>3.45 2.95 0.004</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodFloor</name></script></material></visual>
+      </link>
+    </model>
+
+    <!-- ==== building shell + interior walls (one static model) ====
+         All 12 segments textured, and all 12 DIFFERENT - see header. -->
+    <model name="building">
+      <static>true</static>
+      <link name="walls">
+
+        <!-- outer shell - all four sides distinct -->
+        <collision name="outer_n_c"><pose>0 6 1.25 0 0 0</pose><geometry><box><size>14 0.2 2.5</size></box></geometry></collision>
+        <visual   name="outer_n_v"><pose>0 6 1.25 0 0 0</pose><geometry><box><size>14 0.2 2.5</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Bricks</name></script></material></visual>
+        <collision name="outer_s_c"><pose>0 -6 1.25 0 0 0</pose><geometry><box><size>14 0.2 2.5</size></box></geometry></collision>
+        <visual   name="outer_s_v"><pose>0 -6 1.25 0 0 0</pose><geometry><box><size>14 0.2 2.5</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/PaintedWall</name></script></material></visual>
+        <collision name="outer_e_c"><pose>7 0 1.25 0 0 0</pose><geometry><box><size>0.2 12 2.5</size></box></geometry></collision>
+        <visual   name="outer_e_v"><pose>7 0 1.25 0 0 0</pose><geometry><box><size>0.2 12 2.5</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+        <collision name="outer_w_c"><pose>-7 0 1.25 0 0 0</pose><geometry><box><size>0.2 12 2.5</size></box></geometry></collision>
+        <visual   name="outer_w_v"><pose>-7 0 1.25 0 0 0</pose><geometry><box><size>0.2 12 2.5</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Residential</name></script></material></visual>
+
+        <!-- corridor / north-rooms wall (y=2), split around the two doorways -->
+        <collision name="cn_1_c"><pose>-5.85 2 1.25 0 0 0</pose><geometry><box><size>2.3 0.2 2.5</size></box></geometry></collision>
+        <visual   name="cn_1_v"><pose>-5.85 2 1.25 0 0 0</pose><geometry><box><size>2.3 0.2 2.5</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Wood</name></script></material></visual>
+        <collision name="cn_2_c"><pose>0 2 1.25 0 0 0</pose><geometry><box><size>4.6 0.2 2.5</size></box></geometry></collision>
+        <visual   name="cn_2_v"><pose>0 2 1.25 0 0 0</pose><geometry><box><size>4.6 0.2 2.5</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/BuildingFrame</name></script></material></visual>
+        <collision name="cn_3_c"><pose>5.85 2 1.25 0 0 0</pose><geometry><box><size>2.3 0.2 2.5</size></box></geometry></collision>
+        <visual   name="cn_3_v"><pose>5.85 2 1.25 0 0 0</pose><geometry><box><size>2.3 0.2 2.5</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Steps</name></script></material></visual>
+
+        <!-- corridor / south-rooms wall (y=-2), split around the two doorways -->
+        <collision name="cs_1_c"><pose>-5.85 -2 1.25 0 0 0</pose><geometry><box><size>2.3 0.2 2.5</size></box></geometry></collision>
+        <visual   name="cs_1_v"><pose>-5.85 -2 1.25 0 0 0</pose><geometry><box><size>2.3 0.2 2.5</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodPallet</name></script></material></visual>
+        <collision name="cs_2_c"><pose>0 -2 1.25 0 0 0</pose><geometry><box><size>4.6 0.2 2.5</size></box></geometry></collision>
+        <visual   name="cs_2_v"><pose>0 -2 1.25 0 0 0</pose><geometry><box><size>4.6 0.2 2.5</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Motorway</name></script></material></visual>
+        <collision name="cs_3_c"><pose>5.85 -2 1.25 0 0 0</pose><geometry><box><size>2.3 0.2 2.5</size></box></geometry></collision>
+        <visual   name="cs_3_v"><pose>5.85 -2 1.25 0 0 0</pose><geometry><box><size>2.3 0.2 2.5</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Trunk</name></script></material></visual>
+
+        <!-- NW/NE dividing wall -->
+        <collision name="div_n_c"><pose>0 4 1.25 0 0 0</pose><geometry><box><size>0.2 4 2.5</size></box></geometry></collision>
+        <visual   name="div_n_v"><pose>0 4 1.25 0 0 0</pose><geometry><box><size>0.2 4 2.5</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Primary</name></script></material></visual>
+
+        <!-- SW/SE dividing wall -->
+        <collision name="div_s_c"><pose>0 -4 1.25 0 0 0</pose><geometry><box><size>0.2 4 2.5</size></box></geometry></collision>
+        <visual   name="div_s_v"><pose>0 -4 1.25 0 0 0</pose><geometry><box><size>0.2 4 2.5</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Secondary</name></script></material></visual>
+
+      </link>
+    </model>
+
+    <!-- ================= LAYOUT REVISION 2026-08-23 ====================
+         The prop layout below was edited by hand in the Gazebo GUI during
+         the first office-room-1 exploration session and saved via
+         File > Save World As; those changes were merged back into this
+         file. Two kinds of change were made:
+
+           DELETED (17 props): nw_chair, nw_bookshelf, ne_chair_1,
+           ne_chair_2, sw_chair, se_counter, se_stool_1, se_stool_2,
+           cor_crate_e, cor_pillar, nw_crate, ne_crate, ne_column,
+           ne_low_box, sw_crate, se_crate, se_column.
+           The intent was to clear furniture blocking the doorways: the
+           three props that routes/office1_full.yaml names as making rooms
+           unreachable (ne_column, nw_crate, sw_crate) are among them.
+
+           RELOCATED (8 props): reception_desk, nw_desk, ne_table, sw_desk,
+           se_table, cor_crate_w, cor_box_e, nw_barrel.
+
+         CONSEQUENCE FOR DRIVING. Seven of the eight relocations moved a
+         prop TOWARD the corridor. Three now overlap the corridor spine at
+         y ~ 0 by more than the robot's 0.598 m body radius
+         (reception_desk, se_table, cor_crate_w), and cor_box_e grazes it.
+         routes/office1_full.yaml, written against the ORIGINAL layout,
+         cannot be driven on this world: 27 of its 63 primitives collide.
+         Regenerate it from a hand-driven recording
+         (sidewalk_sim/scripts/route_from_drive.py) or retire it.
+
+         CONSEQUENCE FOR MAPPING. This removes 63 % of the small feature
+         props that the feature-props header below identifies as the
+         scene's feature backbone. Run the per-room ORB feature-count gate
+         (docs/OPERATIONS.md) before trusting any mapping result from this
+         layout. A flat-colour version of this world once yielded 13
+         keypoints against RTAB-Map's minimum of 20.
+    -->
+
+    <!-- ==== corridor landmark (reception desk, mid-corridor) ==== -->
+    <model name="reception_desk"><static>true</static><pose>-3.53785 0 0.5 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>1.5 0.5 1.0</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>1.5 0.5 1.0</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Wood</name></script></material></visual></link></model>
+
+    <!-- ==== NW Office: desk ==== -->
+    <model name="nw_desk"><static>true</static><pose>-4.71039 4.45801 0.375 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>1.2 0.6 0.75</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>1.2 0.6 0.75</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodPallet</name></script></material></visual></link></model>
+
+    <!-- ==== NE Meeting Room: table ==== -->
+    <model name="ne_table"><static>true</static><pose>3.5 4.38204 0.375 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>2.4 1.0 0.75</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>2.4 1.0 0.75</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Wood</name></script></material></visual></link></model>
+
+    <!-- ==== SW Office: desk, cabinet ==== -->
+    <model name="sw_desk"><static>true</static><pose>-3.39663 -3.94467 0.375 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>1.2 0.6 0.75</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>1.2 0.6 0.75</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual></link></model>
+    <model name="sw_cabinet"><static>true</static><pose>-1 -5.3 0.6 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.6 0.4 1.2</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.6 0.4 1.2</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual></link></model>
+
+    <!-- ==== SE Break Room: round table ==== -->
+    <model name="se_table"><static>true</static><pose>3.50432 -4 0.375 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><cylinder><radius>0.5</radius><length>0.75</length></cylinder></geometry></collision>
+        <visual name="v"><geometry><cylinder><radius>0.5</radius><length>0.75</length></cylinder></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Runway</name></script></material></visual></link></model>
+
+    <!-- ================= feature props =================================
+         Small textured objects, 0.3-1.0 m. These are the sharpest feature
+         sources in the world: a box this size shows one FULL copy of its
+         texture per face, where a 14 m wall stretches a single copy across
+         its whole length.
+
+         LAYOUT REVISED 2026-08-23; see the LAYOUT REVISION note further
+         up this file. The original placement rule (every prop clear of the
+         corridor centreline and clear of the four doorways, with a distinct
+         per-room combination so rooms do not look alike to loop-closure)
+         NO LONGER HOLDS:
+           * cor_crate_w (1.44, -0.03) and cor_box_e (4.14, -0.04) now sit
+             ON the corridor centreline, in the robot's main driving lane.
+           * Only four of the original nine feature props remain
+             (cor_crate_w, cor_box_e, nw_barrel, sw_barrel). The NE meeting
+             room and SE break room keep no feature prop at all, only
+             their furniture (ne_table, se_table).
+         Re-derive any scripted route against THIS layout, and re-check the
+         per-room ORB feature count before trusting a mapping result.
+    -->
+
+    <!-- corridor -->
+    <model name="cor_crate_w"><static>true</static><pose>1.43781 -0.031077 0.25 0 0 0.01149</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.5 0.5 0.5</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.5 0.5 0.5</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodPallet</name></script></material></visual></link></model>
+    <model name="cor_box_e"><static>true</static><pose>4.13895 -0.035371 0.35 0 0 0.008045</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.7 0.5 0.7</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.7 0.5 0.7</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Runway</name></script></material></visual></link></model>
+
+    <!-- NW Office -->
+    <model name="nw_barrel"><static>true</static><pose>-1.70856 4.34149 0.45 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><cylinder><radius>0.3</radius><length>0.9</length></cylinder></geometry></collision>
+        <visual name="v"><geometry><cylinder><radius>0.3</radius><length>0.9</length></cylinder></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Trunk</name></script></material></visual></link></model>
+
+    <!-- SW Office -->
+    <model name="sw_barrel"><static>true</static><pose>-6.2 -5.0 0.4 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><cylinder><radius>0.28</radius><length>0.8</length></cylinder></geometry></collision>
+        <visual name="v"><geometry><cylinder><radius>0.28</radius><length>0.8</length></cylinder></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Grass</name></script></material></visual></link></model>
+
+    <!-- ==== overhead presentation camera ===============================
+         WHAT THIS IS. One downward-looking colour camera, attached to
+         nothing, hanging 18 m over the centre of the building and publishing
+         a plain image on /overhead_cam/image_raw. Point a recorder at that
+         topic and every mapping run of this world produces a top-down video
+         of the robot driving the floor plan, at no extra effort during the
+         run. There is no ceiling in this world - only walls and a floor skin
+         - so a camera above it looks straight down into every room.
+
+         WHY IT LIVES INSIDE THE WORLD INSTEAD OF BEING A SCREEN RECORDER.
+         Measured runs are launched with the graphical client switched off
+         (gui:=false) and no windows on screen, which is most of why they run
+         roughly four times faster than a watched run. There is consequently
+         nothing on screen for a screen recorder to capture. The simulation
+         server, however, renders camera sensors inside its own process
+         whether or not any window exists - that is the confirmed rule in
+         ENGINEERING_NOTES.md section 5 - so a camera placed in the world yields a real
+         rendered picture at the full headless speed. The top-down picture at
+         logs/sidewalk_evaluation/results/phase1/fix_verify/gazebo_birdseye.png
+         was produced exactly this way with a temporary camera that was never
+         kept. This is that same technique, made permanent.
+
+         THE CAVEAT THAT WILL CATCH SOMEBODY OUT. Rendering any camera at all
+         needs a graphics context, and the simulation server takes that from
+         the DISPLAY and XAUTHORITY environment variables. Launch over a
+         remote shell without both of them exported and this camera is never
+         created: no images, no camera information, and no error that names
+         the cause - just the line "Unable to create CameraSensor. Rendering
+         is disabled." in the server log, after which everything else carries
+         on normally. The robot's own stereo camera has exactly the same
+         requirement, so in practice a run that produced no overhead video is
+         a run that produced no camera images at all, and the fix is the same
+         one: export both variables before launching.
+
+         HOW THE 18 m HEIGHT WAS COMPUTED. It was derived, not guessed, and
+         it is deliberately NOT the same as office2.world's - that building
+         is larger and its camera sits higher.
+
+         The lens is set to a 1.047 radian (60.0 degree) horizontal field of
+         view. The simulator derives the vertical field of view from the
+         image shape, so an 800 by 600 picture covers a patch of floor with
+         the same 4 : 3 proportions as the picture itself:
+
+             half-width  a = height * tan(field of view / 2) = height * 0.5772
+             half-height b = a * 600 / 800                   = a * 0.75
+
+         The building is 14 m east-west by 12 m north-south, so its floor
+         half-extents are 7 m and 6 m. That is not the whole requirement,
+         because the walls are 2.5 m tall and this is a perspective lens, not
+         an overhead orthographic drawing. Seen from a point directly above
+         the centre, the TOP outer edge of a wall standing at horizontal
+         distance d appears to lie at
+
+             d * height / (height - 2.5)
+
+         so the frame has to cover more than the floor footprint or the tops
+         of the outer walls are sliced off at the edges. Requiring a further
+         10 % margin beyond even that:
+
+             east-west   0.5772 * (height - 2.5) >= 7 * 1.10 -> height >= 15.84 m
+             north-south 0.4329 * (height - 2.5) >= 6 * 1.10 -> height >= 17.75 m
+
+         North-south is the binding constraint, because this building is
+         squarer (14 : 12) than the picture is (4 : 3). Rounded up to a flat
+         18 m, which delivers:
+
+             ground coverage        20.78 m east-west by 15.59 m north-south
+             margin past wall tops  27.8 % east-west, 11.8 % north-south
+             clear border at floor  3.39 m beyond the east and west walls,
+                                    1.79 m beyond the north and south walls
+             scale                  26 mm of floor per pixel, so the Husky
+                                    (about 1.0 by 0.67 m) is roughly 38 by 26
+                                    pixels - small, but unmistakably a robot
+                                    moving between rooms, which is all this
+                                    clip has to show.
+
+         WHICH WAY IS UP IN THE PICTURE. A camera here looks along its own
+         forward axis with its own upward axis at the top of the frame.
+         Pitching it a quarter turn (1.5708 radians) nose-down aims it at the
+         floor; the further quarter turn of yaw then rolls the frame so that
+         north (+Y) is at the top and east (+X) is at the right. The video
+         therefore has the same orientation as the floor-plan sketch at the
+         top of this file, so the two can be held side by side while
+         explaining a run.
+
+         WHY THIS CANNOT DISTURB A MAPPING RUN.
+           * It is not attached to the robot. It is its own static model at a
+             fixed pose, contributing no transform, no joint and no mass to
+             the robot.
+           * Its link carries no collision shape and no visual shape at all,
+             only the sensor. The robot cannot drive into it, the navigation
+             costmap never sees it, and the robot's own stereo camera cannot
+             see it even looking straight up.
+           * It publishes on /overhead_cam/image_raw and
+             /overhead_cam/camera_info, and nothing in the mapping stack
+             subscribes to either. sidewalk_slam/launch/rtabmap_common.launch
+             was read to confirm this: it subscribes only to the colour,
+             depth, left, right, camera-information, inertial and odometry
+             topics beneath the robot camera's own namespace (zedx_front /
+             zed_node by default), plus its own internal bundled image topic.
+           * It costs roughly 7 % of what the robot's stereo pair already
+             costs: 800 by 600 at 10 frames per simulated second is 4.8
+             million pixels per second and 14.4 megabytes per second of image
+             traffic, against 69 million pixels per second and 207 megabytes
+             per second for two 1920 by 1200 colour lenses at 15 hertz. That
+             ratio is the point - this machine is already carrying physics,
+             the stereo camera and the mapping software at once, and
+             over-subscribing it has caused real failures before (see
+             docs/OPERATIONS.md on the memory and queue-depth incident).
+
+         WHY 800 BY 600 AT 10 FRAMES PER SECOND. This picture is watched, not
+         measured: no pose is ever computed from it, so the only requirement
+         is that a person can see where the robot is. 10 frames of SIMULATED
+         time per second, played back at 10 frames per second, shows the
+         motion at true speed no matter what multiple of real time the
+         simulation happened to be running at. Raising either number buys
+         nothing and takes graphics time away from the stereo camera, which
+         is the one that has to keep up.
+    -->
+    <model name="overhead_cam">
+      <static>true</static>
+      <!-- 18 m above the building centre. Pitch 1.5708 aims the lens straight
+           down; the matching yaw puts north at the top of the frame. -->
+      <pose>0 0 18.0 0 1.5708 1.5708</pose>
+      <link name="lens">
+        <sensor name="overhead_camera" type="camera">
+          <always_on>true</always_on>
+          <update_rate>10</update_rate>
+          <!-- No frustum drawn in the graphical client: it would sit across
+               the middle of the scene during hand-driving sessions. -->
+          <visualize>false</visualize>
+          <camera name="overhead">
+            <horizontal_fov>1.047</horizontal_fov>
+            <image><width>800</width><height>600</height><format>R8G8B8</format></image>
+            <!-- Clipping is measured along the lens axis, and the floor is
+                 exactly 18 m along it, so the far plane only has to clear 18.
+                 40 m leaves room to raise the camera later without silently
+                 clipping the floor away. -->
+            <clip><near>1.0</near><far>40.0</far></clip>
+            <!-- Deliberately NO <noise> here. The robot's stereo camera
+                 carries Gaussian noise on purpose, because its covariance has
+                 to be honest (ENGINEERING_NOTES.md section 2.3). This one is only ever
+                 looked at, and grain would just make the video harder to
+                 read. -->
+          </camera>
+          <plugin name="overhead_cam_controller" filename="libgazebo_ros_camera.so">
+            <alwaysOn>true</alwaysOn>
+            <!-- 0.0 means "publish whenever the sensor renders", so the
+                 10 hertz above is the single place the rate is set. -->
+            <updateRate>0.0</updateRate>
+            <!-- Camera name plus image topic name is what forms the published
+                 topic: /overhead_cam/image_raw, with /overhead_cam/camera_info
+                 beside it. -->
+            <cameraName>overhead_cam</cameraName>
+            <imageTopicName>image_raw</imageTopicName>
+            <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+            <!-- Nothing publishes a transform for this frame and nothing
+                 needs one: the picture is watched in an image viewer or
+                 written to a video file, never projected into the map. -->
+            <frameName>overhead_cam_optical_frame</frameName>
+            <distortionK1>0.0</distortionK1>
+            <distortionK2>0.0</distortionK2>
+            <distortionK3>0.0</distortionK3>
+            <distortionT1>0.0</distortionT1>
+            <distortionT2>0.0</distortionT2>
+          </plugin>
+        </sensor>
+      </link>
+    </model>
+
+    <physics type="ode"><real_time_update_rate>1000</real_time_update_rate><max_step_size>0.001</max_step_size></physics>
+    <scene><ambient>0.5 0.5 0.5 1</ambient><background>0.7 0.7 0.7 1</background><shadows>false</shadows></scene>
+  </world>
+</sdf>

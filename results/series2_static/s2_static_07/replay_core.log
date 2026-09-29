@@ -1,0 +1,36 @@
+[33m[ WARN] [1790445463.560372589]: Shutdown request received.[0m
+[33m[ WARN] [1790445463.560556015]: Reason given for shutdown: [user request][0m
+... logging to /home/administrator/.ros/log/88f0486a-b9d1-11f1-ad7c-48b02de646a8/roslaunch-cpr-a200-0985-39132.log
+Checking log directory for disk usage. This may take a while.
+Press Ctrl-C to interrupt
+Done checking log file disk usage. Usage is <1GB.
+]2;roscore
+[1mstarted roslaunch server http://cpr-a200-0985:43085/[0m
+ros_comm version 1.17.0
+
+
+SUMMARY
+========
+
+PARAMETERS
+ * /rosdistro: noetic
+ * /rosversion: 1.17.0
+
+NODES
+
+auto-starting new master
+[1mprocess[master]: started with pid [39169][0m
+[1mROS_MASTER_URI=http://cpr-a200-0985:11312/[0m
+]2;roscore http://cpr-a200-0985:11312/
+[1msetting /run_id to 88f0486a-b9d1-11f1-ad7c-48b02de646a8[0m
+[1mprocess[rosout-1]: started with pid [39193][0m
+started core service [/rosout]
+[1m[rosout-1] process has finished cleanly
+log file: /home/administrator/.ros/log/88f0486a-b9d1-11f1-ad7c-48b02de646a8/rosout-1*.log[0m
+[rosout-1] restarting process
+[1mprocess[rosout-1]: started with pid [55615][0m
+[rosout-1] killing on exit
+[master] killing on exit
+shutting down processing monitor...
+... shutting down processing monitor complete
+[1mdone[0m

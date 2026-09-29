@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Live map - sidewalk robot</title>
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<nav class="top" id="nav"></nav>
+<div id="drawerr" class="band"></div>
+
+<!-- 1. FRESHNESS FIRST: is this page live at all? A frozen page looks exactly like a
+     quiet drive, so this strip is the first thing on the page and stays pinned on top. -->
+<div id="fresh" class="grey">Connecting to the live map...<span class="sub">waiting for the first answer</span></div>
+<div id="localband" class="band"></div>
+
+<!-- 1b. THE JETSON ITSELF: memory, processor, storage. Grey until something is wrong. -->
+
+<!-- 2. The camera's own state, same wording as the Jetson's local page -->
+<div id="lost" class="band"></div>
+<div id="corr" class="corr">last map correction: waiting for the Jetson</div>
+
+<h1 id="runname">Live map</h1>
+<div class="s" id="runsub">the map the camera is building, sent from the Jetson every 2 s</div>
+
+<h2>Camera (ZED X) - the map being built</h2>
+<div class="pic"><img id="map" alt="camera map picture"></div>
+<div class="picnote" id="mapnote"></div>
+<div class="grid" id="rows"></div>
+
+<h2>Drive status lines</h2>
+<div class="s">One line from each helper program on the Jetson, exactly as it wrote it. "Updated" is how
+long before the last update of this page the program last wrote its line.</div>
+<div id="lines"></div>
+
+<h2>LiDAR (Helios, on the robot) - walls placed by the wheel + motion-sensor estimate</h2>
+<div class="s">A live view only, not corrected by recognising places. The red and amber bands above are
+about the CAMERA map only.</div>
+<div class="pic" style="margin-top:6px"><img id="peer" alt="LiDAR map picture"></div>
+<div class="picnote" id="peernote"></div>
+<div class="grid" id="peerrows"></div>
+
+<div class="k">
+ <span><i style="background:rgb(200,40,40)"></i>walls / occupied</span>
+ <span><i style="background:rgb(232,232,232)"></i>floor seen (map says drivable)</span>
+ <span><i style="background:rgb(55,55,55)"></i>not seen yet</span>
+ <span><i style="background:rgb(60,200,60)"></i>robot and its heading (hollow = last known position)</span>
+ <span><i style="background:rgb(255,0,255)"></i>arrow at the edge: robot far outside the map, not drawn</span>
+ <span><i style="background:rgb(255,170,0)"></i>route to drive (camera) / path driven (LiDAR)</span>
+</div>
+
+<footer>All times are Hamilton time (America/Toronto). This page asks for new data every 2 s.
+The Jetson sends outward to this website; nothing on the lab network is opened.</footer>
+
+<script src="/common.js"></script>
+<script>
+'use strict'
+nav('map.html')
+let have = {m: '', p: ''} // fingerprints of the pictures already on screen
+window.stateQuery = () => '&only=map&m=' + encodeURIComponent(have.m) + '&p=' + encodeURIComponent(have.p)
+// ---- 2. drawing one snapshot ---------------------------------------------------
+function picture(imgId, noteId, part, key, what){
+  const img = document.getElementById(imgId), note = document.getElementById(noteId)
+  if (!part || part.error){
+    note.innerHTML = '<span class="off">' + esc(what + ': ' + ((part && part.error) || 'not sent')) + '</span>'
+    return
+  }
+  if (part.b64){
+    img.src = 'data:image/png;base64,' + part.b64
+    have[key] = part.sha || ''
+  }
+  const bits = []
+  if (part.fetched_at) bits.push('picture taken ' + hhmmss(part.fetched_at * 1000))
+  if (part.bytes) bits.push(Math.round(part.bytes / 1024) + ' kB')
+  if (part.size_m) bits.push(part.size_m + ' m shown')
+  note.textContent = bits.join(' - ')
+}
+
+const LINE_INFO = {
+  drive:      ['Drive recorder', 'the drive\'s own progress line: minutes run, samples, closures'],
+  autostop:   ['Auto-stop', 'closes the map properly when you say "park" and the robot stands still'],
+  bridge:     ['Robot link (bridge)', 'the robot\'s wheel and motion-sensor readings arriving at the Jetson; "lost" and "stale" should stay near 0'],
+  ekf_inputs: ['Conditioner (blend inputs)', 'what goes into the blend of wheels, motion sensor and camera: rates, heading-drift correction, anything refused'],
+  turns:      ['Turn watch', 'counts turns and direction changes, and how far the blend and the robot disagree on heading'],
+}
+function linesHtml(prog){
+  const order = ['drive', 'autostop', 'bridge', 'ekf_inputs', 'turns']
+  const out = []
+  for (const k of order){
+    const p = prog && prog[k]
+    const info = LINE_INFO[k]
+    if (!p){ continue }
+    const old = p.age_s > 30
+    out.push('<div class="line' + (old ? ' old' : '') + '"><div class="t">' + esc(info[0]) +
+      ' <span class="x">- updated ' + esc(ago(p.age_s)) + ' before the push' + (old ? ' (not updating)' : '') + '</span></div>' +
+      '<div class="x">' + esc(info[1]) + '</div><code>' + esc(p.line) + '</code></div>')
+  }
+  if (!out.length) return '<div class="line"><span class="off">No status lines found for this run on the Jetson.</span></div>'
+  return out.join('')
+}
+
+
+
+function render(){
+  const b = body
+  // is the pusher alive but the drive's own page gone?
+  const L = b.local || {}
+  if (!L.ok){
+    band('localband', 'amber', 'The Jetson is sending, but its own live-map page (port 8095) is not answering: ' +
+      (L.error || 'no reason given') + '. The drive\'s map program has probably stopped, or the drive has ended.')
+  } else band('localband', null)
+
+  document.getElementById('runname').textContent = b.run ? ('Drive ' + b.run) : 'Live map (no drive found)'
+  document.getElementById('runsub').textContent = 'sent from ' + (b.host || 'the Jetson') + ' every ' + (b.interval_s || 2) +
+    ' s - update number ' + (b.seq || '?') + ' - sender running since ' + (b.started_at ? hhmmss(b.started_at * 1000) : '?')
+
+  const st = L.stats || {}
+  const s = st._state || {}
+  if (L.ok){
+    if (s.lost) band('lost', 'red', 'TRACKING LOST for ' + Math.round(s.lost_for_s || 0) + ' s - the camera has lost its place. The dot is its last good position.')
+    else if (s.tracking_stale) band('lost', 'amber', 'NO TRACKING DATA - ' + (s.tracking_text || ''))
+    else band('lost', null)
+    const c = document.getElementById('corr')
+    c.textContent = 'last map correction: ' + (s.corr_text || st['last map correction'] || '?')
+    c.className = 'corr' + (s.corrections ? '' : ' warn')
+  } else {
+    band('lost', null)
+    const c = document.getElementById('corr')
+    c.textContent = 'last map correction: unknown - the Jetson\'s live-map page is not answering'
+    c.className = 'corr warn'
+  }
+
+  picture('map', 'mapnote', b.map, 'm', 'camera map picture')
+  const closures = (s.corrections == null) ? null :
+    s.corrections + (s.corrections ? ' map corrections - ' + (s.corr_loop || 0) + ' found by recognising a place, ' + (s.corr_prox || 0) + ' by being nearby (one correction can count as both)' : ' - none yet')
+  document.getElementById('rows').innerHTML = L.ok ? rowsHtml([
+    ['tracking', st.tracking],
+    ['tracking losses', st['tracking losses']],
+    ['loop closures', closures],
+    ['map updates', s.map_updates],
+    ['robot', st.robot],
+    ['map picture', st['map picture'] ? st['map picture'] + ' (as of the push)' : null],
+    ['cells', (st.occupied != null) ? st.occupied + ' occupied, ' + st.free + ' free' : null],
+  ]) : '<b>camera</b><span class="off">no numbers - the Jetson\'s live-map page is not answering</span>'
+
+  document.getElementById('lines').innerHTML = linesHtml(b.progress)
+
+  const P = b.peer || {}
+  if (P.ok){
+    picture('peer', 'peernote', P, 'p', 'LiDAR picture')
+    const ps = P.stats || {}
+    document.getElementById('peerrows').innerHTML = rowsHtml(Object.entries(ps).filter(([k]) => k[0] !== '_'))
+  } else {
+    document.getElementById('peernote').innerHTML = '<span class="off">LiDAR view offline' + (P.error ? ' - ' + esc(P.error) : '') + '</span>'
+    document.getElementById('peerrows').innerHTML = ''
+  }
+}
+
+window.onBody = render
+startPolling()
+</script>
+</body>
+</html>

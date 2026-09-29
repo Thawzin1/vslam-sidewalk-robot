@@ -1,0 +1,1 @@
+corridors beyond the lab, one loop ending on the start mark; 240 m at ~0.37 m/s with turns up to 61 deg/s; tracking lost 59 times at blank walls (see 03_methods/DRIVE1_DIAGNOSIS.md)

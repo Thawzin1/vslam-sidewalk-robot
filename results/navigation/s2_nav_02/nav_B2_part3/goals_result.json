@@ -1,0 +1,24 @@
+{
+ "run": "s2_nav_02",
+ "goals_file": "<repo>/catkin_ws/src/sidewalk_navigation/goals_d10_route_B2.yaml",
+ "results": [
+  {
+   "k": 4,
+   "name": "B4_start_mark",
+   "goal": [
+    0.25,
+    0.0,
+    0
+   ],
+   "result": "ABORTED",
+   "time_s": 19.9,
+   "t_send_rel": 0.338,
+   "end_estimate": [
+    3.492,
+    -14.451,
+    0.958
+   ],
+   "dist_estimate_to_goal_m": 14.811
+  }
+ ]
+}

@@ -1,0 +1,40 @@
+{
+ "P1_camera_silences_over_1p5s": [
+  5.27,
+  1.97,
+  2.83,
+  2.17,
+  1.53,
+  2.77,
+  42.97
+ ],
+ "P2_wheel_silences_inbound_held": [],
+ "P3_camera_gyro_max_gap_s": 25.272,
+ "P4_zed_diagnostic_pauses_over_2s": [
+  6.21,
+  2.56,
+  2.91,
+  2.16,
+  2.36,
+  3.37,
+  34.26,
+  6.22,
+  3.13
+ ],
+ "P5_parsed_iterations": 1291,
+ "P5_db_nodes": 1334,
+ "saves_over_5p5s": 0,
+ "other_wheel_silences_over_1p5s": [
+  [
+   5.28,
+   0.0,
+   0.0
+  ],
+  [
+   2.32,
+   0.03,
+   0.0
+  ]
+ ],
+ "verdict": "VOID (control failed: the recorder or the whole Jetson stalled)"
+}

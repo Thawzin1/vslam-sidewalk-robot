@@ -1,0 +1,3 @@
+2026-09-27 07:40:02 EDT start pid 541824 run s2_loc_04 every 3.0 s from http://127.0.0.1:8095 (nice 19)
+2026-09-27 08:10:01 EDT recording stopped (the mapping program (rtabmap) has been gone for 120 s): last frame number 591, this session camera 591, LiDAR 523, missed 0, write errors 0
+2026-09-27 08:11:35 EDT build: ~/.run_records/s2_loc_04/media/s2_loc_04_timelapse.mp4 - 591 frames at 10 a second = 59.1 s of video (1.6 MB)

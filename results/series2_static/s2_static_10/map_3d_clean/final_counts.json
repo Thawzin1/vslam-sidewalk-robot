@@ -1,0 +1,11 @@
+{
+ "pixels_0_6m": 421073101,
+ "dropped_beyond_3m": 99359300,
+ "dropped_blank_2_3m": 34594003,
+ "points": 24817099,
+ "dec": 2,
+ "voxel": 0.01,
+ "maxr": 3.0,
+ "tex": 6.0,
+ "win": 31
+}

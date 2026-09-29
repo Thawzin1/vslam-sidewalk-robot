@@ -1,0 +1,20 @@
+# costmap_global.yaml - the whole-floor costmap the ROUTE is planned on (frame: map = drive 10's frame).
+global_costmap:
+  global_frame: map
+  robot_base_frame: base_link
+  update_frequency: 2.0      # Hz
+  publish_frequency: 1.0     # Hz (for the browser figure / recording only)
+  rolling_window: false      # size comes from the saved map: 33.75 x 40.1 m
+  track_unknown_space: true
+  plugins:
+    - {name: static_layer,    type: "costmap_2d::StaticLayer"}
+    - {name: obstacle_layer,  type: "costmap_2d::ObstacleLayer"}
+    - {name: inflation_layer, type: "costmap_2d::InflationLayer"}
+  inflation_layer:
+    enabled: true
+    inflation_radius: 0.65   # m. Must be >= the outline's outer radius + padding:
+                             #   sqrt(0.495^2 + 0.335^2) = 0.598 m, + 0.05 padding = 0.648 m.
+                             # Below that, a zero-cost cell would NOT mean "the robot fits here turned any way".
+    cost_scaling_factor: 3.0 # how fast the keep-away cost falls with distance; low = the route keeps to the
+                             # middle of the corridor (1.70-2.3 m wide on drive 10's map)
+    inflate_unknown: false

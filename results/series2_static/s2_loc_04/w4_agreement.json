@@ -1,0 +1,30 @@
+{
+ "median_m": 0.636,
+ "p95_m": 1.125,
+ "max_m": 1.234,
+ "rmse_m": 0.706,
+ "n_matched": 1166,
+ "matched_pct_of_estimate": 94.9,
+ "alignment": "SE(3), no scale",
+ "sim3_scale_for_information": 1.0684,
+ "time_offset_applied_s": 0.0,
+ "time_offset_best_from_data_s": 0.45,
+ "fit_at_0_s_m": 0.706,
+ "fit_at_best_shift_m": 0.697,
+ "reference_nodes": 863,
+ "reference_loop_closures": 102,
+ "reference_end_gap_m": 0.05,
+ "reference_end_gap_ok": true,
+ "reference_tilt_max_deg": 0.0,
+ "reference_height_range_m": 0.0,
+ "reference_flat_ok": true,
+ "reference_valid": true,
+ "reference_kind": "cross_stack - agreement with an independent LiDAR estimate, NOT error against ground truth",
+ "registered_line": "median <= 0.50 m (SE(3), no scale)",
+ "verdict": "FAIL",
+ "inputs": [
+  "localised.tum",
+  "lidar_ref_f3dof/lidar.tum",
+  "lidar_ref_f3dof/wheel.tum"
+ ]
+}

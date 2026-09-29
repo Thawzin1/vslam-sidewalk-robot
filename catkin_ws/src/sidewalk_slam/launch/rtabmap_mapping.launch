@@ -1,0 +1,102 @@
+<?xml version="1.0"?>
+<!--
+  rtabmap_mapping.launch — BUILD A NEW MAP with RTAB-Map. This is the primary
+  mapping system for the whole project.
+
+  PREREQUISITE: the camera must already be running.
+      roslaunch sidewalk_perception <the phase 2 camera launch>
+  or, for offline work, a rosbag/SVO must be playing. This launch file
+  intentionally does not start the camera - see the note in
+  rtabmap_common.launch.
+
+  TYPICAL SESSION
+      # terminal 1 - camera
+      roslaunch sidewalk_perception ...            (phase 2)
+      # terminal 2 - mapping
+      roslaunch sidewalk_slam rtabmap_mapping.launch rtabmap_viz:=true
+      # ... drive the robot, INCLUDING back over ground you have already
+      #     covered, or no loop will ever close ...
+      # terminal 3 - when finished, save the 2D grid and export the 3D cloud
+      #              with map_manager.py (exact commands in README.md)
+
+  THE ONE PIECE OF OPERATOR ADVICE THAT MATTERS
+      Drive slowly, and revisit places. RTAB-Map recognises a place by how it
+      LOOKS, so it will only close a loop if you return to roughly the same
+      viewpoint. Driving a corridor out and back gives you two loop closure
+      opportunities; driving a figure of eight gives you many. Driving one long
+      line and stopping gives you none at all, and the map will be pure
+      accumulated drift no matter how good the algorithm is.
+-->
+<launch>
+
+  <arg name="camera_name" default="zedx_front"/>
+  <arg name="node_name"   default="zed_node"/>
+
+  <arg name="database_path" default="/media/sidewalk/SIDEWALK128/rtabmap_maps/sidewalk_front.db"
+       doc="Where the map is written. One SQLite file holds the entire map.
+            Lives on the 128GB SD card, not the Jetson's own root disk."/>
+
+  <!-- DESTRUCTIVE, and false on purpose.
+
+       Most RTAB-Map tutorials set this true so that repeated experiments start
+       clean. That is fine on a tutorial and expensive here: run the launch file
+       twice out of habit and the first session's map is gone.
+
+       Pass delete_db_on_start:=true explicitly when you really do want to start
+       over, or - better - give a NEW database_path per session so nothing is
+       ever overwritten and every map is archived by name. -->
+  <arg name="delete_db_on_start" default="false"/>
+
+  <arg name="visual_odometry" default="true"/>
+  <arg name="force_3dof"      default="true"
+       doc="true for indoor flat floors (Phase 3-4). false outdoors."/>
+  <arg name="rtabmap_viz"     default="false"/>
+  <arg name="rviz"            default="false"/>
+  <arg name="use_sim_time"    default="false"/>
+  <arg name="frame_id"        default="base_link"/>
+  <arg name="approx_sync"     default="false"/>
+  <arg name="stereo"          default="false"
+       doc="true = stereo front end (stereo_sync + stereo_odometry) instead
+            of RGB-D. See rtabmap_common.launch; the back end is identical."/>
+  <arg name="queue_size"      default="5"
+       doc="Message queue depth. See the long note in rtabmap_common.launch:
+            these frames are 16 MB each, so this number governs how much memory
+            the stack can occupy before it starts dropping. Raise it only if you
+            actually see synchronisation warnings."/>
+  <arg name="wait_imu_to_init" default="true"
+       doc="See rtabmap_common.launch. Set false for the Gazebo sim, which
+            has no IMU topic to wait on."/>
+  <arg name="rtabmap_ns"      default="rtabmap"/>
+
+  <!-- Passed straight to the rtabmap node's command line. See the long note in
+       rtabmap_common.launch. Empty by default, so a normal run is unaffected. -->
+  <arg name="extra_rtabmap_params" default=""/>
+  <!-- true (default) = the camera tracker publishes odom -> base_link, as in
+       drives 1-2. false = the blend (fused_odometry.launch) owns it instead.
+       See rtabmap_common.launch. -->
+  <arg name="vo_publish_tf"   default="true"/>
+  <arg name="output"          default="screen"/>
+
+  <include file="$(find sidewalk_slam)/launch/rtabmap_common.launch">
+    <arg name="camera_name"        value="$(arg camera_name)"/>
+    <arg name="node_name"          value="$(arg node_name)"/>
+    <arg name="localization"       value="false"/>
+    <arg name="database_path"      value="$(arg database_path)"/>
+    <arg name="delete_db_on_start" value="$(arg delete_db_on_start)"/>
+    <arg name="visual_odometry"    value="$(arg visual_odometry)"/>
+    <arg name="force_3dof"         value="$(arg force_3dof)"/>
+    <arg name="rtabmap_viz"        value="$(arg rtabmap_viz)"/>
+    <arg name="rviz"               value="$(arg rviz)"/>
+    <arg name="use_sim_time"       value="$(arg use_sim_time)"/>
+    <arg name="frame_id"           value="$(arg frame_id)"/>
+    <arg name="approx_sync"        value="$(arg approx_sync)"/>
+    <arg name="stereo"             value="$(arg stereo)"/>
+    <arg name="queue_size"         value="$(arg queue_size)"/>
+    <arg name="wait_imu_to_init"   value="$(arg wait_imu_to_init)"/>
+    <arg name="rtabmap_ns"         value="$(arg rtabmap_ns)"/>
+    <arg name="extra_rtabmap_params" value="$(arg extra_rtabmap_params)"/>
+    <arg name="vo_publish_tf"      value="$(arg vo_publish_tf)"/>
+    <arg name="output"             value="$(arg output)"/>
+  </include>
+
+</launch>

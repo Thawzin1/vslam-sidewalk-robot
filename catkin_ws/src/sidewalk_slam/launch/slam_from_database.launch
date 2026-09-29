@@ -1,0 +1,109 @@
+<?xml version="1.0"?>
+<!--
+  slam_from_database.launch — run RTAB-Map fresh over a SAVED DATABASE's own
+  raw sensor data, using rtabmap_util's data_player node.
+
+  This is the companion to slam_from_recording.launch (which replays a
+  rosbag). Use THIS one when the only surviving recording is an RTAB-Map
+  database (.db) rather than a .bag — data_player reads the database's
+  stored images/odometry/tf back out and republishes them on live ROS
+  topics, exactly like a camera driver would, so a brand new RTAB-Map
+  instance can build its own map from scratch.
+
+  WHY THE TOPIC NAMES ARE HARD-CODED, NOT DERIVED FROM camera_name
+      data_player does not republish on the original zedx_front/zed_node/...
+      names the camera used when the database was first recorded - it always
+      publishes on a fixed, generic set of names: /left/image, /right/image,
+      /left/camera_info, /right/camera_info, /odom, /tf. Verified live against
+      this build 2026-08-24 (rostopic list after starting data_player alone).
+      So this file talks to rtabmap_common.launch directly (not through
+      rtabmap_mapping.launch, which can only override camera_name/node_name,
+      not the topic names themselves) and points the stereo topics at
+      data_player's actual output.
+
+  WHY wait_imu_to_init IS false HERE
+      data_player does not publish an imu topic at all (nothing in the
+      database's own recorded topic set corresponds to one for the office1
+      sim runs). Waiting for it would hang forever.
+
+  WHY THIS IS FOR VISUALISATION, NOT A MEASURED RUN
+      This produces a fresh map/database as a side effect, but the point is
+      the occupancy grid's growth over time (feed it into
+      map_manager.py timelapse), not a new number to report. Treat the
+      resulting database as scratch: it duplicates data already scored from
+      the original recording.
+-->
+<launch>
+
+  <arg name="database" doc="Path to the SAVED RTAB-Map .db to replay. REQUIRED."/>
+  <arg name="rate" default="1.0"
+       doc="WARNING: this is NOT the same semantic as rosbag play's --rate.
+            Verified live 2026-08-24 (office1_explore_03.db, 276 kept nodes):
+            rate=1.0 replayed the WHOLE database - which came from a ~78-minute
+            live drive - in under 5 minutes of wall-clock time (roughly
+            16-20x the recorded timestamps' own rate, measured from TF stamps
+            jumping ~316s of recorded time in the first ~15-20s of replay).
+            data_player paces by STORED NODE throughput, not by the gaps
+            between their original capture timestamps - RTAB-Map's own memory
+            management keeps far fewer nodes than raw camera frames, so a long
+            drive can have a short database. To slow a replay down (e.g. for a
+            timelapse sampler to have time to catch each state), lower this
+            well below 1.0; there is no principled 'real time' value here the
+            way there is for rosbag play."/>
+
+  <arg name="run_id" default="offline_db"/>
+  <arg name="output_database_path"
+       default="$(env HOME)/tmp_timelapse_replay/$(arg run_id)_SCRATCH.db"
+       doc="Where the FRESH map goes. Never the original file being replayed."/>
+  <arg name="force_3dof" default="true"/>
+  <arg name="rtabmap_viz" default="false"/>
+  <arg name="rviz" default="false"/>
+
+  <!-- MUST STAY false. THE TRAP THAT BROKE THE FIRST TWO ATTEMPTS:
+       data_player publishes the recorded odom->base_link TF itself
+       (its publish_tf param defaults to TRUE). If stereo_odometry is ALSO
+       started, both nodes publish that same transform and fight over it -
+       measured 552 TF_REPEATED_DATA warnings in one 15-minute replay.
+       The visible damage: RTAB-Map ingested 279 nodes but built
+       *** 279 poses and 0 links *** (`rtabmap-info` on the scratch db),
+       Working Memory never grew past 1 node, so no map was ever assembled,
+       /rtabmap/grid_map published just 2x in 936 s, and all 248 timelapse
+       frames came out byte-identical.
+       Using the database's OWN stored odometry instead leaves exactly one
+       TF publisher, and has the bonus of reproducing the original run's
+       trajectory rather than re-deriving a slightly different one. -->
+  <arg name="visual_odometry" default="false"/>
+
+  <param name="/use_sim_time" value="true"/>
+
+  <include file="$(find sidewalk_slam)/launch/rtabmap_common.launch">
+    <arg name="stereo"             value="true"/>
+    <arg name="left_image_topic"   value="/left/image"/>
+    <arg name="right_image_topic"  value="/right/image"/>
+    <arg name="left_info_topic"    value="/left/camera_info"/>
+    <arg name="right_info_topic"   value="/right/camera_info"/>
+    <arg name="visual_odometry"    value="$(arg visual_odometry)"/>
+    <!-- data_player republishes the stored odometry on plain /odom
+         (verified live 2026-08-24 via `rostopic list`), not on the
+         camera-namespaced default rtabmap_common.launch would otherwise use. -->
+    <arg name="odom_topic"         value="/odom"/>
+    <arg name="use_sim_time"       value="true"/>
+    <arg name="database_path"      value="$(arg output_database_path)"/>
+    <arg name="delete_db_on_start" value="true"/>
+    <arg name="wait_imu_to_init"   value="false"/>
+    <arg name="force_3dof"         value="$(arg force_3dof)"/>
+    <arg name="rtabmap_viz"        value="$(arg rtabmap_viz)"/>
+    <arg name="rviz"               value="$(arg rviz)"/>
+  </include>
+
+  <!-- required="true": when data_player reaches the end of the database, shut
+       the whole session down so this terminates by itself. database/rate are
+       private params (verified live: `rosrun rtabmap_util data_player
+       _database:=... _rate:=...`), not command-line args. -->
+  <node pkg="rtabmap_util" type="data_player" name="data_player"
+        output="screen" required="true">
+    <param name="database" value="$(arg database)"/>
+    <param name="rate" value="$(arg rate)"/>
+  </node>
+
+</launch>

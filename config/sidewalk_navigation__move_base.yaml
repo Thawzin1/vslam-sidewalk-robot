@@ -1,0 +1,37 @@
+# move_base.yaml - the navigation program's own settings (move_base, ROS Noetic navigation 1.17.3, Jetson).
+# Used live 27 Sept 2026 (s2_nav_01..03). Every name below was checked on THIS build by loading it and reading it back
+# (sim dry run, sim_results/params_move_base.yaml); a misspelt name is silently ignored by move_base, so the
+# read-back is the only proof. Values borrow from Clearpath's husky_navigation (installed, 0.6.10) and the
+# project's own sidewalk_navigation where they fit; every difference is explained.
+
+base_global_planner: global_planner/GlobalPlanner   # route over the whole saved map (Dijkstra, below)
+base_local_planner: dwa_local_planner/DWAPlannerROS # turns the route into wheel commands (Fox et al. 1997)
+
+controller_frequency: 10.0   # Hz: wheel commands per second. Husky's own driver runs at 10 Hz
+                             # (etc_ros base.launch control_frequency 10.0), so faster buys nothing.
+                             # *Plain terms: ten steering decisions a second.*
+planner_frequency: 1.0       # Hz: re-plan the whole route once a second, so a corrected position after a
+                             # localisation fix, or a newly seen obstacle, reshapes the route within 1 s.
+controller_patience: 3.0     # s without any safe wheel command before trying the clearing recoveries.
+planner_patience: 5.0        # s without any route before trying the clearing recoveries.
+max_planning_retries: 3      # then give up on this goal (reported as ABORTED; the robot stays stopped).
+oscillation_timeout: 30.0    # s without 0.2 m of progress = "stuck" -> recoveries. A turn on the spot is
+                             # not "progress" to move_base: a 180 deg turn at the 0.2 rad/s floor takes 16 s,
+                             # and the sim dry run (run2) aborted goal G1 at 15 s while it was still turning.
+oscillation_distance: 0.20
+shutdown_costmaps: false     # keep the maps alive between goals.
+
+# What move_base may do by itself when stuck: ONLY forget camera obstacles (never the saved walls), first
+# beyond 3 m, then all. It never spins in place by itself (clearing_rotation_allowed false): an unplanned spin
+# in a 1.7 m corridor is the one move the person beside the robot cannot predict.
+recovery_behavior_enabled: true
+clearing_rotation_allowed: false
+recovery_behaviors:
+  - {name: conservative_clear, type: clear_costmap_recovery/ClearCostmapRecovery}
+  - {name: aggressive_clear,   type: clear_costmap_recovery/ClearCostmapRecovery}
+conservative_clear:
+  reset_distance: 3.0
+  layer_names: ["obstacle_layer"]
+aggressive_clear:
+  reset_distance: 0.0
+  layer_names: ["obstacle_layer"]

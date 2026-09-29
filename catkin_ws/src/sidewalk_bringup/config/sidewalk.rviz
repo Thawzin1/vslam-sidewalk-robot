@@ -1,0 +1,102 @@
+# RViz layout for bringup.launch's own stated purpose (bringup.launch:96-102):
+# a raw-sensor sanity check — load the robot model together with the live
+# point cloud and confirm the ground plane in the cloud lines up with the
+# wheels in the model. This is NOT a SLAM view: bare bringup.launch never
+# runs RTAB-Map, so nothing here may depend on a `map` frame — Fixed Frame is
+# base_link, the confirmed root link of sidewalk_robot.urdf.xacro.
+#
+# The camera displays below are disabled by default so this file loads
+# cleanly with camera:=false too; enable them by hand (or re-save with
+# Enabled: true) when running with camera:=true. Topics and bounded queue
+# sizes match sidewalk_perception/config/perception.rviz, which uses this
+# same raw-topic set safely and is not implicated in the documented RViz
+# memory-livelock incident (docs/SOLVED.md, 2026-08-21).
+Panels:
+  - Class: rviz/Displays
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Global Options1
+      Splitter Ratio: 0.5
+    Tree Height: 700
+  - Class: rviz/Views
+    Name: Views
+Visualization Manager:
+  Class: ""
+  Name: root
+  Global Options:
+    Background Color: 48; 48; 48
+    Fixed Frame: base_link
+    Frame Rate: 30
+  Displays:
+    - Class: rviz/Grid
+      Name: Grid
+      Enabled: true
+      Cell Size: 1
+      Plane Cell Count: 20
+      Color: 160; 160; 164
+    - Class: rviz/RobotModel
+      Name: RobotModel
+      Enabled: true
+      Alpha: 1
+      Collision Enabled: false
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+      Robot Description: robot_description
+      TF Prefix: ''
+      Update Interval: 0
+      Visual Enabled: true
+    - Class: rviz/TF
+      Name: TF
+      Enabled: true
+      Show Names: true
+      Show Axes: true
+      Show Arrows: false
+      Marker Scale: 0.3
+    - Class: rviz/Image
+      Name: Left rectified (camera:=true only)
+      Enabled: false
+      Image Topic: /zedx_front/left/image_rect_color
+      Transport Hint: raw
+      Queue Size: 5
+      Normalize Range: true
+    - Class: rviz/PointCloud2
+      Name: Point cloud (camera:=true only)
+      Enabled: false
+      Topic: /zedx_front/point_cloud/cloud_registered
+      Queue Size: 3
+      Size (m): 0.02
+      Style: Points
+      Color Transformer: RGB8
+      Decay Time: 0
+      # This is the ground-plane-vs-wheels check bringup.launch's own header
+      # describes: with camera:=true and this display enabled, the cloud's
+      # ground plane should visibly line up with the RobotModel's wheels.
+  Enabled: true
+  Global Options:
+    Fixed Frame: base_link
+  Tools:
+    - Class: rviz/Interact
+    - Class: rviz/MoveCamera
+    - Class: rviz/Select
+  Views:
+    Current:
+      Class: rviz/Orbit
+      Name: Current View
+      Distance: 4
+      Focal Point:
+        X: 0
+        Y: 0
+        Z: 0
+      Pitch: 0.4
+      Yaw: 3.6
+      Target Frame: <Fixed Frame>
+Window Geometry:
+  Height: 1000
+  Width: 1600
+  Displays:
+    collapsed: false

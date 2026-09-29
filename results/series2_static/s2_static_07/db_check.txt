@@ -1,0 +1,1 @@
+PASS ~/slam_series2/s2_static_07.db: quick_check=['ok'], 729 map nodes, 0.7 s

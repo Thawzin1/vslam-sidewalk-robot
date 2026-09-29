@@ -1,0 +1,49 @@
+{
+ "run": "s2_static_08",
+ "reference": "lidar_reference_dense.tum (LiDAR map, filled in with the wheels; NOT ground truth)",
+ "association_s": 0.05,
+ "time_offset_s": 0.0,
+ "note": "size-fitted (Sim(3)) numbers are for information only; the rigid (SE(3)) numbers are the result",
+ "estimates": {
+  "camera_corrected": {
+   "n_pairs": 474,
+   "se3": {
+    "scale_applied": 1.0,
+    "median_m": 1.971,
+    "p95_m": 3.085,
+    "max_m": 3.42
+   },
+   "sim3": {
+    "scale_applied": 1.0131,
+    "median_m": 1.924,
+    "p95_m": 3.044,
+    "max_m": 3.372
+   },
+   "control_se3_reproduces_agreement_json": true,
+   "agreement_json_se3": [
+    1.971,
+    3.085
+   ]
+  },
+  "camera_tracking": {
+   "n_pairs": 662,
+   "se3": {
+    "scale_applied": 1.0,
+    "median_m": 1.818,
+    "p95_m": 3.031,
+    "max_m": 3.212
+   },
+   "sim3": {
+    "scale_applied": 0.9143,
+    "median_m": 2.185,
+    "p95_m": 3.287,
+    "max_m": 3.587
+   },
+   "control_se3_reproduces_agreement_json": true,
+   "agreement_json_se3": [
+    1.818,
+    3.031
+   ]
+  }
+ }
+}

@@ -1,0 +1,121 @@
+<?xml version="1.0"?>
+<!--
+  husky_mcity_gazebo.launch - the Husky in Mcity, the OSRF recreation of
+  Michigan's autonomous-vehicle test facility.
+
+  A thin wrapper around husky_real_gazebo.launch, changing only what this
+  world needs. Nothing else is duplicated: two launch files describing the
+  same robot would drift apart the first time either was edited.
+
+  THE MODEL PATH IS THE ONE THING THAT MUST BE RIGHT
+    The mcity mesh lives in this package under models/, not in Gazebo's
+    default search path, so GAZEBO_MODEL_PATH is extended below. Without it
+    the world loads with the sun and physics but NO GEOMETRY, and the robot
+    falls forever through an empty scene. $(optenv ...) preserves whatever
+    was already on the path rather than replacing it.
+
+  THE TOWN WAS RESCALED ON 2026-08-21 (0.254 -> 0.127)
+    The mesh scale was wrong by a factor of two. The full argument is in
+    models/mcity/model.sdf; the short version is that it made every kerb
+    0.316 m == 1.9x the Husky's wheel radius, an impassable wall. Halving
+    it gives a 0.158 m kerb (the US 6-inch standard, just under one wheel
+    radius) and shrinks the town from 584x925 m to 292x463 m.
+
+    So the spawn pose below is the OLD one halved, and it lands on the same
+    piece of sidewalk as before == the town did not move, it shrank about
+    its own origin.
+
+  WHY THE SPAWN POSE IS WHAT IT IS
+    Mcity is 292 m x 463 m. Where you start matters enormously, and not for
+    the obvious reason.
+
+    The first choice here was the sidewalk patch nearest the mesh origin.
+    It was measured and it FAILS: 6 ORB keypoints on the decimated image
+    against the 20 RTAB-Map needs. That spot is a wide concrete apron
+    facing open ground, and Mcity's Concrete_Ground texture is near-uniform
+    pale grey. Tiling textures are necessary for features but not
+    sufficient == they also have to have CONTRAST, and a big flat pale
+    surface under empty sky has none.
+
+    Relative feature richness across the town, from the pre-rescale survey.
+    The COUNTS BELOW ARE STALE == they were measured at 0.254, and halving
+    the world changes how much of each surface fills the frame. Their
+    RANKING is still the useful part; re-measure the count before any
+    recorded run.
+
+        -12.375,  -56.140   was 812   beside building cluster   <== default
+        -34.325,  -39.335   was 154   building cluster C
+        -19.670,  -54.125   was 137   dense buildings
+        -57.230,  -13.880   was  39   west buildings, marginal
+         -4.000,  -14.275   was   6   open concrete apron, FAILS
+         -2.070,  -54.125   was   0   camera ends up inside geometry
+
+    Sidewalk surfaces now sit at z = 0.158 (they were 0.316 before the
+    rescale) == Mcity's sidewalks are genuinely raised above the roadway ==
+    so spawn_z 0.45 drops the robot cleanly onto one. It should settle at
+    0.158 + 0.13228 = 0.290.
+
+    IF YOU MOVE THE SPAWN, RE-MEASURE. Feature richness varies by more than
+    two orders of magnitude across this map.
+
+  THE SPAWN HEADING MAKES THE SCENE
+    yaw 2.85 points the robot down the sidewalk along -x. That puts the
+    street on its LEFT, with the parked cars added to mcity.world beside
+    it, and the pedestrians ahead on the walking line. Turning the robot
+    around does not break anything, but it does throw away the scene.
+
+  WHAT THIS WORLD OFFERS THAT THE OTHERS DO NOT
+    Real kerb reveals, crosswalks, lane markings, buildings, and a road
+    network with intersections and a roundabout. It is also the only world
+    here with genuine height changes on the pedestrian route, which makes
+    it the one candidate for the Reg/Force3DoF question besides
+    sidewalk.world's synthetic camber.
+
+  USAGE
+    roslaunch sidewalk_sim husky_mcity_gazebo.launch gui:=true rviz:=false zedx:=true
+
+  BEFORE ANY RECORDED RUN, measure the feature count (see ENGINEERING_NOTES.md). This
+  mesh passes on paper == its UVs tile rather than stretch == but paper is
+  not the running system, and the rescale has not yet been measured live.
+-->
+<launch>
+
+  <arg name="gui"   default="true"/>
+  <arg name="rviz"  default="true"/>
+  <arg name="zedx"  default="false"/>
+  <arg name="zedx_parent" default="zedx_base_frame"/>
+  <arg name="zedx_xyz"    default="0 0 0"/>
+  <arg name="zedx_rpy"    default="0 0 0"/>
+  <arg name="zedx_stereo" default="false"/>
+  <arg name="zedx_noise_stddev" default="0.005"/>
+
+  <arg name="spawn_x"   default="-12.375"/>
+  <arg name="spawn_y"   default="-56.140"/>
+  <arg name="spawn_z"   default="0.45"/>
+  <arg name="spawn_yaw" default="2.85"
+       doc="Points down the sidewalk along -x, street on the left. See the
+            header: this heading is what puts the cars and pedestrians in
+            frame."/>
+
+  <!-- Extend, do not replace, the model search path. -->
+  <env name="GAZEBO_MODEL_PATH"
+       value="$(find sidewalk_sim)/models:$(optenv GAZEBO_MODEL_PATH)"/>
+
+  <include file="$(find sidewalk_sim)/launch/husky_real_gazebo.launch">
+    <arg name="world"     value="$(find sidewalk_sim)/worlds/mcity.world"/>
+    <arg name="spawn_x"   value="$(arg spawn_x)"/>
+    <arg name="spawn_y"   value="$(arg spawn_y)"/>
+    <arg name="spawn_z"   value="$(arg spawn_z)"/>
+    <arg name="spawn_yaw" value="$(arg spawn_yaw)"/>
+
+    <arg name="gui"         value="$(arg gui)"/>
+    <arg name="rviz"        value="$(arg rviz)"/>
+    <arg name="zedx"        value="$(arg zedx)"/>
+    <arg name="zedx_parent" value="$(arg zedx_parent)"/>
+    <arg name="zedx_xyz"    value="$(arg zedx_xyz)"/>
+    <arg name="zedx_rpy"    value="$(arg zedx_rpy)"/>
+    <arg name="zedx_stereo" value="$(arg zedx_stereo)"/>
+    <arg name="zedx_noise_stddev" value="$(arg zedx_noise_stddev)"/>
+  </include>
+
+</launch>

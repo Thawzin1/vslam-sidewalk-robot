@@ -1,0 +1,90 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>sidewalk_slam</name>
+  <version>0.3.0</version>
+
+  <description>
+    Phase 3-4 of the Mitacs sidewalk VSLAM project: make the robot able to build
+    a map of a place it has never seen, and then find itself on that map again.
+
+    RTAB-Map is the PRIMARY mapping and localisation system, consuming ZED X
+    depth, rectified colour and the camera's 200 Hz IMU. It produces both a 2D
+    occupancy grid for navigation and a 3D point cloud map, in a single
+    saveable, reloadable database, with separate mapping and
+    localisation-on-an-existing-map modes.
+
+    Two comparative baselines run over IDENTICAL recorded input: the ZED SDK's
+    own closed-source visual-inertial positional tracking, and ORB-SLAM3 in
+    stereo or stereo-inertial mode. All three emit trajectories in one common
+    TUM format so that the evaluation package can compare them directly. That
+    three-way comparison on identical data is the core research contribution of
+    the project.
+
+    The package also contains a build helper that adds the ROS layer of
+    rtabmap_ros against the RTAB-Map core already installed on the Jetson
+    (0.21.10, in /usr/local) rather than installing a second copy of it, a
+    generator that writes ORB-SLAM3's settings file from live camera_info so the
+    intrinsics can never go stale, and a validator that refuses to let a
+    physically implausible run be treated as a result.
+  </description>
+
+  <maintainer email="thawzin@users.noreply.github.com">Thaw Zin</maintainer>
+  <license>MIT</license>
+  <author email="thawzin@users.noreply.github.com">Thaw Zin</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- Core ROS interfaces actually used by the nodes in scripts/. -->
+  <depend>rospy</depend>
+  <depend>roscpp</depend>
+  <depend>std_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>rosbag</depend>
+
+  <!-- NOTE ON rtabmap_ros
+       The launch files reference rtabmap_sync, rtabmap_odom, rtabmap_slam and
+       rtabmap_viz. Those are deliberately NOT declared as dependencies.
+
+       On the Jetson only rtabmap_msgs is currently built; the rest are added by
+       scripts/build_rtabmap_ros.py as a documented setup step. On a computer
+       without ROS and on any CI runner, none of them exist at all. Declaring them
+       here would make this package fail to CONFIGURE on every machine except a
+       fully-provisioned Jetson, which would block work on the documentation and
+       the offline tooling for no benefit.
+
+       roslaunch resolves node packages at launch time and gives a clear
+       "cannot locate node of type [rtabmap] in package [rtabmap_slam]" if they
+       are missing, which is a better error than a build failure three packages
+       away.
+
+       Same reasoning for zed_wrapper (external, needs the ZED SDK) and for
+       ORB_SLAM3, which is not a ROS package at all.
+  -->
+
+  <!-- Optional runtime tools. exec_depend so that their absence on a headless
+       robot cannot block a build. -->
+  <exec_depend>map_server</exec_depend>
+  <exec_depend>rviz</exec_depend>
+  <exec_depend>rostopic</exec_depend>
+  <exec_depend>tf2_tools</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
+  <!-- Only used by map_manager.py's timelapse-video subcommand, to pad grid
+       snapshots onto a shared canvas before stitching them into a video. -->
+  <exec_depend>python3-pil</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+  <!-- launch/fused_odometry.launch (drive 3, 2026-09-24): the EKF that blends wheels,
+       gyroscope and camera. Installed on the Jetson as ros-noetic-robot-localization 2.7.7. -->
+  <exec_depend>robot_localization</exec_depend>
+
+  <!-- Sibling package: provides scripts/run_logger.py, the shared logging
+       helper that every node in this package writes through. slam_common.py
+       falls back to a local logger if it is missing, so this is exec_depend
+       rather than depend, but the fallback loses the RUNLOG.md summary line. -->
+  <exec_depend>sidewalk_bringup</exec_depend>
+
+  <export/>
+</package>

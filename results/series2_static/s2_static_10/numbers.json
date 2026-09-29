@@ -1,0 +1,145 @@
+{
+ "run": "s2_static_10",
+ "sources": {
+  "paths": "~/.run_records/s2_static_10/fusion.bag (/fused/odometry, /robot/ekf_odom, /rtabmap/odom, /robot/wheel_odom)",
+  "turns": "<repo>/results/series2_static/s2_static_10/turns_replayed.log (turn watcher's rule REPLAYED after the drive from fusion.bag; UTC in the file, Hamilton here)",
+  "link": "~/.run_records/s2_static_10/bridge_recv.log",
+  "rtabmap_timing": "~/slam_series2/s2_static_10.db (Statistics table, read-only)"
+ },
+ "tracking_alone_gaps": {
+  "blend": {
+   "end_to_start_m": 2.111,
+   "heading_deg": -1.5,
+   "path_m": 293.6,
+   "first": "02:02:27",
+   "last": "02:31:20"
+  },
+  "robot": {
+   "end_to_start_m": 2.027,
+   "heading_deg": -14.92,
+   "path_m": 264.5,
+   "first": "02:02:27",
+   "last": "02:31:20"
+  },
+  "camera": {
+   "end_to_start_m": 2.081,
+   "heading_deg": -4.02,
+   "path_m": 294.2,
+   "first": "02:02:27",
+   "last": "02:31:20"
+  }
+ },
+ "camera_tracking_lost": {
+  "stretches": 15,
+  "seconds_total": 58.4,
+  "longest_s": 12.6,
+  "share_of_messages_pct": 3.1,
+  "rule": "/rtabmap/odom message with covariance >= 9998 or an all-zero pose (RTAB-Map's lost signal)"
+ },
+ "blend_heading_while_still": {
+  "stops": 60,
+  "seconds_still": 677.6,
+  "signed_sum_deg": -3.907,
+  "sum_abs_net_per_stop_deg": 6.189,
+  "sum_abs_steps_deg": 47.688,
+  "largest_stop_net_deg": -4.078,
+  "rule": "robot wheel odometry speed and turn rate both zero, below 1e-6 - the log holds 1e-16 float noise, not 0.0 (nearest wheel message within 0.3 s)"
+ },
+ "turns": {
+  "n": 29,
+  "abs_blend_minus_robot_deg": {
+   "median": 0.2,
+   "p95": 1.36,
+   "max": 1.9
+  },
+  "abs_camera_minus_robot_deg": {
+   "median": 3.4,
+   "p95": 25.28,
+   "max": 53.1
+  },
+  "within_1deg_blend": 24,
+  "within_1deg_camera": 3,
+  "turns_with_no_camera_value": 1
+ },
+ "link": {
+  "down_events": 19,
+  "down_lines_hamilton": [
+   "02:05:00 STATE DOWN no bytes for 1.5 s",
+   "02:08:37 STATE DOWN no bytes for 1.5 s",
+   "02:08:47 STATE DOWN no bytes for 1.5 s",
+   "02:09:50 STATE DOWN no bytes for 1.5 s",
+   "02:09:58 STATE DOWN no bytes for 1.5 s",
+   "02:11:20 STATE DOWN no bytes for 1.5 s",
+   "02:11:32 STATE DOWN no bytes for 1.5 s",
+   "02:11:47 STATE DOWN no bytes for 1.5 s",
+   "02:12:18 STATE DOWN no bytes for 1.5 s",
+   "02:13:55 STATE DOWN no bytes for 1.5 s",
+   "02:14:47 STATE DOWN no bytes for 1.5 s",
+   "02:16:39 STATE DOWN no bytes for 1.5 s",
+   "02:17:52 STATE DOWN no bytes for 1.5 s",
+   "02:18:46 STATE DOWN no bytes for 1.5 s",
+   "02:23:11 STATE DOWN no bytes for 1.5 s",
+   "02:23:36 STATE DOWN no bytes for 1.5 s",
+   "02:24:45 STATE DOWN no bytes for 1.5 s",
+   "02:25:58 STATE DOWN no bytes for 1.5 s",
+   "02:27:22 STATE DOWN no bytes for 1.5 s"
+  ],
+  "receiver_sessions": 1,
+  "connects": 20,
+  "sessions": [
+   {
+    "elapsed_s": 1792.5,
+    "per_topic": {
+     "/husky_velocity_controller/odom": {
+      "robot_read": 18145,
+      "robot_sent": 16026,
+      "published_on_jetson": 15411,
+      "pct_of_sent": 96.16,
+      "pct_of_robot_read": 84.93,
+      "missed_while_down": 1884,
+      "stale": 403,
+      "lost": 158
+     },
+     "/imu/data": {
+      "robot_read": 35252,
+      "robot_sent": 31113,
+      "published_on_jetson": 29952,
+      "pct_of_sent": 96.27,
+      "pct_of_robot_read": 84.97,
+      "missed_while_down": 3653,
+      "stale": 764,
+      "lost": 323
+     },
+     "/imu/data_raw": {
+      "robot_read": 35252,
+      "robot_sent": 31142,
+      "published_on_jetson": 29966,
+      "pct_of_sent": 96.22,
+      "pct_of_robot_read": 85.01,
+      "missed_while_down": 3628,
+      "stale": 770,
+      "lost": 328
+     },
+     "/odometry/filtered": {
+      "robot_read": 90757,
+      "robot_sent": 80172,
+      "published_on_jetson": 77122,
+      "pct_of_sent": 96.2,
+      "pct_of_robot_read": 84.98,
+      "missed_while_down": 9345,
+      "stale": 2001,
+      "lost": 851
+     }
+    }
+   }
+  ]
+ },
+ "processor_rtabmap": {
+  "rtabmap_ms_per_node": {
+   "n": 1558,
+   "median": 544.2,
+   "p95": 750.9,
+   "max": 5836.5
+  }
+ }
+}

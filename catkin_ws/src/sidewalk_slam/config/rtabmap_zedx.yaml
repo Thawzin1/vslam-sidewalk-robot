@@ -1,0 +1,731 @@
+# =============================================================================
+# rtabmap_zedx.yaml — RTAB-Map parameters tuned for a ZED X on a
+# differential-drive sidewalk robot.
+#
+# HOW THESE ARE USED
+#   Loaded with <rosparam> into the PRIVATE namespace of the rtabmap node and
+#   of the odometry node. RTAB-Map reads parameters by their own slash-separated
+#   names ("Grid/CellSize"), which map onto ROS private parameters directly.
+#   Every value is a STRING on purpose: that is how RTAB-Map's own parser wants
+#   them, and it avoids YAML turning 30 into an int where RTAB-Map expected the
+#   text "30".
+#
+#   Parameters RTAB-Map does not recognise are reported as a warning on startup
+#   and ignored. That is a feature here: a couple of entries below are spelled
+#   both the old and the new way so that the file works across the 0.20/0.21
+#   renames without anyone having to guess which release is installed. If you
+#   see "Parameter ... not found" in the console, that is this file being
+#   deliberately belt-and-braces, not a bug.
+#
+#   To see every parameter this build actually supports:
+#       rtabmap --params | less
+#
+# THE GOVERNING PHYSICAL FACT
+#   The ZED X with the 4.6 mm lens has a minimum depth range of 1 metre. Nothing
+#   closer than that produces a valid depth reading at all. Several thresholds
+#   below exist purely to stop RTAB-Map treating the invalid near field as real
+#   geometry, and it is why an obstacle-avoidance layer built on this camera
+#   alone will be blind to a kerb the robot is about to touch.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Registration strategy
+# -----------------------------------------------------------------------------
+
+# 0 = visual only. There is no LiDAR on this robot, so ICP-based registration
+# (1) and the vision+ICP hybrid (2) are not options. When a LiDAR is fitted this
+# is the first parameter to revisit.
+Reg/Strategy: "0"
+
+# Constrain the pose graph to x, y and yaw only.
+#
+# This is a modelling choice, not a bug fix. A wheeled robot on a flat indoor
+# floor has three degrees of freedom, not six; telling the optimiser that
+# removes three ways for it to be wrong and makes the 2D grid consistent.
+#
+# It is WRONG on a real sidewalk. Kerb ramps, driveway crossings and camber all
+# violate the flat-ground assumption, and forcing 3DoF there will fight the IMU
+# and bend the map. Phase 3-4 is indoor mapping, so this is true; set
+# force_3dof:=false on the launch line for outdoor runs and say so in the log.
+Reg/Force3DoF: "true"
+
+# NOTE: `Optimizer/Slam2D` used to be set here as well. It was REMOVED from
+# RTAB-Map (this build is 0.21.13) and now lives only in the library's
+# `removedParameters_` table, so setting it did nothing except print
+# "Parameter name changed: Optimizer/Slam2D -> Reg/Force3DoF" on every launch.
+# Worse, it was pinned "true" while Reg/Force3DoF above follows the launch
+# argument, so the two disagreed whenever anyone ran force_3dof:=false.
+# Reg/Force3DoF is the live name and the only one needed.
+Optimizer/Strategy: "1"          # 1 = g2o. 0 = TORO (old), 2 = GTSAM.
+Optimizer/Iterations: "20"
+
+# Reject a loop closure whose optimisation residual exceeds this. A false loop
+# closure is far more damaging than a missed one: it welds two different places
+# together and the map folds in on itself, permanently. This is the guard.
+#
+# The number is a RATIO - residual divided by the link's standard deviation -
+# not a distance. That distinction is what forced this value up from 3.0.
+#
+# In run #4 every one of 224 loop-closure candidates was rejected. Their actual
+# residuals were small and sensible (0.11-0.25 m across a 14 m room), but they
+# were being divided by a standard deviation of 0.0316 m, because the SIMULATED
+# camera is noise-free and odometry therefore reports near-zero uncertainty
+# (std dev 0.0001 m). Divide a reasonable 11 cm disagreement by an unreasonable
+# certainty and you get a 3.5-sigma "outlier". The guard was working perfectly
+# on numbers that were wrong.
+#
+# The honest fix is sensor noise, so the covariance becomes real. Gazebo will
+# not do that on a depth sensor - see the long note in
+# sidewalk_bringup/urdf/zedx_mount.urdf.xacro, where it is measured. So instead
+# the threshold is loosened by roughly the factor odometry is over-confident by
+# (~3x), which is where 8.0 comes from.
+#
+# UPDATE 2026-08-21: this whole approach was abandoned. Raising 3.0 -> 8.0 was
+# aimed at the wrong magnitude, and the reason is instructive.
+#
+# Measured on the verification run: loop closure correctly detected that the
+# robot was 1.0 m off (confirmed independently - ground truth said 1.149 m). It
+# proposed exactly the right correction. RTAB-Map discarded it anyway:
+#
+#   error ratio of 31.64 (edge 250->289, abs error=1.000614 m, stddev=0.031623)
+#
+# 1.0 m divided by a claimed 0.0316 m standard deviation is 31 sigma. Admitting
+# it would need a threshold of ~35, and a threshold that permissive no longer
+# rejects anything at all - including the genuinely false closures this guard
+# exists to stop, which corrupted an earlier map.
+#
+# The test itself is unusable here. It is a SIGMA RATIO, and sigma is fabricated:
+# the simulated camera has no noise, so odometry claims 3 cm precision it does
+# not have. No threshold can be right when the denominator is fiction.
+#
+# REVERTED 2026-08-21 after the Vertigo experiment was run and scored.
+#
+# Setting this to 0 and turning on Optimizer/Robust DID work in the sense that
+# loop closures finally started being accepted - 1,455 global plus 656 local,
+# confirmed in the database, after a project history of exactly zero. It also
+# made the map 18x worse:
+#
+#     threshold rejection, 0 closures accepted   ATE 0.141 m
+#     Vertigo robust,  2,111 closures accepted   ATE 2.560 m
+#
+# CPU starvation was ruled out (odometry frame time flat at 0.115-0.125 s) and
+# no single bad closure was responsible (largest one-second jump 0.624 m). The
+# error signature was closures repeatedly yanking the map and never settling.
+#
+# The reason is the same fabricated covariance as before: with no sensor noise
+# there is nothing to distinguish a good closure from a bad one, so admitting
+# them all simply injects error. In a noise-free sim, loop closure turns out to
+# be both unnecessary - odometry alone reaches 0.141 m - and harmful.
+#
+# So: back to the configuration that measured 0.141 m. This is a simulation
+# artifact, not a pipeline defect. On the real ZED X, genuine noise makes the
+# covariance honest and the trade reverses, at which point Optimizer/Robust is
+# worth re-testing properly.
+RGBD/OptimizeMaxError: "3.0"
+
+# Robust graph optimization (Vertigo). THIS is the tool for "my covariances
+# cannot be trusted".
+#
+# Rather than pre-filtering loop closures by a sigma threshold, Vertigo admits
+# every one of them and adds a switch variable per closure that the optimizer
+# solves for alongside the poses. A closure that disagrees with the rest of the
+# graph gets its switch pulled toward zero and quietly stops contributing. So
+# outliers are down-weighted by evidence instead of by a threshold that depends
+# on a covariance the simulator invented.
+#
+# Requires g2o or GTSAM (Optimizer/Strategy above is 1 = g2o) and a build with
+# Vertigo. Verified present on this Jetson: `rtabmap --version` reports
+# "With Vertigo: true".
+Optimizer/Robust: "false"
+
+# Keep the map frame anchored to the FIRST node rather than the latest one.
+# With "true" the whole map jumps every time the graph is optimised, which is
+# visually dramatic and makes recorded trajectories hard to compare.
+RGBD/OptimizeFromGraphEnd: "false"
+
+# Fuse the IMU's gravity direction into the graph. This is what stops roll and
+# pitch drifting away over a long run: gravity is an absolute, always-available
+# reference for two of the three rotational degrees of freedom. Yaw has no such
+# reference, which is why yaw drift is the hard problem and loop closure is the
+# only real cure for it.
+# Smaller = trust the IMU more. 0.3 rad is a deliberately loose default.
+Optimizer/GravitySigma: "0.3"
+
+# -----------------------------------------------------------------------------
+# When to add a node to the map
+# -----------------------------------------------------------------------------
+
+# Do not add a new node unless the robot has actually moved 5 cm or turned
+# ~3 degrees. Without this, a robot waiting at a crossing adds a node every
+# second, the database grows without bound, and loop closure gets slower and
+# less discriminating because the map is full of near-identical views of one
+# spot.
+RGBD/LinearUpdate: "0.05"
+RGBD/AngularUpdate: "0.05"
+
+# Cap the map update to 1 Hz. RTAB-Map's real-time guarantee comes from
+# bounding how often the expensive part runs, not from making it faster.
+Rtabmap/DetectionRate: "1.0"
+
+# 0 = no time limit per iteration. Appropriate for offline validation over a
+# recording, where correctness matters more than keeping up. For LIVE running
+# on the robot set this to about 700 (ms) so RTAB-Map starts moving older
+# nodes out of working memory instead of falling behind the camera.
+Rtabmap/TimeThr: "0"
+Rtabmap/MemoryThr: "0"
+
+# -----------------------------------------------------------------------------
+# Loop closure detection
+# -----------------------------------------------------------------------------
+
+# Minimum probability before two places are declared the same. Lowering it
+# finds more loop closures and more false ones; the 3.0 m residual guard above
+# is what makes a moderately permissive threshold safe.
+Rtabmap/LoopThr: "0.11"
+
+# Short-term memory: how many recent nodes are held back from loop-closure
+# consideration. Without it the system would keep "recognising" the place it
+# was standing two seconds ago.
+Mem/STMSize: "30"
+
+# KEEP THE RAW DATA. This is what makes the database re-exportable into a 3D
+# cloud afterwards, and what makes rtabmap-reprocess able to re-run the whole
+# session with different parameters without going back to the robot. It is also
+# why an hour of mapping is measured in gigabytes.
+Mem/BinDataKept: "true"
+Mem/RehearsalSimilarity: "0.6"
+
+# 8 = GFTT/ORB: GFTT finds the corners, ORB describes them.
+#
+# This used to say "6" (GFTT/BRIEF), which was a lie the logs quietly exposed.
+# BRIEF, FREAK and DAISY all live in OpenCV's `xfeatures2d` contrib module, and
+# the OpenCV this Jetson has (4.2.0) was built WITHOUT it:
+#
+#   rtabmap --version  ->  With OpenCV xfeatures2d: false
+#
+# so RTAB-Map fell back on its own and printed, once per frame:
+#
+#   "BRIEF, FREAK and DAISY features cannot be used because OpenCV was not
+#    built with xfeatures2d module. GFTT/ORB is used instead."
+#
+# Strategy 8 was therefore what actually ran the whole time; asking for 6 only
+# made this file disagree with reality. Now it says what happens. The same
+# build constraint rules out strategies 0, 1, 3, 4, 5, 6, 12, 13 and 14 -
+# usable here are 2 (ORB), 7 (BRISK), 8 (GFTT/ORB), 9 (KAZE), 10 (ORB-OCTREE).
+Kp/DetectorStrategy: "8"
+Kp/MaxFeatures: "500"
+Vis/FeatureType: "8"
+
+# -----------------------------------------------------------------------------
+# Visual registration between two nodes
+# -----------------------------------------------------------------------------
+
+# Below this many geometrically consistent matches, refuse to accept the
+# transform. 20 is conservative; raising it makes loop closures rarer and much
+# more trustworthy.
+Vis/MinInliers: "20"
+
+# 1 = PnP (3D-to-2D). More robust than 3D-to-3D for a stereo rig because it
+# does not require BOTH observations to have good depth - and depth quality
+# falls off fast with range on a 120 mm baseline.
+Vis/EstimationType: "1"
+Vis/InlierDistance: "0.1"
+Vis/CorGuessWinSize: "40"
+
+# Nearest-neighbour distance ratio: accept a match only if the best candidate is
+# clearly better than the second-best. Default is 0.8 (permissive).
+#
+# Tightened to 0.7 because the run #3 logs showed the failure mode this guards
+# against: lines like "Not enough inliers 0/20 (matches=64)" - plenty of matches
+# proposed, almost none geometrically consistent. That gap is what ambiguous
+# matching looks like, and it happens when several places in the image look
+# alike, so the "best" match is nearly a coin toss between them. Rejecting the
+# ambiguous ones early gives RANSAC fewer but more honest correspondences.
+Vis/CorNNDR: "0.7"
+
+# Ignore features closer than the camera's minimum depth range and further than
+# the range at which stereo depth stops being trustworthy.
+#
+# The ZED X datasheet quotes depth error under 0.4% out to 2 m and under 7% at
+# 20 m. That is the z^2/(f*b) growth of stereo depth uncertainty. Beyond ~15 m
+# a feature's 3D position is mostly guesswork, and feeding guesswork into pose
+# estimation biases it smoothly and invisibly.
+#
+# (This comment said "~0.2% at 1 m and ~3.1% at 15 m" until 2026-08-29 and
+# attributed it to the datasheet. Those two figures are not in the datasheet;
+# they had been written from memory. The Vis/MaxDepth value below is NOT
+# changed by the correction — 15 m still sits inside the "ideal range" the
+# datasheet gives as 1.0-20 m, and the 7%-at-20 m bound reinforces rather than
+# contradicts the reason for stopping short of it.)
+Vis/MinDepth: "1.0"
+Vis/MaxDepth: "15.0"
+
+# -----------------------------------------------------------------------------
+# Stereo-mode pins (Phase 1)
+#
+# Four parameters the stereo front end depends on, pinned EXPLICITLY at this
+# build's verified defaults (checked against `rtabmap --params` on 0.21.13,
+# 2026-08-22) rather than inherited silently - per the repo rule that
+# compile-time-conditional defaults are never trusted (ENGINEERING_NOTES.md 4.6). They
+# are inert in RGB-D mode, so pinning them keeps both A/B arms on literally
+# identical configuration.
+# -----------------------------------------------------------------------------
+
+# Both sim and real images arrive rectified: Gazebo cameras are ideal pinhole
+# (D=0, R=I - the images are BORN rectified), and the real ZED wrapper
+# publishes *_rect topics. Never let RTAB-Map re-rectify.
+Rtabmap/ImagesAlreadyRectified: "true"
+
+# Optical-flow stereo correspondence (default). The alternative block-matcher
+# is a fallback if flow ever proves unstable on the noisy sim images.
+Stereo/OpticalFlow: "true"
+Stereo/MaxDisparity: "128.0"
+
+# Covariance scaling for PnP with stereo-estimated depth. The parameter's own
+# help text: "For depth estimated by stereo, 4 or more maybe used to ignore
+# large errors of very far points."
+Vis/PnPVarianceMedianRatio: "4"
+
+# -----------------------------------------------------------------------------
+# Odometry (used when visual_odometry:=true)
+# -----------------------------------------------------------------------------
+
+Odom/Strategy: "0"               # 0 = frame-to-map, the robust default
+Odom/GuessMotion: "true"
+# How many CONSECUTIVE unusable frames before odometry re-anchors itself.
+#
+# This was "1", and that turned out to be actively harmful. A reset is not a
+# free recovery: RTAB-Map restarts odometry "from the latest computed pose with
+# large covariance", which is a deliberate discontinuity in the pose estimate.
+# At 1, a single dropped frame - a momentary glare, one fast turn, one glance at
+# a close wall - triggered a full re-anchor. Run #3 logged 147 of them in one
+# session, and each one shifted the map's frame slightly, so the accumulated
+# graph ended up with a 23.8 degree error on a single consecutive-node edge and
+# every subsequent loop closure got rejected as inconsistent. The visible
+# symptom was the map boundary jumping and the walls drifting out of alignment.
+#
+# 10 frames is ~0.7 s at this camera rate: long enough to ride out the isolated
+# blips (which is nearly all of them), short enough to still rescue a genuine
+# sustained loss instead of freezing forever - which is what "0" would risk, and
+# what the old comment here was rightly worried about.
+Odom/ResetCountdown: "10"
+OdomF2M/MaxSize: "1000"
+Vis/MaxFeatures: "1000"
+
+# Halve each image dimension before registering it (1920x1200 -> 960x600).
+#
+# This is a COMPUTE decision, not an accuracy one. The camera keeps publishing
+# at the ZED X's true 1920x1200 so the simulation still matches the real sensor,
+# but odometry is the most expensive node in the pipeline (~90% of a core) and
+# it does not need every pixel: a quarter of the pixels still leaves far more
+# features than the 20 inliers Vis/MinInliers asks for. On the Jetson, with
+# Gazebo + RViz + rtabmap all competing for 8 cores, odometry frame times were
+# reaching 0.65 s - and a slow frame means a bigger jump between the frames
+# that DO get processed, which is itself a documented cause of tracking loss.
+#
+# 2 -> 4 on 2026-08-22: THE Phase-1 A+Y yield lever, chosen from measurement,
+# not guesswork. frame_yield.py localized the frame loss entirely to the
+# odometry stage (sync passes 99.9%); arm A measured the odometry compute
+# ceiling at ~8.3 Hz = ~120 ms/frame against a 95%-yield requirement of
+# ~70 ms/frame. Decimation 4 processes 480x300 - a quarter of the pixel work.
+# Feature headroom was checked first: 952 ORB keypoints at decimation 2
+# against the 20 needed leaves a wide margin for halving again. Applied as
+# arm A+Y of the Phase-1 ladder and carried into every later rung.
+Odom/ImageDecimation: "4"
+
+# The Husky is skid-steer: it cannot move sideways. Telling odometry that lets
+# it derive y from x and yaw (y = x*tan(yaw)) instead of estimating a lateral
+# motion that is physically impossible. One less way to be wrong.
+Odom/Holonomic: "false"
+
+# -----------------------------------------------------------------------------
+# Occupancy grid — the 2D map move_base will navigate on
+# -----------------------------------------------------------------------------
+
+# Build the grid from depth images (there is no laser scan to build it from).
+# Grid/Sensor: 0 = laser, 1 = depth, 2 = both.
+#
+# The old spelling `Grid/FromDepth` was given here too, as cross-version
+# insurance. It is not insurance any more: on 0.21.13 it is a REMOVED parameter
+# and only produced "Parameter name changed: Grid/FromDepth -> Grid/Sensor"
+# noise at startup. Dropped.
+Grid/Sensor: "1"
+
+# Keep a full 3D voxel representation as well as the 2D projection. This is what
+# makes /rtabmap/cloud_map a real 3D map rather than a flattened one, and it is
+# the difference between "we made a map" and "we made a map you can look at".
+Grid/3D: "true"
+
+# 5 cm cells. The trade is direct: halving the cell size quadruples the memory
+# and the cost of every grid operation, and a 5 cm cell is already finer than
+# the positioning accuracy the robot will navigate with.
+Grid/CellSize: "0.05"
+
+# Only map what the sensor can actually measure. Below 1 m the ZED X returns
+# nothing valid; beyond 8 m the depth error at 5 cm cell size is comparable to
+# several cells, so those points blur the map instead of sharpening it.
+Grid/RangeMin: "1.0"
+Grid/RangeMax: "8.0"
+
+# Use every 4th pixel when building the cloud. At 1920x1200 that is still
+#roughly 144000 points per frame, which is far more than a 5 cm grid can use.
+# This one parameter is the difference between real-time and not.
+Grid/DepthDecimation: "4"
+
+# Separate ground from obstacles by surface normal rather than by height alone.
+# Height-only segmentation fails the moment the floor is not level - on a kerb
+# ramp it calls the ramp an obstacle and the robot refuses to climb it.
+Grid/NormalsSegmentation: "true"
+Grid/MaxGroundAngle: "30"        # degrees from horizontal still counted as ground
+
+# Height band, in metres. THE REFERENCE IS `base_link`, NOT THE FLOOR.
+#
+# This comment used to read "relative to the robot's ground plane", which any
+# reader takes to mean "relative to the floor". It is not, and the difference
+# is 13 cm, so every number here means something other than what it looks like.
+# Writing the correction out in full because the downward end of the band turns
+# out to be the one that matters on a sidewalk.
+#
+# WHERE THE ZERO ACTUALLY IS - verified, not assumed
+#   RTAB-Map builds the depth cloud (the 3D points recovered from the stereo
+#   pair), transforms it by the camera's mounting transform into the frame the
+#   node was told to report in - `frame_id`, which rtabmap_common.launch in this
+#   package sets to `base_link` - and then applies only the ROLL and PITCH of
+#   the node's pose, which levels the cloud against gravity without moving it
+#   up or down:
+#
+#     cloud = transformPointCloud(cloud,
+#               Transform(0, 0, projMapFrame_ ? pose.z() : 0, roll, pitch, 0));
+#
+#   `projMapFrame_` is the parameter `Grid/MapFrameProjection`. It defaults to
+#   FALSE on this build and is not overridden anywhere in this repository, so
+#   the z translation in that line is 0 and the cloud's z = 0 plane stays
+#   exactly at `base_link`'s own height. Nothing anywhere in this path shifts
+#   the origin down to the floor.
+#   [VERIFIED - read on the JETSON'S INTERNAL DISK, the installed 0.21.13
+#    headers: /opt/ros/noetic/include/rtabmap-0.21/rtabmap/core/impl/
+#    LocalMapMaker.hpp, LocalGridMaker::segmentCloud, the block commented
+#    "add pose rotation without yaw"; the false default is Parameters.h,
+#    Grid/MapFrameProjection.]
+#
+#   And `base_link` sits 0.13228 m above the floor: the base_footprint joint is
+#   `xyz="0 0 -0.13228"` in sidewalk_bringup/urdf/husky_a200_real.urdf (the
+#   project's copy of the robot description on the Jetson).
+#
+# SO THE BAND BELOW, RE-EXPRESSED ABOUT THE TRUE FLOOR
+#   Grid/MinGroundHeight    -0.20 + 0.13228 = -0.068 m  (68 mm BELOW the floor)
+#   Grid/MaxGroundHeight    +0.10 + 0.13228 = +0.232 m
+#   Grid/MaxObstacleHeight  +1.60 + 0.13228 = +1.732 m
+#
+# WHAT HAPPENS TO A POINT OUTSIDE THE BAND: IT IS THROWN AWAY, NOT CLAMPED
+#   Before any ground-versus-obstacle segmentation runs at all, segmentCloud
+#   filters the cloud on z. Quoting the installed header verbatim rather than
+#   paraphrasing it, because the guard and the sentinels both carry meaning:
+#
+#     if(minGroundHeight_ != 0.0f || maxObstacleHeight_ != 0.0f)
+#     {
+#       indices = util3d::passThrough(cloud, indices, "z",
+#         minGroundHeight_!=0.0f?minGroundHeight_:std::numeric_limits<int>::min(),
+#         maxObstacleHeight_>0.0f?maxObstacleHeight_:std::numeric_limits<int>::max());
+#
+#   Both of this file's values are non-zero (-0.20 and 1.60), so the guard is
+#   true and both limits are applied exactly as written. But note what the
+#   sentinels imply: 0.0 is the DISABLED code, not a usable limit. There is no
+#   way to ask for a band whose floor sits exactly AT base_link - setting
+#   Grid/MinGroundHeight to "0.0" removes the lower limit altogether rather than
+#   placing it at zero. Anyone re-tuning this band needs to know that, because
+#   "0.0" looks like the most natural thing in the world to type and does the
+#   opposite of what it reads as.
+#   [VERIFIED - `rtabmap --params` on the JETSON reports Grid/MinGroundHeight
+#    and Grid/MaxObstacleHeight both defaulting to "0.0" with the help text
+#    "(0=disabled)".]
+#
+#   That is a plain PCL PassThrough filter (the Point Cloud Library's "keep only
+#   the points whose z lies between these two numbers" filter), called with its
+#   `negative` argument left at the default `false` - so it KEEPS what is inside
+#   and DELETES what is outside. A point below MinGroundHeight is not pulled up
+#   to the limit, and it is not reclassified as an obstacle. It ceases to exist
+#   before the normals segmentation ever sees it, so it cannot be mapped as
+#   anything at all, not even as unknown-but-there.
+#   [VERIFIED - the call site and the `negative = false` default were read on
+#    the JETSON'S INTERNAL DISK in the installed 0.21.13 headers
+#    (.../impl/LocalMapMaker.hpp and .../util3d_filtering.h). passThrough's BODY
+#    is compiled into librtabmap_core.so and no source for it is installed; it
+#    was read instead from the RTAB-Map 0.21.10 source,
+#    corelib/src/util3d_filtering.cpp:856-876, which is `pcl::PassThrough` with
+#    `setNegative(negative)`. segmentCloud's text is byte-identical between the
+#    two versions, so this is as close to first-hand as the installed build
+#    allows. To settle it beyond doubt on 0.21.13 itself: run rtabmap with
+#    `--udebug` and read the line "indices after max obstacles height filtering
+#    = N" - N shrinking is the filter deleting, and no later log line ever
+#    re-introduces those points.]
+#
+#   Note also that on the branch this configuration actually takes,
+#   MinGroundHeight is used ONLY in that pre-filter. It is not passed into
+#   segmentObstaclesFromGround at all - that call receives maxGroundHeight_ and
+#   never minGroundHeight_ - so it has no second, gentler role. Its entire
+#   effect is deletion.
+#
+#   Being exact about "the branch this configuration takes", because the
+#   condition has TWO halves and only one of them is pinned in this file. The
+#   normals path runs when `normalsSegmentation_ && !groundIsObstacle_`. The
+#   else branch DOES use minGroundHeight_ a second time, in a passthrough that
+#   separates ground from obstacles - so the "its entire effect is deletion"
+#   conclusion depends on Grid/GroundIsObstacle being false just as much as it
+#   depends on Grid/NormalsSegmentation being true. Grid/NormalsSegmentation is
+#   pinned "true" above; Grid/GroundIsObstacle is NOT pinned here and is
+#   inherited from the build.
+#   [VERIFIED - `rtabmap --params` on the JETSON reports
+#    Grid/GroundIsObstacle = "false" on this build, so the normals branch is
+#    the one that runs and the conclusion holds as written. By the pinning rule
+#    (ENGINEERING_NOTES.md section 4.6 - never trust a compile-time-conditional default)
+#    this is a third candidate for an explicit pin, with the same
+#    deliberate-decision caveat as Grid/MapFrameProjection below.]
+#
+# THE RISK THIS CREATES, AND IT IS EXACTLY THE SIDEWALK CASE
+#   68 mm is all the downward headroom there is, and the honest figure is
+#   smaller than that: the residual height bias measured on 2026-08-29 after the
+#   camera pose was corrected is about 12 mm in the low direction (the floor
+#   reads ~12 mm below where it is), which eats into the budget and leaves
+#   roughly 56 mm of real margin.
+#   [Provenance: that figure comes from the 2026-08-29 pose-verification
+#    measurement and is NOT yet written up in docs/. Replace this bracket with
+#    the write-up's file and section once it lands - it is a quoted number, not
+#    a re-derived one.]
+#
+#   A kerb drop is typically 100-150 mm. The road surface at the bottom of a
+#   150 mm kerb therefore sits at about
+#       -0.13228 - 0.150 = -0.282 m   in base_link
+#   which is below -0.20 and is DISCARDED. The vertical kerb face survives only
+#   down to -0.20; everything below that, including the road the robot would
+#   fall onto, is deleted from the map. For a robot whose entire job is
+#   sidewalks, the drop-off is the single most safety-relevant feature there is,
+#   and this band quietly removes the bottom of it.
+#
+#   The asymmetry is worth naming: the UP direction is fine. A 150 mm kerb
+#   climbed ONTO puts its top surface at 0.150 - 0.13228 = +0.018 m, comfortably
+#   inside MaxGroundHeight's +0.10. Only DOWN is short.
+#
+# WHAT MinGroundHeight WOULD HAVE TO BE - RECOMMENDATION, DELIBERATELY NOT
+# APPLIED
+#   To admit the road surface 150 mm below the pavement, the limit must reach at
+#   least
+#         0.13228   base_link above the floor
+#       + 0.150     the kerb drop to be admitted
+#       + 0.012     measured residual height bias (2026-08-29)
+#       = 0.294 m       ->   Grid/MinGroundHeight = "-0.30"
+#
+#   "-0.30" clears that sum by only 6 mm, which is nothing next to stereo depth
+#   noise at the grazing angle a kerb edge is seen from. "-0.35" is the value to
+#   choose if the kerb bottom is meant to survive reliably rather than
+#   marginally. Both are a large move from -0.20.
+#
+#   IT IS NOT CHANGED HERE, ON PURPOSE. Mapping runs 1 through 6 were all
+#   recorded with "-0.20". This repository's rule is one variable per experiment
+#   (ENGINEERING_NOTES.md section 4.5): moving a SLAM parameter quietly makes every earlier
+#   run incomparable with every later one, and afterwards nobody can say whether
+#   a map improved because of the kerbs or because of the parameter. This is a
+#   decision to take deliberately, in its own A/B run, with the run IDs written
+#   down - not a tidy-up to fold into a comment fix.
+#
+#   Related and also NOT changed: `Grid/MapFrameProjection` is the parameter
+#   that makes base_link the reference at all, and it is inherited from the
+#   build default rather than pinned in this file. The pinning rule (ENGINEERING_NOTES.md
+#   section 4.6 - never trust a compile-time-conditional default) argues it
+#   should be written down explicitly. Same reasoning: its own deliberate
+#   decision, not a silent addition.
+#
+# MaxObstacleHeight: everything taller than this is ignored, so that overhanging
+# branches and door frames the robot passes under are not mapped as walls.
+# Correcting the frame here too: 1.60 in base_link is 1.732 m above the floor.
+#
+# HOW TALL THE ROBOT ACTUALLY IS - because "just above the robot" was the
+# original claim here and an earlier correction of it was itself wrong twice.
+# The ZED X housing is NOT the highest thing on this machine, and its top is
+# 0.7112 m above the floor, not the 0.727 m that draft asserted. Tracing the
+# URDF rather than estimating, all values in base_link then converted:
+#
+#   ZED X housing top   0.5789 in base_link  =  0.7112 m above floor
+#                       (this is the tape measurement the whole mount pose is
+#                        derived from, so it is the firmest number here)
+#   Oak-D mount point   0.5900               =  0.7223 m
+#                       (mount only - no depthai hardware is fitted - but the
+#                        sensor arch carrying it is physically there)
+#   Ouster OS1-64 top   0.7469               =  0.8791 m   <-- the tallest
+#
+#   The Ouster figure is a chain of fixed joints in
+#   sidewalk_bringup/urdf/husky_a200_real.urdf (the project's copy of the robot
+#   description on the Jetson): PACS cell D05 at z = 0.23385, + 0.39 sensor mount,
+#   + 0.008 to the baseplate, + 0.042 to the body frame, + 0.0365 to the
+#   collision cylinder's centre, + half of its 0.073 m length.
+#
+# So the cut sits about 0.85 m above the robot's tallest modelled point, not
+# "just above" it. The conclusion the previous version drew is unchanged and if
+# anything strengthened: a door frame at ~2.03 m is above the cut and correctly
+# ignored; a branch at 1.5 m is below the cut and WILL be mapped as an obstacle
+# even though the robot would pass under it untouched. That is over-cautious
+# rather than unsafe, so it is recorded here rather than changed.
+#
+# [UNVERIFIED - "tallest" means tallest thing MODELLED IN THE URDF. The
+#  Swiftnav antenna at z = 0.57056 is a mesh whose height was not read, and
+#  antennas, cable runs and the RoboSense LiDAR may not all be in the model.
+#  None of that threatens the 0.85 m margin, which is why it is left as a
+#  caveat rather than chased down.]
+Grid/MinGroundHeight: "-0.20"
+Grid/MaxGroundHeight: "0.10"
+Grid/MaxObstacleHeight: "1.60"
+
+# Remove isolated points before they become phantom obstacles. Stereo depth
+# produces speckle at depth discontinuities - the edge of a table against a far
+# wall - and a single stray point becomes a cell the planner will not drive
+# through.
+#
+# RADIUS CHANGED 0.05 -> 0.09 ON 2026-08-30. The old value equalled
+# Grid/CellSize, and that made the filter delete flat surfaces.
+#
+#   Grid/PreVoxelFiltering is true, and its help text reads "Input cloud is
+#   downsampled by voxel filter (voxel size is Grid/CellSize) before doing
+#   segmentation". So by the time this filter runs - its own help text says
+#   "Done after segmentation" - every surviving point sits on a 5 cm lattice.
+#
+#   On a 5 cm lattice a point's four side-neighbours are at exactly 5.00 cm and
+#   its four diagonals at 7.07 cm. A 5 cm radius therefore admits AT MOST FOUR.
+#   Five were demanded. A perfectly flat, perfectly measured surface failed by
+#   one neighbour.
+#
+#   Measured: all three bench boards showed a median of 3.0-3.9 neighbours and
+#   lost 73-80 % of their points. On the robot, widening the radius took the
+#   printed control board from 33 occupied cells to 65.
+#
+# Why widen the radius rather than lower the threshold to 3, which reaches the
+# same counts: clumps of three or four wrong points sitting together are exactly
+# what a stereo mismatch produces, so a threshold of three waves them through.
+# At 9 cm the diagonals fall inside, a flat surface reaches eight neighbours,
+# and a genuinely isolated speck still has none. The guard keeps its power.
+#
+# If Grid/CellSize is ever changed, THIS MUST CHANGE WITH IT - the radius has to
+# exceed the lattice spacing, not equal it. Full write-up in docs/SOLVED.md.
+Grid/NoiseFilteringRadius: "0.09"
+Grid/NoiseFilteringMinNeighbors: "5"
+Grid/ClusterRadius: "0.10"
+
+# Trace the ray from the camera to each hit and mark everything along it as
+# free. Without this, the map only ever gains obstacles and never clears them,
+# so a person who walked through the scene is remembered as a wall forever.
+Grid/RayTracing: "true"
+
+GridGlobal/MinSize: "20"         # metres; pre-allocate so the map does not
+                                 # reallocate constantly while it grows
+GridGlobal/OccupancyThr: "0.5"
+GridGlobal/Eroded: "false"
+
+# -----------------------------------------------------------------------------
+# Proximity detection
+#
+# Loop closure by appearance answers "have I seen this view before?". Proximity
+# detection answers "am I physically near a place I have mapped, even though it
+# looks different from here?" - which is exactly the case when you traverse the
+# same corridor in the opposite direction.
+# -----------------------------------------------------------------------------
+RGBD/ProximityBySpace: "true"
+RGBD/ProximityByTime: "false"
+# Loop-closure investigation, 2026-08-22: across 16 Phase-1 runs, 0/1144
+# candidates were ever accepted. Reading the actual logs (not guessing) shows
+# the dominant rejection (5 of 6 runs sampled, both B1 stereo+noise runs
+# included) is the post-optimization confidence check: the correction needed
+# is 3-9x bigger than the honest camera confidence allows. Unlimited depth
+# (was "0") lets proximity compare the current pose against ANY earlier node,
+# including one 4 laps / ~70+ m ago, which has had far longer to drift and
+# so needs a bigger correction. rtabmap-info on p1_B1_r3.db: 274 nodes over 5
+# laps = ~55 nodes/lap. Capping at ~2 laps (120) keeps multiple revisit
+# opportunities per run while excluding the most drift-heavy comparisons -
+# the goal is a SMALLER correction, not just more candidates. Does not touch
+# RGBD/OptimizeMaxError or Optimizer/Robust (off-limits, ENGINEERING_NOTES.md SS4.7).
+RGBD/ProximityMaxGraphDepth: "120"
+RGBD/LocalRadius: "5.0"
+RGBD/NeighborLinkRefining: "true"
+
+# -----------------------------------------------------------------------------
+# DATABASE DURABILITY - added 2026-08-31 after run 7c's database failed an
+# integrity check having completed a clean run.
+# -----------------------------------------------------------------------------
+#
+# THE PROBLEM. Two of the last three runs came back damaged. Run 7b died with
+# "database is locked" mid-write; run 7c finished normally and its file still
+# failed "PRAGMA quick_check" with cross-linked pages - two parts of the file
+# both claiming the same block. Six artefacts have now been damaged.
+#
+# The card was the obvious suspect and is now the weaker one: the five earlier
+# losses were all on exFAT-through-FUSE, the card was reformatted to ext4 on
+# 2026-08-25, and runs 5 and 6 then wrote cleanly. Run 7c is the FIRST
+# structural corruption on ext4.
+#
+# WHAT WAS FOUND. RTAB-Map ships two SQLite settings at values chosen for speed
+# over safety, and neither had ever been examined here. Verified present on THIS
+# build (rtabmap 0.21.13, docs/params_baseline.txt):
+#
+#   DbSqlite3/JournalMode = 3   -> MEMORY
+#   DbSqlite3/Synchronous = 0   -> OFF
+#
+# Plain terms: the undo log - the record SQLite keeps so a half-finished write
+# can be backed out - was being kept in the program's own memory, so a crash
+# takes it with it. And SQLite was told not to wait for the disk to confirm a
+# write before carrying on. Those are the two settings SQLite's own
+# documentation names as the ones that corrupt a file when a write is
+# interrupted.
+#
+# Each fits one of the failures:
+#   - run 7b CRASHED mid-write. With the undo log in memory, a partly-applied
+#     write cannot be rolled back.
+#   - run 7c did NOT crash. But with the confirm-write check off, SQLite trusts
+#     the card's claim that a write landed. Cheap flash routinely reports a
+#     write complete while it is still in the card's own buffer.
+#
+# THE SETTINGS BELOW.
+#   JournalMode 1 = TRUNCATE. The undo log lives in a FILE beside the database,
+#     so it survives the program dying. TRUNCATE rather than DELETE because it
+#     blanks the journal file instead of deleting and recreating it, which is
+#     fewer directory operations on flash.
+#   Synchronous 1 = NORMAL. Waits for the storage to confirm the important
+#     writes. FULL (2) is safer still and slower still; NORMAL is the usual
+#     middle choice and is the one to try first.
+#
+# THE COST IS NOT YET MEASURED, AND THAT MATTERS. Safer writes are slower
+# writes, and the database grows about 0.34 GB per minute of driving. It is
+# possible that slowing writes makes "database is locked" MORE likely rather
+# than less, since that error is about two writes colliding, not about
+# durability. So this is a change to be WATCHED on its first run, not assumed:
+#
+#   - if run 8 completes AND passes quick_check with the page cache dropped,
+#     the change is doing its job
+#   - if run 8 hits "database is locked" where run 7c did not, the write cost
+#     is real and Synchronous should go back to 0 while JournalMode stays at 1,
+#     which keeps the crash protection and drops the wait
+#
+# VERIFY IT ACTUALLY TOOK HOLD. roslaunch silently discards an argument a
+# launch file does not declare, so a setting can be "applied" and absent. Two
+# independent checks, because one is not enough:
+#   rosparam get /rtabmap/rtabmap/DbSqlite3/JournalMode      # must print 1
+#   ls -la <database dir>/*-journal                          # a journal FILE
+#                                                            # must now appear
+# The second is the real proof - the file existing on disk is the behaviour,
+# the parameter is only the request.
+DbSqlite3/JournalMode: "1"
+# CHANGED 2026-09-26 01:40 Hamilton (user's decision after drive 4): Synchronous 1 -> 0, JournalMode stays 1,
+# exactly the fallback the note above names. Why: the database is now on the Jetson's internal disk, not the
+# card, and the confirmed saves (3-4 s at the end of a drive) still froze the camera once in drive 4 (2.9 s at
+# 00:46:58, during a 4.45 s save; drive-4 pack, results/series2_static/s2_static_04/RESULTS.md).
+# Bench: longest save 0.10 s with 0 (stall FINDINGS.md section 6, change 4).
+# Plain terms: the map program no longer waits for the disk to say "written" before going on; the undo file
+# beside the database (JournalMode 1) still protects against the PROGRAM crashing.
+# Risk: a Jetson hang or power loss mid-save can damage the database (two unexplained resets 25 Sept) -> the
+# integrity check after every drive stays. To undo: set this back to "1" (backup .before_sync0_2026-09-26).
+DbSqlite3/Synchronous: "0"
+
+# Drive 4 (user's decision 2026-09-26 00:15 Hamilton, after rehearsal T5b): store depth as 16-bit millimetres.
+# Why: the long database saves froze the camera 10 times in T5b (2-4 s each; stall findings, the project records
+# 03_methods/jetson_stalls_drive3_2026-09-25/FINDINGS.md section 6, change 1). Depth is ~5.8 of the ~6.3 MB
+# written per map node; 16-bit (.rvl compression) cuts it to ~1.5 MB (measured with this Jetson's own
+# librtabmap 0.21.13 on 6 drive-3 nodes). Cost: depth kept to the millimetre, values over ~65 m dropped;
+# drive-4 databases replay differently from 32-bit ones. Verified to exist on this build (rtabmap --params).
+Mem/SaveDepth16Format: "true"

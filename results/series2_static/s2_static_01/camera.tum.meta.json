@@ -1,0 +1,13 @@
+{
+  "source_database": "~/slam_series2/s2_static_01.db",
+  "output": "~/slam_series2/s2_static_01/camera.tum",
+  "nodes_in_database": 769,
+  "poses_written": 769,
+  "skipped_bad_pose": 0,
+  "skipped_zero_stamp": 0,
+  "zero_stamps_seen": 0,
+  "read_stopped_early": false,
+  "duration_s": 1001.034,
+  "path_length_m": 240.155,
+  "format": "TUM: timestamp tx ty tz qx qy qz qw"
+}

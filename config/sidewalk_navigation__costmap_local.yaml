@@ -1,0 +1,42 @@
+# costmap_local.yaml - the small moving costmap the WHEEL COMMANDS are checked against (frame: odom).
+# In odom, not map, on purpose: odom -> base_link (the wheels + gyroscope + camera blend) is smooth, while
+# map -> odom jumps a little every time RTAB-Map recognises a place. A jump must not teleport the obstacles
+# the robot is steering around.
+local_costmap:
+  global_frame: odom
+  robot_base_frame: base_link
+  update_frequency: 5.0      # Hz
+  publish_frequency: 2.0     # Hz
+  rolling_window: true
+  width: 6.0                 # m: 3 m each side, beyond the 4 m marking range needs no more
+  height: 6.0
+  track_unknown_space: false
+  always_send_full_costmap: true   # 27 Sept: nav_cmd_sender.py reads the WHOLE local costmap for its real-time clearance check (6 x 6 m, 2 Hz); without this only the first full map is sent, then updates
+  # Camera obstacles only - NOT the saved walls. Tried in sim run 6 (27 Sept): with drive 10's saved walls in this
+  # costmap too, the collision check refused every move through a 1.0 m pinch of the long corridor at x = 12.4-13.2 m
+  # (the saved map's walls are depth-smeared bands, thicker than the real walls; drive 10 drove through there many
+  # times) and the robot stopped for good. The saved walls still shape the ROUTE (global costmap), the camera marks
+  # what is really there, turns on the spot no longer stall (min_vel_theta 0.30), and the leash in nav_cmd_sender.py
+  # stops the robot if it ever strays more than 1.0 m from its route - the changes that answer run 5, where the
+  # simulated robot crept into the end wall of the corridor while a turn on the spot stalled.
+  # CHANGED 27 Sept after real run s2_nav_01 route B: the front-left corner touched a wall post that the camera
+  # could not see (beside and below its view), because this costmap held camera obstacles only. Now it also holds
+  # drive 10's walls MINUS the cells drive 10's own outline drove over (maps/d10_nav_local, make_local_walls.py):
+  # the 1.0 m pinch stays open (the reason for dry run 6's removal), every other wall - the post included - is known.
+  plugins:
+    - {name: local_walls,     type: "costmap_2d::StaticLayer"}
+    - {name: obstacle_layer,  type: "costmap_2d::ObstacleLayer"}
+    - {name: inflation_layer, type: "costmap_2d::InflationLayer"}
+  local_walls:
+    map_topic: /nav/map_local
+    first_map_only: true
+    subscribe_to_updates: false
+    track_unknown_space: false
+    use_maximum: false
+    lethal_cost_threshold: 100
+    trinary_costmap: true
+  inflation_layer:
+    enabled: true
+    inflation_radius: 0.65   # >= the padded outline corner radius hypot(0.545, 0.385) = 0.667 m ~ (padding 0.05)
+    cost_scaling_factor: 5.0 # steeper: near obstacles matter to the wheels, far ones less
+    inflate_unknown: false

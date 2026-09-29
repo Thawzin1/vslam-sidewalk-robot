@@ -1,0 +1,181 @@
+{
+ "definition": "camera map corrected path (camera_corrected.tum), filled in every 5 cm; drives 7 and 8 lined up on drive 4 by 2D rotation + shift (ICP, pairs < 1.0 m); a point is on the shared route if within 0.5 m of the other drive's route; direction of travel not tested",
+ "R_m": 0.5,
+ "pairs": {
+  "4_vs_7": {
+   "rotation_deg": -7.28,
+   "shift_m": [
+    0.11,
+    0.492
+   ],
+   "start_offset_after_alignment_m": 0.504,
+   "route_m": {
+    "drive4": 84.7,
+    "drive7": 103.2
+   },
+   "shared_m": {
+    "drive4": 82.5,
+    "drive7": 73.1
+   },
+   "sensitivity_by_R": {
+    "0.3": {
+     "drive7_m": 68.4,
+     "drive4_m": 77.2
+    },
+    "0.5": {
+     "drive7_m": 73.1,
+     "drive4_m": 82.5
+    },
+    "0.75": {
+     "drive7_m": 74.5,
+     "drive4_m": 84.7
+    },
+    "1.0": {
+     "drive7_m": 75.6,
+     "drive4_m": 84.7
+    }
+   },
+   "distance_to_drive4_route_on_shared_m": {
+    "median": 0.071,
+    "p95": 0.345
+   }
+  },
+  "4_vs_8": {
+   "rotation_deg": -3.42,
+   "shift_m": [
+    0.194,
+    0.345
+   ],
+   "start_offset_after_alignment_m": 0.396,
+   "route_m": {
+    "drive4": 84.7,
+    "drive8": 83.0
+   },
+   "shared_m": {
+    "drive4": 83.1,
+    "drive8": 75.2
+   },
+   "sensitivity_by_R": {
+    "0.3": {
+     "drive8_m": 71.4,
+     "drive4_m": 80.8
+    },
+    "0.5": {
+     "drive8_m": 75.2,
+     "drive4_m": 83.1
+    },
+    "0.75": {
+     "drive8_m": 75.9,
+     "drive4_m": 84.7
+    },
+    "1.0": {
+     "drive8_m": 76.4,
+     "drive4_m": 84.7
+    }
+   },
+   "distance_to_drive4_route_on_shared_m": {
+    "median": 0.056,
+    "p95": 0.297
+   }
+  }
+ },
+ "camera_route_to_drive4_lidar_path": {
+  "4": {
+   "median_m": 0.024,
+   "p95_m": 0.095,
+   "rotation_deg": -0.45
+  },
+  "8": {
+   "median_m": 0.055,
+   "p95_m": 0.265,
+   "rotation_deg": -0.36
+  }
+ },
+ "agreement_on_shared_route": {
+  "7_camera_corrected": {
+   "n_pairs_shared": 430,
+   "n_pairs_all": 582,
+   "median_m": 0.352,
+   "p95_m": 0.757,
+   "off_route_median_m": 0.71,
+   "whole_median_m": 0.445,
+   "whole_p95_m": 0.879,
+   "control_whole_reproduces_agreement_json": true
+  },
+  "4vs7_camera_corrected": {
+   "n_pairs_shared": 279,
+   "n_pairs_all": 283,
+   "median_m": 0.259,
+   "p95_m": 0.49,
+   "off_route_median_m": 0.15,
+   "whole_median_m": 0.259,
+   "whole_p95_m": 0.491,
+   "control_whole_reproduces_agreement_json": true
+  },
+  "7_camera_tracking": {
+   "n_pairs_shared": 515,
+   "n_pairs_all": 678,
+   "median_m": 0.381,
+   "p95_m": 0.605,
+   "off_route_median_m": 0.385,
+   "whole_median_m": 0.381,
+   "whole_p95_m": 0.75,
+   "control_whole_reproduces_agreement_json": true
+  },
+  "4vs7_camera_tracking": {
+   "n_pairs_shared": 479,
+   "n_pairs_all": 483,
+   "median_m": 0.117,
+   "p95_m": 0.239,
+   "off_route_median_m": 0.05,
+   "whole_median_m": 0.117,
+   "whole_p95_m": 0.239,
+   "control_whole_reproduces_agreement_json": true
+  },
+  "8_camera_corrected": {
+   "n_pairs_shared": 426,
+   "n_pairs_all": 474,
+   "median_m": 2.023,
+   "p95_m": 3.106,
+   "off_route_median_m": 1.586,
+   "whole_median_m": 1.971,
+   "whole_p95_m": 3.085,
+   "control_whole_reproduces_agreement_json": true
+  },
+  "4vs8_camera_corrected": {
+   "n_pairs_shared": 271,
+   "n_pairs_all": 283,
+   "median_m": 0.256,
+   "p95_m": 0.47,
+   "off_route_median_m": 0.485,
+   "whole_median_m": 0.259,
+   "whole_p95_m": 0.491,
+   "control_whole_reproduces_agreement_json": true
+  },
+  "8_camera_tracking": {
+   "n_pairs_shared": 603,
+   "n_pairs_all": 662,
+   "median_m": 1.9,
+   "p95_m": 3.033,
+   "off_route_median_m": 1.629,
+   "whole_median_m": 1.818,
+   "whole_p95_m": 3.031,
+   "control_whole_reproduces_agreement_json": true
+  },
+  "4vs8_camera_tracking": {
+   "n_pairs_shared": 466,
+   "n_pairs_all": 483,
+   "median_m": 0.111,
+   "p95_m": 0.239,
+   "off_route_median_m": 0.228,
+   "whole_median_m": 0.117,
+   "whole_p95_m": 0.239,
+   "control_whole_reproduces_agreement_json": true
+  }
+ },
+ "side_corridor_depth_m": {
+  "drive4": 6.49,
+  "drive7": 14.83,
+  "drive8": 11.06
+ }
+}

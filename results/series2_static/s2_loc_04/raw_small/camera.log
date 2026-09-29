@@ -1,0 +1,314 @@
+[0m[INFO] [1790509104.859785025]: Initializing nodelet with 12 worker threads.[0m
+[2026-09-27 11:38:25 UTC][ZED][INFO] Logging level INFO
+[0m[INFO] [1790509105.295361329]: ********** Starting nodelet '/zedx_front/zed_node' **********[0m
+[0m[INFO] [1790509105.295521236]: SDK version: 4.2.5[0m
+[0m[INFO] [1790509105.295616150]: *** GENERAL PARAMETERS ***[0m
+[0m[INFO] [1790509105.296414630]:  * Camera Model by param	-> zedx[0m
+[0m[INFO] [1790509105.297074131]:  * Camera Name			-> zedx_front[0m
+[0m[INFO] [1790509105.297778369]:  * Camera resolution		-> HD1200[0m
+[0m[INFO] [1790509105.298466543]:  * Camera Grab Framerate	-> 30[0m
+[0m[INFO] [1790509105.299260895]:  * Grab compute capping FPS	-> 15 Hz[0m
+[0m[INFO] [1790509105.300060751]:  * Publishing resolution	-> NATIVE[0m
+[0m[INFO] [1790509105.300827422]:  * Gpu ID			-> -1[0m
+[0m[INFO] [1790509105.301577965]:  * Camera ID			-> 0[0m
+[0m[INFO] [1790509105.302321532]:  * SDK Verbose level		-> 1[0m
+[0m[INFO] [1790509105.303118508]:  * Camera Flip			-> AUTO[0m
+[0m[INFO] [1790509105.303922204]:  * Self calibration		-> ENABLED[0m
+[0m[INFO] [1790509105.305357817]:  * Region of interest		-> [][0m
+Ci sei o no?
+[0m[INFO] [1790509105.305494556]: *** DYNAMIC PARAMETERS (Init. values) ***[0m
+[0m[INFO] [1790509105.306242955]:  * [DYN] brightness		-> 4[0m
+[0m[INFO] [1790509105.307079579]:  * [DYN] contrast		-> 4[0m
+[0m[INFO] [1790509105.307951661]:  * [DYN] hue			-> 0[0m
+[0m[INFO] [1790509105.308790334]:  * [DYN] saturation		-> 4[0m
+[0m[INFO] [1790509105.309617614]:  * [DYN] sharpness		-> 4[0m
+[0m[INFO] [1790509105.310420414]:  * [DYN] gamma			-> 8[0m
+[0m[INFO] [1790509105.311202158]:  * [DYN] auto_exposure_gain	-> ENABLED[0m
+[0m[INFO] [1790509105.313582109]:  * [DYN] auto_whitebalance	-> ENABLED[0m
+[0m[INFO] [1790509105.315136701]:  * [DYN] Depth confidence	-> 50[0m
+[0m[INFO] [1790509105.315919116]:  * [DYN] Depth texture conf.	-> 100[0m
+[0m[INFO] [1790509105.316704988]:  * [DYN] point_cloud_freq	-> 10 Hz[0m
+[0m[INFO] [1790509105.316753949]: *** DEPTH PARAMETERS ***[0m
+[0m[INFO] [1790509105.317626862]:  * Depth mode			-> NEURAL [4][0m
+[0m[INFO] [1790509105.318369245]:  * OpenNI mode			-> DISABLED[0m
+[0m[INFO] [1790509105.319098188]:  * Depth Stabilization		-> 1[0m
+[0m[INFO] [1790509105.319881596]:  * Minimum depth		-> 1 m[0m
+[0m[INFO] [1790509105.320633835]:  * Maximum depth		-> 35 m[0m
+[0m[INFO] [1790509105.321374041]:  * [DYN] Fill Mode	-> 0[0m
+[0m[INFO] [1790509105.321424314]: *** POSITIONAL TRACKING PARAMETERS ***[0m
+[0m[INFO] [1790509105.322170281]:  * Positional tracking		-> ENABLED[0m
+[0m[INFO] [1790509105.322929465]:  * Positional tracking mode	-> GEN 2[0m
+[0m[INFO] [1790509105.323757641]:  * Set gravity as origin	-> ENABLED[0m
+[0m[INFO] [1790509105.324672476]:  * Path rate			-> 2 Hz[0m
+[0m[INFO] [1790509105.325525229]:  * Path history size		-> INFINITE[0m
+[0m[INFO] [1790509105.327101644]:  * Odometry DB path		-> [0m
+[0m[INFO] [1790509105.327930301]:  * Save Area Memory on closing	-> DISABLED[0m
+[0m[INFO] [1790509105.328760685]:  * Area Memory			-> DISABLED[0m
+[0m[INFO] [1790509105.329531229]:  * IMU Fusion			-> ENABLED[0m
+[0m[INFO] [1790509105.330274700]:  * Floor alignment		-> DISABLED[0m
+[0m[INFO] [1790509105.331103388]:  * Init Odometry with first valid pose data -> ENABLED[0m
+[0m[INFO] [1790509105.331938477]:  * Force 2D mode		-> DISABLED[0m
+[0m[INFO] [1790509105.332749181]:  * Broadcast odometry TF	-> DISABLED[0m
+[0m[INFO] [1790509105.333553837]:  * Broadcast map pose TF	-> DISABLED[0m
+[0m[INFO] [1790509105.334379230]:  * Camera is static		-> DISABLED[0m
+[0m[INFO] [1790509105.335142029]:  * Depth minimum range		-> 0[0m
+[0m[INFO] [1790509105.335198862]: *** MAPPING PARAMETERS ***[0m
+[0m[INFO] [1790509105.336107520]:  * Mapping			-> DISABLED[0m
+[0m[INFO] [1790509105.336894224]:  * Clicked point topic		-> /clicked_point[0m
+[0m[INFO] [1790509105.336941937]: *** OBJECT DETECTION PARAMETERS ***[0m
+[0m[INFO] [1790509105.337629023]:  * Object Detection		-> DISABLED[0m
+[0m[INFO] [1790509105.338319149]:  * Object confidence		-> 50[0m
+[0m[INFO] [1790509105.338975162]:  * Object tracking		-> ENABLED[0m
+[0m[INFO] [1790509105.339652327]:  * Detection max range		-> 15[0m
+[0m[INFO] [1790509105.340307669]:  * Allow reduced precision	-> ENABLED[0m
+[0m[INFO] [1790509105.340982722]:  * Prediction Timeout		-> 0.5[0m
+[0m[INFO] [1790509105.341710609]:  * Object Det. model		->MULTI CLASS BOX ACCURATE[0m
+[0m[INFO] [1790509105.342379166]:  * Detect people		-> ENABLED[0m
+[0m[INFO] [1790509105.342976266]:  * Detect vehicles		-> ENABLED[0m
+[0m[INFO] [1790509105.343601750]:  * Detect bags			-> ENABLED[0m
+[0m[INFO] [1790509105.344224035]:  * Detect animals		-> ENABLED[0m
+[0m[INFO] [1790509105.344795758]:  * Detect electronics		-> ENABLED[0m
+[0m[INFO] [1790509105.345378586]:  * Detect fruit and vegetables	-> ENABLED[0m
+[0m[INFO] [1790509105.345973926]:  * Detect sport-related objects	-> ENABLED[0m
+[0m[INFO] [1790509105.346013415]: *** SENSORS PARAMETERS ***[0m
+[0m[INFO] [1790509105.346609715]:  * Sensors timestamp sync	-> DISABLED[0m
+[0m[INFO] [1790509105.347220447]:  * Max sensors rate		-> 400[0m
+[0m[INFO] [1790509105.347809867]:  * Broadcast IMU pose TF	-> ENABLED[0m
+[0m[INFO] [1790509105.347920365]: *** SVO PARAMETERS ***[0m
+[0m[INFO] [1790509105.348474328]:  * SVO input file: 		-> [0m
+[0m[INFO] [1790509105.349060484]:  * SVO REC compression		-> LOSSLESS[0m
+[0m[INFO] [1790509105.349641647]: *** COORDINATE FRAMES ***[0m
+[0m[INFO] [1790509105.351249136]:  * camera_frame			-> zedx_front_camera_center[0m
+[0m[INFO] [1790509105.351301201]:  * imu_link			-> zedx_front_imu_link[0m
+[0m[INFO] [1790509105.351322481]:  * left_camera_frame		-> zedx_front_left_camera_frame[0m
+[0m[INFO] [1790509105.351341585]:  * left_camera_optical_frame	-> zedx_front_left_camera_optical_frame[0m
+[0m[INFO] [1790509105.351365586]:  * right_camera_frame		-> zedx_front_right_camera_frame[0m
+[0m[INFO] [1790509105.351388914]:  * right_camera_optical_frame	-> zedx_front_right_camera_optical_frame[0m
+[0m[INFO] [1790509105.351413459]:  * map_frame			-> map[0m
+[0m[INFO] [1790509105.351437267]:  * odometry_frame		-> odom[0m
+[0m[INFO] [1790509105.351476916]:  * base_frame			-> base_link[0m
+[0m[INFO] [1790509105.351499253]:  * depth_frame			-> zedx_front_left_camera_frame[0m
+[0m[INFO] [1790509105.351518997]:  * depth_optical_frame		-> zedx_front_left_camera_optical_frame[0m
+[0m[INFO] [1790509105.351539349]:  * disparity_frame		-> zedx_front_left_camera_frame[0m
+[0m[INFO] [1790509105.351558710]:  * disparity_optical_frame	-> zedx_front_left_camera_optical_frame[0m
+[0m[INFO] [1790509105.351578582]:  * confidence_frame		-> zedx_front_left_camera_frame[0m
+[0m[INFO] [1790509105.351594102]:  * confidence_optical_frame	-> zedx_front_left_camera_optical_frame[0m
+[0m[INFO] [1790509105.358746278]:  * Camera coordinate system	-> RIGHT HANDED Z UP X FWD[0m
+[0m[INFO] [1790509105.752718068]:  *** Opening ZED X - LIVE CAMERA with ID 0 ***[0m
+[2026-09-27 11:38:25 UTC][ZED][INFO] Logging level INFO
+[2026-09-27 11:38:26 UTC][ZED][INFO] [Init]  Depth mode: NEURAL
+[2026-09-27 11:38:28 UTC][ZED][INFO] [Init]  Sensors FW version: 1000
+[2026-09-27 11:38:28 UTC][ZED][INFO] [Init]  Camera FW version: 2001
+[2026-09-27 11:38:28 UTC][ZED][INFO] [Init]  Video mode: HD1200@30
+[2026-09-27 11:38:28 UTC][ZED][INFO] [Init]  Serial Number: S/N 47637666
+[0m[INFO] [1790509115.658273006]: ZED connection [LIVE CAMERA with ID 0]: SUCCESS[0m
+[0m[INFO] [1790509117.658640059]:  ...  ZED ready[0m
+[0m[INFO] [1790509117.658714205]: ZED SDK running on GPU #0[0m
+[0m[INFO] [1790509117.660014583]: Camera-IMU Transform: 
+ AAAB1476BB58
+0.999995 -0.003102 0.000909 0.000000
+0.003110 0.999955 -0.008936 -0.035649
+-0.000881 0.008939 0.999960 -0.000147
+0.000000 0.000000 0.000000 1.000000
+[0m
+[0m[INFO] [1790509117.660046039]:  * CAMERA MODEL	-> ZED X[0m
+[0m[INFO] [1790509117.660096280]:  * Serial Number: 47637666[0m
+[0m[INFO] [1790509117.660120313]:  * Camera FW Version: 2001[0m
+[0m[INFO] [1790509117.660141049]:  * Sensors FW Version: 1000[0m
+[0m[INFO] [1790509117.722947331]: *** PUBLISHERS ***[0m
+[0m[INFO] [1790509118.040934272]:  * Advertised on topic /zedx_front/zed_node/rgb/image_rect_color[0m
+[0m[INFO] [1790509118.041110788]:  * Advertised on topic /zedx_front/zed_node/rgb/camera_info[0m
+[0m[INFO] [1790509118.077433115]:  * Advertised on topic /zedx_front/zed_node/rgb_raw/image_raw_color[0m
+[0m[INFO] [1790509118.077472892]:  * Advertised on topic /zedx_front/zed_node/rgb_raw/camera_info[0m
+[0m[INFO] [1790509118.105747890]:  * Advertised on topic /zedx_front/zed_node/left/image_rect_color[0m
+[0m[INFO] [1790509118.105790323]:  * Advertised on topic /zedx_front/zed_node/left/camera_info[0m
+[0m[INFO] [1790509118.129380523]:  * Advertised on topic /zedx_front/zed_node/left_raw/image_raw_color[0m
+[0m[INFO] [1790509118.129426572]:  * Advertised on topic /zedx_front/zed_node/left_raw/camera_info[0m
+[0m[INFO] [1790509118.154016568]:  * Advertised on topic /zedx_front/zed_node/right/image_rect_color[0m
+[0m[INFO] [1790509118.154066905]:  * Advertised on topic /zedx_front/zed_node/right/camera_info[0m
+[0m[INFO] [1790509118.179707482]:  * Advertised on topic /zedx_front/zed_node/right_raw/image_raw_color[0m
+[0m[INFO] [1790509118.179760571]:  * Advertised on topic /zedx_front/zed_node/right_raw/camera_info[0m
+[0m[INFO] [1790509118.209212617]:  * Advertised on topic /zedx_front/zed_node/rgb/image_rect_gray[0m
+[0m[INFO] [1790509118.209264426]:  * Advertised on topic /zedx_front/zed_node/rgb/camera_info[0m
+[0m[INFO] [1790509118.239038526]:  * Advertised on topic /zedx_front/zed_node/rgb_raw/image_raw_gray[0m
+[0m[INFO] [1790509118.239097567]:  * Advertised on topic /zedx_front/zed_node/rgb_raw/camera_info[0m
+[0m[INFO] [1790509118.268799410]:  * Advertised on topic /zedx_front/zed_node/left/image_rect_gray[0m
+[0m[INFO] [1790509118.268862035]:  * Advertised on topic /zedx_front/zed_node/left/camera_info[0m
+[0m[INFO] [1790509118.293519553]:  * Advertised on topic /zedx_front/zed_node/left_raw/image_raw_gray[0m
+[0m[INFO] [1790509118.293585346]:  * Advertised on topic /zedx_front/zed_node/left_raw/camera_info[0m
+[0m[INFO] [1790509118.316448332]:  * Advertised on topic /zedx_front/zed_node/right/image_rect_gray[0m
+[0m[INFO] [1790509118.316536430]:  * Advertised on topic /zedx_front/zed_node/right/camera_info[0m
+[0m[INFO] [1790509118.339883905]:  * Advertised on topic /zedx_front/zed_node/right_raw/image_raw_gray[0m
+[0m[INFO] [1790509118.339955394]:  * Advertised on topic /zedx_front/zed_node/right_raw/camera_info[0m
+[0m[INFO] [1790509118.363112338]:  * Advertised on topic /zedx_front/zed_node/stereo/image_rect_color[0m
+[0m[INFO] [1790509118.387305590]:  * Advertised on topic /zedx_front/zed_node/stereo_raw/image_raw_color[0m
+[0m[INFO] [1790509118.411761088]:  * Advertised on topic /zedx_front/zed_node/depth/depth_registered[0m
+[0m[INFO] [1790509118.411847138]:  * Advertised on topic /zedx_front/zed_node/depth/camera_info[0m
+[0m[INFO] [1790509118.412422925]:  * Advertised on topic /zedx_front/zed_node/confidence/confidence_map[0m
+[0m[INFO] [1790509118.412961528]:  * Advertised on topic /zedx_front/zed_node/disparity/disparity_image[0m
+[0m[INFO] [1790509118.413487810]:  * Advertised on topic /zedx_front/zed_node/point_cloud/cloud_registered[0m
+[0m[INFO] [1790509118.414043374]:  * Advertised on topic /zedx_front/zed_node/pose[0m
+[0m[INFO] [1790509118.414568344]:  * Advertised on topic /zedx_front/zed_node/pose_with_covariance[0m
+[0m[INFO] [1790509118.415138019]:  * Advertised on topic /zedx_front/zed_node/odom[0m
+[0m[INFO] [1790509118.415866930]:  * Advertised on topic /zedx_front/zed_node/odom/status[0m
+[0m[INFO] [1790509118.416612193]:  * Advertised on topic /zedx_front/zed_node/pose/status[0m
+[0m[INFO] [1790509118.417783960]:  * Advertised on topic /zedx_front/zed_node/path_odom[0m
+[0m[INFO] [1790509118.418335971]:  * Advertised on topic /zedx_front/zed_node/path_map[0m
+[0m[INFO] [1790509118.419181908]:  * Advertised on topic /zedx_front/zed_node/imu/data[0m
+[0m[INFO] [1790509118.419760608]:  * Advertised on topic /zedx_front/zed_node/imu/data_raw[0m
+[0m[INFO] [1790509118.420304971]:  * Advertised on topic /zedx_front/zed_node/temperature/imu[0m
+[0m[INFO] [1790509118.420904631]:  * Advertised on topic /zedx_front/zed_node/left_cam_imu_transform [LATCHED][0m
+[0m[INFO] [1790509118.420958680]: *** SUBSCRIBERS ***[0m
+[0m[INFO] [1790509118.423057890]:  * Subscribed to topic /clicked_point[0m
+[0m[INFO] [1790509118.423112387]: *** SERVICES ***[0m
+[0m[INFO] [1790509118.423699023]:  * Advertised on service /zedx_front/zed_node/set_pose[0m
+[0m[INFO] [1790509118.424312667]:  * Advertised on service /zedx_front/zed_node/reset_odometry[0m
+[0m[INFO] [1790509118.424838310]:  * Advertised on service /zedx_front/zed_node/reset_tracking[0m
+[0m[INFO] [1790509118.425358352]:  * Advertised on service /zedx_front/zed_node/save_area_memory[0m
+[0m[INFO] [1790509118.425876538]:  * Advertised on service /zedx_front/zed_node/start_3d_mapping[0m
+[0m[INFO] [1790509118.426392069]:  * Advertised on service /zedx_front/zed_node/stop_3d_mapping[0m
+[0m[INFO] [1790509118.426903823]:  * Advertised on service /zedx_front/zed_node/save_3d_map[0m
+[0m[INFO] [1790509118.427421369]:  * Advertised on service /zedx_front/zed_node/enable_object_detection[0m
+[0m[INFO] [1790509118.427961668]:  * Advertised on service /zedx_front/zed_node/start_svo_recording[0m
+[0m[INFO] [1790509118.428470446]:  * Advertised on service /zedx_front/zed_node/stop_svo_recording[0m
+[0m[INFO] [1790509118.428993305]:  * Advertised on service /zedx_front/zed_node/set_led_status[0m
+[0m[INFO] [1790509118.429556324]:  * Advertised on service /zedx_front/zed_node/toggle_led[0m
+[0m[INFO] [1790509118.430157392]:  * Advertised on service /zedx_front/zed_node/start_remote_stream[0m
+[0m[INFO] [1790509118.430855838]:  * Advertised on service /zedx_front/zed_node/stop_remote_stream[0m
+[0m[INFO] [1790509118.431388521]:  * Advertised on service /zedx_front/zed_node/set_roi[0m
+[0m[INFO] [1790509118.431944532]:  * Advertised on service /zedx_front/zed_node/set_roi[0m
+[0m[INFO] [1790509118.432147160]: +++ ZED Node started +++[0m
+[0m[INFO] [1790509118.434640810]: *** Starting Positional Tracking ***[0m
+[0m[INFO] [1790509118.434728748]:  * Waiting for valid static transformations...[0m
+[0m[INFO] [1790509118.434917839]: Static transform Sensor to Base [zedx_front_left_camera_frame -> base_link][0m
+[0m[INFO] [1790509118.435814369]: Published static transform 'zedx_front_imu_link' -> 'zedx_front_left_camera_frame'[0m
+[0m[INFO] [1790509118.435936324]:  * Translation: {-0.040,-0.020,-0.567}[0m
+[0m[INFO] [1790509118.435991237]:  * Rotation: {0.000,-3.237,0.000}[0m
+[0m[INFO] [1790509118.436062534]: Static transform Sensor to Camera Center [zedx_front_left_camera_frame -> zedx_front_camera_center][0m
+[0m[INFO] [1790509118.436106695]:  * Translation: {0.010,-0.060,0.000}[0m
+[0m[INFO] [1790509118.436152008]:  * Rotation: {0.000,-0.000,0.000}[0m
+[0m[INFO] [1790509118.436208841]: Static transform Camera Center to Base [zedx_front_camera_center -> base_link][0m
+[0m[INFO] [1790509118.436243050]:  * Translation: {-0.050,0.040,-0.567}[0m
+[0m[INFO] [1790509118.436300171]:  * Rotation: {0.000,-3.237,0.000}[0m
+[0m[INFO] [1790509118.936491112]: Initial ZED left camera pose (ZED pos. tracking): [0m
+[0m[INFO] [1790509118.936612587]:  * T: [0.0719195,0.02,0.563539][0m
+[0m[INFO] [1790509118.936662028]:  * Q: [0,0.0282462,0,0.999601][0m
+ZED 47637666 closed.
+... logging to ~/.ros/log/e0e56ee4-ba38-11f1-8c88-48e7da41463d/roslaunch-jetson-531598.log
+Checking log directory for disk usage. This may take a while.
+Press Ctrl-C to interrupt
+Done checking log file disk usage. Usage is <1GB.
+]2;<repo>/catkin_ws/src/sidewalk_perception/launch/zedx_front.launch
+[1mstarted roslaunch server http://127.0.0.1:37029/[0m
+
+SUMMARY
+========
+
+PARAMETERS
+ * /rosdistro: noetic
+ * /rosversion: 1.17.4
+ * /zedx_front/zed_node/auto_exposure_gain: True
+ * /zedx_front/zed_node/auto_whitebalance: True
+ * /zedx_front/zed_node/brightness: 4
+ * /zedx_front/zed_node/contrast: 4
+ * /zedx_front/zed_node/depth/depth_mode: NEURAL
+ * /zedx_front/zed_node/depth/depth_stabilization: 1
+ * /zedx_front/zed_node/depth/max_depth: 35.0
+ * /zedx_front/zed_node/depth/min_depth: 1.0
+ * /zedx_front/zed_node/depth/openni_depth_mode: False
+ * /zedx_front/zed_node/depth/sensing_mode: 0
+ * /zedx_front/zed_node/depth_confidence: 50
+ * /zedx_front/zed_node/depth_texture_conf: 100
+ * /zedx_front/zed_node/exposure: 100
+ * /zedx_front/zed_node/gain: 100
+ * /zedx_front/zed_node/gamma: 8
+ * /zedx_front/zed_node/general/base_frame: base_link
+ * /zedx_front/zed_node/general/camera_flip: AUTO
+ * /zedx_front/zed_node/general/camera_model: zedx
+ * /zedx_front/zed_node/general/camera_name: zedx_front
+ * /zedx_front/zed_node/general/gpu_id: -1
+ * /zedx_front/zed_node/general/grab_frame_rate: 30
+ * /zedx_front/zed_node/general/grab_resolution: HD1200
+ * /zedx_front/zed_node/general/pub_downscale_factor: 2.0
+ * /zedx_front/zed_node/general/pub_frame_rate: 15
+ * /zedx_front/zed_node/general/pub_resolution: NATIVE
+ * /zedx_front/zed_node/general/region_of_interest: []
+ * /zedx_front/zed_node/general/sdk_verbose: 1
+ * /zedx_front/zed_node/general/self_calib: True
+ * /zedx_front/zed_node/general/serial_number: 0
+ * /zedx_front/zed_node/general/svo_compression: 0
+ * /zedx_front/zed_node/general/svo_realtime: True
+ * /zedx_front/zed_node/general/zed_id: 0
+ * /zedx_front/zed_node/hue: 0
+ * /zedx_front/zed_node/mapping/clicked_point_topic: /clicked_point
+ * /zedx_front/zed_node/mapping/fused_pointcloud_freq: 1.0
+ * /zedx_front/zed_node/mapping/mapping_enabled: False
+ * /zedx_front/zed_node/mapping/max_mapping_range: -1
+ * /zedx_front/zed_node/mapping/resolution: 0.05
+ * /zedx_front/zed_node/object_detection/allow_reduced_precision_inference: True
+ * /zedx_front/zed_node/object_detection/max_range: 15.0
+ * /zedx_front/zed_node/object_detection/mc_animal: True
+ * /zedx_front/zed_node/object_detection/mc_bag: True
+ * /zedx_front/zed_node/object_detection/mc_electronics: True
+ * /zedx_front/zed_node/object_detection/mc_fruit_vegetable: True
+ * /zedx_front/zed_node/object_detection/mc_people: True
+ * /zedx_front/zed_node/object_detection/mc_sport: True
+ * /zedx_front/zed_node/object_detection/mc_vehicle: True
+ * /zedx_front/zed_node/object_detection/model: MULTI_CLASS_BOX_A...
+ * /zedx_front/zed_node/object_detection/object_tracking_enabled: True
+ * /zedx_front/zed_node/object_detection/od_enabled: False
+ * /zedx_front/zed_node/object_detection/prediction_timeout: 0.5
+ * /zedx_front/zed_node/point_cloud/point_cloud_freq: 10.0
+ * /zedx_front/zed_node/point_cloud_freq: 10.0
+ * /zedx_front/zed_node/pos_tracking/area_memory: False
+ * /zedx_front/zed_node/pos_tracking/area_memory_db_path: 
+ * /zedx_front/zed_node/pos_tracking/depth_min_range: 0.0
+ * /zedx_front/zed_node/pos_tracking/fixed_z_value: 0.0
+ * /zedx_front/zed_node/pos_tracking/floor_alignment: False
+ * /zedx_front/zed_node/pos_tracking/imu_fusion: True
+ * /zedx_front/zed_node/pos_tracking/init_odom_with_first_valid_pose: True
+ * /zedx_front/zed_node/pos_tracking/initial_base_pose: [0.0, 0.0, 0.0, 0...
+ * /zedx_front/zed_node/pos_tracking/map_frame: map
+ * /zedx_front/zed_node/pos_tracking/odometry_frame: odom
+ * /zedx_front/zed_node/pos_tracking/path_max_count: -1
+ * /zedx_front/zed_node/pos_tracking/path_pub_rate: 2.0
+ * /zedx_front/zed_node/pos_tracking/pos_tracking_enabled: True
+ * /zedx_front/zed_node/pos_tracking/pos_tracking_mode: GEN_2
+ * /zedx_front/zed_node/pos_tracking/publish_map_tf: False
+ * /zedx_front/zed_node/pos_tracking/publish_tf: False
+ * /zedx_front/zed_node/pos_tracking/save_area_memory_db_on_exit: False
+ * /zedx_front/zed_node/pos_tracking/set_as_static: False
+ * /zedx_front/zed_node/pos_tracking/set_gravity_as_origin: True
+ * /zedx_front/zed_node/pos_tracking/two_d_mode: False
+ * /zedx_front/zed_node/saturation: 4
+ * /zedx_front/zed_node/sensors/max_pub_rate: 400.0
+ * /zedx_front/zed_node/sensors/publish_imu_tf: True
+ * /zedx_front/zed_node/sensors/sensors_timestamp_sync: False
+ * /zedx_front/zed_node/sharpness: 4
+ * /zedx_front/zed_node/stream: 
+ * /zedx_front/zed_node/svo_file: 
+ * /zedx_front/zed_node/video/auto_exposure_gain: True
+ * /zedx_front/zed_node/video/auto_whitebalance: True
+ * /zedx_front/zed_node/video/brightness: 4
+ * /zedx_front/zed_node/video/contrast: 4
+ * /zedx_front/zed_node/video/exposure: 80
+ * /zedx_front/zed_node/video/gain: 80
+ * /zedx_front/zed_node/video/saturation: 4
+ * /zedx_front/zed_node/video/sharpness: 4
+ * /zedx_front/zed_node/whitebalance_temperature: 42
+ * /zedx_front/zedx_front_description: <?xml version="1....
+
+NODES
+  /zedx_front/
+    zed_node (zed_wrapper/zed_wrapper_node)
+    zedx_front_state_publisher (robot_state_publisher/robot_state_publisher)
+
+[1mROS_MASTER_URI=http://127.0.0.1:11311[0m
+]2;<repo>/catkin_ws/src/sidewalk_perception/launch/zedx_front.launch http://127.0.0.1:11311
+[1mprocess[zedx_front/zedx_front_state_publisher-1]: started with pid [531680][0m
+[1mprocess[zedx_front/zed_node-2]: started with pid [531681][0m
+[zedx_front/zed_node-2] killing on exit
+[zedx_front/zedx_front_state_publisher-1] killing on exit
+shutting down processing monitor...
+... shutting down processing monitor complete
+[1mdone[0m

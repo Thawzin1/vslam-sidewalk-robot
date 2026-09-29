@@ -1,0 +1,13 @@
+# Detector settings shared by every sphere_centroid instance.
+# Loading one file into both detectors of dynamic_paired.launch is what guarantees the
+# paired A/B differs ONLY in whether the cloud was deskewed.
+# Values match launch/dynamic_replay.launch and the static Test 1 runs.
+sphere_radius:  0.20
+radius_tol:     0.07
+inlier_thresh:  0.03
+ransac_iters:   1500
+max_candidates: 7
+triangle_base:  1.10
+triangle_rise:  1.10
+side_tol:       0.06
+apex_z_tol:     0.08

@@ -1,0 +1,209 @@
+# zedx_front_od_replay.yaml - REPLAY variant of zedx_front_od.yaml (slam_session_2026-09-27): identical except
+# general/svo_realtime false, so two replays of one recording process the same frames (zedx-offline-replay memory).
+# ---------------------------------------------------------------------------
+# zedx_front.yaml — ZED X (SKU ZED-312110) settings for the FRONT camera.
+#
+# These are parameters for zed-ros-wrapper (Noetic branch, ZED SDK 4.x). They
+# are loaded into the driver's private namespace by launch/zedx_front.launch.
+#
+# WHY THIS FILE IS PER-CAMERA
+#   A second ZED X, facing the opposite direction, is planned. Every setting
+#   here that affects naming — camera_name above all — must differ between the
+#   two, or their topics and coordinate frames collide. Copy this file to
+#   zedx_rear.yaml when that camera arrives; do not add a second camera to this
+#   one.
+#
+# HOW TO VERIFY IT TOOK EFFECT
+#   Do not trust this file. Run
+#       rosrun sidewalk_perception sensor_validator.py --quick
+#   which measures what the camera actually delivers and compares it against
+#   what was asked for. The enum values below in particular are version
+#   sensitive (see the note on `resolution`), so measurement is the only
+#   reliable confirmation.
+# ---------------------------------------------------------------------------
+
+general:
+  svo_realtime: false        # REPLAY ONLY (zedx_front_od_replay.yaml): every recorded frame, not wall-clock pacing
+  # Drives topic namespace AND the prefix of every published coordinate frame.
+  # `zedx_front` produces /zedx_front/... topics and zedx_front_left_camera_
+  # optical_frame etc. This single string is what keeps the future rear camera
+  # from colliding with this one.
+  camera_name: 'zedx_front'
+  camera_model: 'zedx'
+
+  # 0 = auto-detect the single connected camera. Set this to the real serial
+  # once the second camera exists, otherwise which physical unit each driver
+  # grabs becomes a race at boot.
+  serial_number: 0
+
+  # RESOLUTION — VERSION-SENSITIVE ENUM.
+  # The ZED X native mode is HD1200 (1920x1200) at up to 60 FPS. The integer
+  # meaning of this field has changed across wrapper versions, and on some 4.x
+  # builds it is a string ('HD1200') rather than an index. If the validator
+  # reports a resolution other than 1920x1200, check this against the enum in
+  # your installed `zed_wrapper/params/common.yaml` rather than assuming the
+  # file is wrong.
+  grab_resolution: 'HD1200'    # 1920x1200 per eye; best fx -> best depth precision
+  pub_resolution: 'NATIVE'     # publish at grab resolution, NO 2x downscale
+  # NOTE: this wrapper (zed-ros-wrapper, SDK 4.x) reads STRING keys. An earlier
+  # `resolution: 0` here was silently ignored and the wrapper defaulted to
+  # publishing a 2x-downscaled 960x600 depth. Always verify with
+  # `rosparam get /zedx_front/zed_node/general/grab_resolution`.
+
+  # 30 FPS, not the 60 the sensor supports. This is a deliberate choice:
+  #   - RTAB-Map, the ZED tracker and ORB-SLAM3 all run concurrently during the
+  #     comparison, and the Orin has to feed all three plus depth.
+  #   - Sidewalk speeds are ~1.5 m/s. At 30 FPS that is 5 cm of travel between
+  #     frames, which is ample overlap for feature tracking.
+  #   - Halving the frame rate halves the data written during a soak run.
+  # Raise it to 60 only for a specific experiment on fast motion, and re-run
+  # the validator afterwards — the Orin may not sustain it with SLAM running.
+  grab_frame_rate: 30
+  pub_frame_rate: 15           # NEURAL @ native 1200p won't sustain 30; 15 is stable (static test unaffected)
+
+  gpu_id: -1
+  base_frame: 'base_link'      # robot body frame, shared; NOT namespaced
+  # Was `verbose: false` — a DEAD LINE. The driver reads `general/sdk_verbose`
+  # (zed_wrapper_nodelet.cpp:861), not `verbose`, so this never suppressed
+  # anything: the SDK has been at the wrapper's default of 1 (verbose) all along
+  # [VERIFIED 2026-08-25]. Stating it explicitly so the file says what is true.
+  #
+  # Verbose is what we WANT, and it is free — the camera's diagnostics go to
+  # stdout. Run 5's crash could not be root-caused because that stdout was
+  # thrown away, not because it was missing. Capture it (see docs/RUN6_PROCEDURE.md):
+  #     roslaunch ... 2>&1 | tee ~/.run_records/<run_id>/camera.log
+  sdk_verbose: 1
+  # 4 = H265_LOSSLESS (was 2 = lossy H265, changed 2026-09-04 for the sphere
+  # benchmark's raw captures). Stereolabs documents no answer to whether lossy
+  # SVO changes recomputed depth, and our first replay-vs-live check came back
+  # murky - so the raw material for the camera depth study is recorded lossless, and the
+  # lossy-vs-lossless depth question gets characterized from a paired capture
+  # instead of assumed. Read at node STARTUP only; rosparam set does nothing.
+  # 0 = LOSSLESS (PNG/ZSTD, CPU). Changed 2026-09-05 from 4 (H265_LOSSLESS) after
+  # reading the SDK's own documentation: of the five modes, ONLY mode 0 is truly
+  # lossless. H264_LOSSLESS and H265_LOSSLESS are documented as NEAR-lossless -
+  # "SSIM/PSNR >= 99.9 %" against raw, about 25 % of raw size - which is not
+  # bit-exact, and the name misleads. Our mode-4 captures came out at roughly 1 %
+  # of raw, the documented figure for plain LOSSY H265, so they are further from
+  # lossless than even the near-lossless label promises. The whole offline research
+  # arm reprocesses depth from these files, so the raw material has to be the real
+  # thing.
+  #
+  # THE COST, so nobody is surprised: mode 0 is roughly 42 % of raw, order 3-5 MB
+  # per frame against the 67 KB we were getting, and it compresses on the CPU
+  # rather than the video encoder. Two consequences: keep captures SHORT (a couple
+  # of minutes is plenty for offline reprocessing), and record them AFTER a live
+  # run rather than during one, because CPU-side compression competes with the
+  # detector in a way the hardware encoder did not. Check the frame count after
+  # every capture - a stick that cannot keep up drops frames silently.
+  #
+  # Read at node STARTUP only; rosparam set does nothing.
+  svo_compression: 0           # LOSSLESS - the only genuinely lossless mode
+
+depth:
+  # NEURAL gives markedly better depth on the low-texture surfaces that dominate
+  # sidewalks (plain concrete, asphalt), but costs ~80% of the Orin's GPU
+  # (ENGINEERING_NOTES.md Sec.5) — ULTRA is the standing choice on this hardware, not a
+  # fallback. Only switch to NEURAL for a specific, budgeted experiment, and
+  # re-run the validator after changing this: depth mode changes both the CPU
+  # budget and the fraction of valid pixels.
+  depth_mode: 'ULTRA'          # STRING key; the old `quality: 4` was silently ignored (ran ULTRA)
+  # CONFIDENCE FILTERING IS NOT SET HERE, AND THAT IS A KNOWN GAP.
+  # The driver's own defaults apply: depth_confidence 50, depth_texture_conf 100.
+  # VERIFIED 2026-09-05 by reading the live running node - and note the path,
+  # because it is not where you would guess:
+  #     rosparam get /zedx_front/zed_node/depth_confidence      -> 50
+  #     rosparam get /zedx_front/zed_node/depth_texture_conf    -> 100
+  # They sit at the NODE's top level, NOT under depth/ like every neighbouring
+  # depth setting. An audit that looked under depth/ found "not set" and nearly
+  # concluded the value was unknown.
+  # WHY IT MATTERS: the sphere-benchmark replay and exposure scripts pin 50 to
+  # reproduce this pipeline. Had the live value differed, confidence would have
+  # been an uncontrolled second variable in the exposure experiment. It does not
+  # differ. Pin it explicitly here at the next deliberate restart - not mid-series,
+  # and re-run the validator when you do.
+  sensing_mode: 0              # STANDARD; FILL interpolates and invents data
+  depth_stabilization: 1
+
+  # Rated range for this camera is 1-35 m. Setting the minimum below 1 m does
+  # not extend the camera's ability — it just produces confident nonsense in a
+  # region where the two lenses barely share a view. The 120 mm baseline sets
+  # this floor geometrically and no setting overrides physics.
+  min_depth: 1.0
+  max_depth: 35.0
+
+  openni_depth_mode: false     # publish float32 metres, not uint16 mm
+
+video:
+  # Auto exposure, but capped. An uncapped auto exposure will happily choose
+  # 30 ms in low light, and 30 ms at 1.5 m/s smears every feature across 4.5 cm
+  # of ground. Motion blur destroys the sharp corners visual SLAM tracks, so a
+  # slightly noisy short exposure beats a clean long one on a moving robot.
+  auto_exposure_gain: true
+  exposure: 80                 # percent, used when auto is disabled
+  gain: 80
+  auto_whitebalance: true
+  brightness: 4
+  contrast: 4
+  saturation: 4
+  sharpness: 4
+
+sensors:
+  # The ZED X IMU runs at 200 Hz (datasheet, "Output Data Rate"). Publish it at
+  # full rate: RTAB-Map and ORB-SLAM3 both integrate IMU between camera frames,
+  # and at 30 FPS there are only ~7 IMU samples per frame interval. Throttling
+  # this is a silent way to degrade the very thing the IMU is for.
+  #
+  # max_pub_rate BELOW IS A CEILING AND IS DELIBERATELY LEFT AT 400.0. This
+  # comment said "the IMU runs at 400 Hz" until 2026-08-29, which was the ZED 2
+  # figure; the ZED X datasheet says 200 Hz in two places. A ceiling above the
+  # source rate is a no-op — the wrapper publishes whatever the sensor gives —
+  # so nothing is gained by lowering it and a tuning value is not changed as a
+  # side effect of a documentation correction. Lower it to 200.0 only if a
+  # measured `rostopic hz` shows the wrapper synthesising samples above the
+  # sensor rate, which would matter because ORB-SLAM3 and RTAB-Map would then
+  # be treating interpolated values as independent measurements.
+  sensors_timestamp_sync: false   # stamp from the camera clock, not ROS time
+  max_pub_rate: 400.0
+  publish_imu_tf: true
+
+pos_tracking:
+  # The ZED SDK's own tracker is a COMPARATIVE BASELINE in this project, not
+  # the primary system — RTAB-Map is. It stays enabled so its trajectory can be
+  # recorded alongside the others, but nothing downstream should consume it as
+  # the authoritative pose.
+  pos_tracking_enabled: true
+  publish_tf: false            # RTAB-Map owns map->odom; two publishers fight
+  publish_map_tf: false
+  area_memory: false           # the SDK's own loop closure, off for a fair test
+  imu_fusion: true
+  floor_alignment: false
+  two_d_mode: false            # sidewalks have kerbs, ramps and camber
+
+point_cloud:
+  # The point cloud is expensive to publish and RTAB-Map does not need it (it
+  # builds its own from the depth image). Keep it low-rate for visualisation
+  # and turn it off entirely during a soak run.
+  point_cloud_freq: 10.0
+
+object_detection:
+  # ---- COPY WITH THE PEOPLE DETECTOR ON. Lines 1-185 are the live
+  # catkin_ws/src/sidewalk_perception/config/zedx_front.yaml byte for byte (its sha256 is in
+  # zedx_front.yaml.BASE_sha256; start_slam.sh refuses if the live file has changed since).
+  # Only this section differs: object detection ON, people only, the FAST model (the only one whose
+  # file is on this Jetson: /usr/local/zed/resources/objects_performance_3.2.model).
+  # *Plain terms: the camera also looks for people in every picture and reports a box around each.*
+  od_enabled: true                     # start the detector with the camera (needs the model optimised once: od_bench.sh)
+  model: 'MULTI_CLASS_BOX_FAST'        # common.yaml's default ACCURATE needs a model file this Jetson does not have
+  confidence_threshold: 50             # 0-100: boxes the detector is less sure of than this are not reported
+  max_range: 15.0                      # metres; people further away than this are ignored
+  allow_reduced_precision_inference: true
+  prediction_timeout: 0.5              # s: a person briefly hidden keeps its box this long (tracking)
+  object_tracking_enabled: true        # the same person keeps one id from picture to picture
+  mc_people: true                      # people ONLY - the one class that moves in these corridors
+  mc_vehicle: false
+  mc_bag: false
+  mc_animal: false
+  mc_electronics: false
+  mc_fruit_vegetable: false
+  mc_sport: false

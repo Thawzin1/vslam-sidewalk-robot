@@ -1,0 +1,13 @@
+2026-09-25 03:58:10 EDT REHEARSAL_START round 3b conditioner 52a244ac; robot_side started 03:58:03 (marks typed by the Jetson operator from chat cues: +-30 s)
+2026-09-25 03:59:32 EDT READY printed 03:59:15 (kept +0.48 n=739); PARKED_5MIN_START
+2026-09-25 04:04:28 EDT PARKED_5MIN_END; cue sent: cover lens 15 s, blind turn ~90 left, 3 s, uncover, turn ~90 right
+2026-09-25 04:07:17 EDT USER_SAID step 1 done (lens covered 15 s, parked)
+2026-09-25 04:08:38 EDT USER_SAID step 2 done (blind turn ~90 deg left, 3 s, uncovered)
+2026-09-25 04:10:14 EDT USER_SAID step 3 done: turn ~90 right back to original orientation, LENS STILL COVERED (a second blind turn, not the uncovered one)
+2026-09-25 04:13:12.600 EDT USER_SAID step 3b done (uncovered turn ~90 left then back, still)
+2026-09-25 04:13:12.602 EDT DROP_START kill -TERM 498732 (robot_bridge_recv.py)
+2026-09-25 04:13:13.365 EDT receiver 498732 gone: yes; conditioner: EKF_INPUTS wheel 10.0Hz imu 19.5Hz vo 14.5Hz vo_dropped 0.0% bias +0.20deg/min(n=728,measuring) kept +0.20deg/min(n=728) still 39s hold 7.7s refused_imu 0 nonfi
+2026-09-25 04:13:23.369 EDT DROP_END restarted receiver pid 540963
+2026-09-25 04:13:26.430 EDT bridge after restart: BRIDGE UP  offset +2.48+-1.53 ms  wheel 0.0 Hz  imu 0.0 Hz  imu_raw 0.0 Hz  ekf 0.0 Hz  lost 0  stale 0  future 0  steps 0  2s
+2026-09-25 04:13:38.436 EDT conditioner 12 s later: EKF_INPUTS wheel 8.1Hz imu 15.8Hz vo 9.1Hz vo_dropped 0.0% bias +0.18deg/min(n=834,held while measuring) kept +0.18deg/min(n=834) still 8s hold 9.1s refused_imu 0 nonfinite 0 offset_refused 0 dropped 
+2026-09-25 04:13:54 EDT PARK touched (step 8)

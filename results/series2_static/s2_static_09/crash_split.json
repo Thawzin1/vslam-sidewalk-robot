@@ -1,0 +1,130 @@
+{
+ "camera_down_hamilton": "21:12:29.2",
+ "camera_back_hamilton": "21:12:57.5",
+ "outage_s": 28.3,
+ "outage_cause": "no pictures for 16 s although the camera process runs",
+ "outage_outcome": "restarted (1); camera positions back after 0.4 s but LOST (null position)",
+ "outage_source": "~/.run_records/s2_static_09/camera_outages.csv",
+ "longest_rtabmap_odom_silence_near_outage_s": 43.06,
+ "longest_rtabmap_odom_silence_from_to_hamilton": [
+  "21:12:13",
+  "21:12:56"
+ ],
+ "bag_hamilton": [
+  "20:52:25",
+  "21:20:56"
+ ],
+ "park_received_hamilton": null,
+ "start_used": "bag's first message (ready ~60 s after start; not in a timed line)",
+ "end_used": "each stream's last message (no park: power-cycled ~21:21)",
+ "distance_method": "positions every 0.5 s, straight steps summed",
+ "distance_m": {
+  "blend": {
+   "start_to_down": 178.72,
+   "during_outage": 6.19,
+   "back_to_end": 69.86,
+   "whole": 254.79,
+   "first_last_hamilton": [
+    "20:52:24",
+    "21:20:56"
+   ]
+  },
+  "robot": {
+   "start_to_down": 181.08,
+   "during_outage": 6.19,
+   "back_to_end": 42.2,
+   "whole": 229.47,
+   "first_last_hamilton": [
+    "20:52:25",
+    "21:15:59"
+   ]
+  },
+  "robot_lidar_bag_wheel_tum": {
+   "start_to_down": 181.08,
+   "during_outage": 6.19,
+   "back_to_end": 67.77,
+   "whole": 255.05,
+   "first_last_hamilton": [
+    "20:51:03",
+    "21:24:09"
+   ]
+  }
+ },
+ "map_nodes": {
+  "total": 1334,
+  "first_hamilton": "20:52:09",
+  "last_hamilton": "21:21:03",
+  "before_down": 1006,
+  "during_outage": 1,
+  "after_back": 327
+ },
+ "loop_closures_db_types_1_2": {
+  "pairs": 305,
+  "note": "Link stores each closure both ways; counted once per node pair",
+  "newer_node_after_camera_back": 127,
+  "joining_a_node_from_before_the_outage": 280,
+  "joining_node_1": 0,
+  "first_node_after_camera_back": 1008
+ },
+ "live_page_frames": {
+  "total": 572,
+  "during_outage": [
+   [
+    "397",
+    "21:12:31",
+    "NO DATA for 18 s - the odometry node may have stopped"
+   ],
+   [
+    "398",
+    "21:12:34",
+    "NO DATA for 21 s - the odometry node may have stopped"
+   ],
+   [
+    "399",
+    "21:12:37",
+    "NO DATA for 24 s - the odometry node may have stopped"
+   ],
+   [
+    "400",
+    "21:12:40",
+    "NO DATA for 27 s - the odometry node may have stopped"
+   ],
+   [
+    "401",
+    "21:12:43",
+    "NO DATA for 30 s - the odometry node may have stopped"
+   ],
+   [
+    "402",
+    "21:12:46",
+    "NO DATA for 33 s - the odometry node may have stopped"
+   ],
+   [
+    "403",
+    "21:12:49",
+    "NO DATA for 36 s - the odometry node may have stopped"
+   ],
+   [
+    "404",
+    "21:12:52",
+    "NO DATA for 39 s - the odometry node may have stopped"
+   ],
+   [
+    "405",
+    "21:12:55",
+    "NO DATA for 42 s - the odometry node may have stopped"
+   ],
+   [
+    "406",
+    "21:12:58",
+    "ok (163 matched features)"
+   ]
+  ]
+ },
+ "hang_note": "a HANG, not a crash: the camera process was alive but sent no pictures for 16 s; nvargus-daemon logged InsufficientMemory at 21:12:44 (journal); the guard restarted it",
+ "robot_streams_last_hamilton": {
+  "blend": "21:20:56",
+  "robot": "21:15:59"
+ },
+ "camera_odom_last_hamilton": "21:20:56"
+}

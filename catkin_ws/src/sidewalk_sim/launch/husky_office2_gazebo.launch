@@ -1,0 +1,75 @@
+<?xml version="1.0"?>
+<!--
+  husky_office2_gazebo.launch - the real Husky in a full 24 x 18 m office
+  building (office2.world), a second indoor floor plan alongside office.world.
+
+  A thin wrapper around husky_real_gazebo.launch, changing only what this
+  world needs. Nothing else is duplicated: two launch files describing the
+  same robot would drift apart the first time either was edited (same
+  rationale as every other per-world wrapper here - see
+  husky_mcity_gazebo.launch, husky_sidewalk_gazebo.launch,
+  husky_marc_gazebo.launch).
+
+  WHY THE SPAWN POSE IS WHAT IT IS
+    office2.world's drivable surface is the ground plane at z=0, same as
+    office.world, so spawn_z keeps husky_real_gazebo.launch's own default
+    (0.1) - no override needed. spawn_x/spawn_y put the robot in the
+    entrance/reception foyer just inside the main door (world coordinates
+    x=0, y=-8.0), facing north (+Y, yaw=pi/2) into the building - the
+    natural arrival point, and inside the widest, most feature-rich part
+    of the entrance area rather than jammed against a wall.
+
+  WHAT THIS WORLD OFFERS THAT office.world DOES NOT
+    A full building rather than 4 rooms + one corridor: 15 individually
+    enterable rooms (2 toilets, a pantry/kitchen, 5 offices, a meeting room,
+    a server/IT room, storage, copy/print, 2x 6x6 open-plan areas, and
+    reception), fed by a CLOSED-LOOP corridor (north leg -> west branch ->
+    entrance foyer -> east branch -> back to the north leg) instead of a
+    single straight run - more loop-closure opportunity, and a size/room-
+    count closer to a real small office building. See office2.world's own
+    header comment for the full floor plan, the texture-per-segment
+    discipline it copies from office.world, and the flagged dimensional
+    adjustments made to fit the 24 x 18 m footprint.
+
+  USAGE
+    roslaunch sidewalk_sim husky_office2_gazebo.launch gui:=false rviz:=false zedx:=true zedx_stereo:=true
+
+  BEFORE ANY RECORDED RUN, measure the feature count (see ENGINEERING_NOTES.md) at
+  several spawn points - a small office, the open-plan area, and the
+  corridor at minimum, per this project's own established discipline.
+-->
+<launch>
+
+  <arg name="gui"   default="true"/>
+  <arg name="rviz"  default="true"/>
+  <arg name="zedx"  default="false"/>
+  <arg name="zedx_parent" default="zedx_base_frame"/>
+  <arg name="zedx_xyz"    default="0 0 0"/>
+  <arg name="zedx_rpy"    default="0 0 0"/>
+  <arg name="zedx_stereo" default="false"/>
+  <arg name="zedx_noise_stddev" default="0.005"/>
+
+  <arg name="spawn_x"   default="0.0"/>
+  <arg name="spawn_y"   default="-8.0"/>
+  <arg name="spawn_z"   default="0.1"/>
+  <arg name="spawn_yaw" default="1.5708"
+       doc="Faces +Y (north), into the building from the entrance foyer."/>
+
+  <include file="$(find sidewalk_sim)/launch/husky_real_gazebo.launch">
+    <arg name="world"     value="$(find sidewalk_sim)/worlds/office2.world"/>
+    <arg name="spawn_x"   value="$(arg spawn_x)"/>
+    <arg name="spawn_y"   value="$(arg spawn_y)"/>
+    <arg name="spawn_z"   value="$(arg spawn_z)"/>
+    <arg name="spawn_yaw" value="$(arg spawn_yaw)"/>
+
+    <arg name="gui"         value="$(arg gui)"/>
+    <arg name="rviz"        value="$(arg rviz)"/>
+    <arg name="zedx"        value="$(arg zedx)"/>
+    <arg name="zedx_parent" value="$(arg zedx_parent)"/>
+    <arg name="zedx_xyz"    value="$(arg zedx_xyz)"/>
+    <arg name="zedx_rpy"    value="$(arg zedx_rpy)"/>
+    <arg name="zedx_stereo" value="$(arg zedx_stereo)"/>
+    <arg name="zedx_noise_stddev" value="$(arg zedx_noise_stddev)"/>
+  </include>
+
+</launch>

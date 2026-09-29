@@ -1,0 +1,158 @@
+<?xml version="1.0"?>
+<!--
+  record_mapping_run.launch - mapping WITH the full recording set, in one command.
+
+  WHY THIS EXISTS
+    A mapping drive costs 20-45 minutes and cannot be replayed. Started bare,
+    all it can ever produce is "the mapping drifted" - which is unfalsifiable
+    and leaves the drive wasted. Started with recording, the same drive answers
+    drifted by how much, from when, and whether the cause was odometry losing
+    tracking or a bad loop closure being accepted. Those have opposite fixes.
+
+    Remembering to start four extra processes by hand is exactly the kind of
+    step that gets skipped when someone is keen to drive. So it is not a step:
+    this file starts them with the mapping or not at all.
+
+  WHAT IT STARTS
+    1. rtabmap_mapping.launch          the SLAM stack itself
+    2. ground_truth_odom.py            Gazebo truth as nav_msgs/Odometry (SIM ONLY)
+    3. trajectory_recorder.py x2       SLAM estimate and ground truth, TUM format,
+                                       so ATE is computable afterwards
+    4. run_monitor.py                  1 Hz CSV of error, quality, resets and
+                                       loop-closure counts, plus a STATUS line
+
+  BEFORE YOU RUN IT, IN SIM: RESET THE ROBOT TO THE WORLD ORIGIN.
+    RTAB-Map anchors its map frame wherever the robot is at startup. Begin with
+    the robot parked somewhere else and the map frame is silently offset from
+    the world frame, and every recorded error is inflated by that offset. Caught
+    live on 2026-08-21 reading 2.653 m of "drift" before the robot had moved.
+
+      rosservice call /gazebo/set_model_state "{model_state: {model_name: husky,
+        pose: {position: {x: 0, y: 0, z: 0.35}}, reference_frame: world}}"
+
+    z:=0.35 clears the sidewalk world's raised pavement; 0.1 is enough indoors.
+
+  USAGE
+    roslaunch sidewalk_slam record_mapping_run.launch \
+        run_id:=office_vertigo_1 \
+        database_path:=/media/sidewalk/SIDEWALK128/rtabmap_maps/2026-08-21/office.db
+
+    Outputs land in logs/sidewalk_slam/trajectories/<run_id>/ (TUM files) and
+    the monitor CSV wherever monitor_out points.
+
+    On the REAL robot pass ground_truth:=false - there is no Gazebo to ask, and
+    the ground-truth recorder would sit waiting for a topic that never comes.
+-->
+<launch>
+
+  <arg name="run_id" doc="Name for this run. Trajectories are written to
+                          logs/sidewalk_slam/trajectories/&lt;run_id&gt;/."/>
+  <arg name="database_path" doc="Where RTAB-Map writes its .db."/>
+
+  <arg name="use_sim_time"     default="true"/>
+  <arg name="approx_sync"      default="true"/>
+  <arg name="stereo"           default="false"
+       doc="true = stereo front end (Phase 1). Pair with the sim launched as
+            zedx_stereo:=true; see rtabmap_common.launch."/>
+  <arg name="queue_size"       default="5"
+       doc="Message queue depth, and the main control on how much memory this
+            stack can occupy. Each RGBD frame is 16 MB at 1920x1200, and the
+            number is applied to six separate queues, so 30 (the old default)
+            allowed roughly 2.9 GB of buffered frames against 0.48 GB at 5.
+            Full reasoning in rtabmap_common.launch."/>
+  <arg name="wait_imu_to_init" default="false"
+       doc="No camera IMU exists in sim, so leave false there or odometry waits
+            forever for a topic nobody publishes."/>
+  <arg name="force_3dof"       default="true"
+       doc="Correct indoors on a flat floor. Set false for the sidewalk world -
+            camber and kerb ramps violate the flat-ground assumption."/>
+  <!-- Override one RTAB-Map parameter for this run only, without touching
+       rtabmap_zedx.yaml. See rtabmap_common.launch for the full explanation.
+       Example, to test whether the grid's noise filter is discarding a real
+       surface:  extra_rtabmap_params:="(dashdash)Grid/NoiseFilteringRadius 0.0" -->
+  <arg name="extra_rtabmap_params" default=""/>
+  <!-- true (default) = the camera tracker publishes odom -> base_link, as in
+       drives 1-2. false = the blend (fused_odometry.launch, started separately
+       by start_drive.sh with FUSION=1) owns it instead. See rtabmap_common.launch. -->
+  <arg name="vo_publish_tf"    default="true"/>
+
+  <arg name="rviz"             default="false"
+       doc="Off by default: the sim launch usually already has RViz up, and a
+            second one just competes for the GPU."/>
+
+  <arg name="ground_truth" default="true"
+       doc="Sim only. false on the real robot, where Gazebo truth does not exist."/>
+  <!-- Per-run directory, not a fixed file: a fixed path meant every run
+       OVERWROTE the last run's monitor CSV — the office runs' CSVs were lost
+       exactly this way, taking the reset-gap analysis with them. -->
+  <arg name="monitor_out"  default="$(env HOME)/.run_records/$(arg run_id)/monitor.csv"/>
+  <arg name="rtabmap_log"  default=""
+       doc="Path to the rtabmap stdout log. The monitor counts loop closures and
+            odometry resets from it, since RTAB-Map does not publish those
+            counts on any topic. Leave empty to record error/quality only."/>
+
+  <!-- 1. the SLAM stack -->
+  <include file="$(find sidewalk_slam)/launch/rtabmap_mapping.launch">
+    <arg name="use_sim_time"     value="$(arg use_sim_time)"/>
+    <arg name="approx_sync"      value="$(arg approx_sync)"/>
+    <arg name="stereo"           value="$(arg stereo)"/>
+    <arg name="queue_size"       value="$(arg queue_size)"/>
+    <arg name="wait_imu_to_init" value="$(arg wait_imu_to_init)"/>
+    <arg name="force_3dof"       value="$(arg force_3dof)"/>
+    <arg name="database_path"    value="$(arg database_path)"/>
+    <arg name="rviz"             value="$(arg rviz)"/>
+    <arg name="extra_rtabmap_params" value="$(arg extra_rtabmap_params)"/>
+    <arg name="vo_publish_tf"    value="$(arg vo_publish_tf)"/>
+  </include>
+
+  <!-- 2. ground truth as an ordinary Odometry topic -->
+  <node if="$(arg ground_truth)" name="ground_truth_odom" pkg="sidewalk_sim"
+        type="ground_truth_odom.py" output="screen"/>
+
+  <!-- 3. the two trajectories, same format, so they are directly comparable.
+          The estimate comes from TF rather than the odom topic on purpose: TF
+          carries the loop-closure-corrected pose, the topic carries raw
+          odometry, and after a closure the difference between them is exactly
+          the drift that was just removed. -->
+  <node name="traj_rec_slam" pkg="sidewalk_slam" type="trajectory_recorder.py"
+        args="--stack rtabmap --run-id $(arg run_id) --source tf
+              --fixed-frame map --body-frame base_link --rate 20"
+        output="screen"/>
+
+  <!-- No rate flag here: for a topic source the recorder is callback-driven
+       and records at the topic's own rate (~100 Hz after the publisher's
+       duplicate-stamp guard); a rate flag would be dead weight implying a
+       control that does not exist. The reference-kind flag writes the
+       provenance into the .meta.json sidecar at RECORD time;
+       evaluate_trajectory.py adopts it and refuses a contradicting CLI flag. -->
+  <node if="$(arg ground_truth)" name="traj_rec_truth" pkg="sidewalk_slam"
+        type="trajectory_recorder.py"
+        args="--stack ground_truth --run-id $(arg run_id) --source topic
+              --topic /ground_truth/odom --type odom
+              --reference-kind simulator_ground_truth"
+        output="screen"/>
+
+  <!-- 4. the live sampler.
+
+       NOT gated on ground_truth (fixed 2026-08-24, before real indoor run 2).
+       It used to be, which silently deprived every real-hardware run of the
+       only quantitative measurements the lab can produce. The monitor needs
+       ground truth for its error columns ONLY: `self.gt` starts as None and
+       line ~196 guards with `if self.gt is not None`, so without Gazebo the
+       gt_x/gt_y/pos_err/yaw_err columns simply stay blank while `quality`,
+       `resets`, `accepted_lc_global`, `accepted_lc_proximity` and
+       `rejected_lc` all still record - the loop-closure counts come from
+       /rtabmap/info, which is published by the real stack exactly as it is
+       by the sim one.
+
+       In a lab with no ground truth, closures-per-100 m and resets-per-100 m
+       ARE the measurement. Run 1 reported 249 accepted closures on exactly
+       these counters. -->
+  <node name="run_monitor" pkg="sidewalk_slam"
+        type="run_monitor.py" output="screen">
+    <param name="log_file" value="$(arg rtabmap_log)"/>
+    <param name="out_file" value="$(arg monitor_out)"/>
+    <param name="rate"     value="1.0"/>
+  </node>
+
+</launch>

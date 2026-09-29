@@ -1,0 +1,16 @@
+{
+  "database": "~/lidar_replays/s2_slam_01/lidar_ref_f3dof/rtab_helios.db",
+  "positions": "corrected",
+  "positions_source": "corrected (after loop closures) - lidar.tum",
+  "graph_nodes_corrected": 699,
+  "nodes": 699,
+  "nodes_with_grids": 699,
+  "duration_s": 1621.1,
+  "path_m_nodes": 164.7,
+  "closed_loop_gap_m": 0.52,
+  "cells_solid": 117504,
+  "cells_free": 0,
+  "cell_size_m": 0.05,
+  "map_width_m": 66.6,
+  "map_height_m": 70.7
+}

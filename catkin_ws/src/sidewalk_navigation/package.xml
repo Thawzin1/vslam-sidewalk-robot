@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>sidewalk_navigation</name>
+  <version>1.0.0</version>
+  <description>
+    Goal-driven navigation on the saved camera map (September 2026 design). On top of a running
+    localisation (RTAB-Map in localisation mode, wheels + gyroscope + camera blend), it adds a map
+    server for the saved 2D map, camera obstacle points from the ZED X depth, move_base with the DWA
+    local planner, and a guarded command link: wheel commands leave the Jetson only through
+    nav_cmd_sender.py and reach the robot only through nav_cmd_recv.py while the operator holds the
+    autonomy button. Includes the goal routes driven in September, the exported maps, the sim dry-run,
+    and the scoring scripts. Started by run/navigate.sh.
+  </description>
+  <maintainer email="thawzin@users.noreply.github.com">Thaw Zin</maintainer>
+  <license>MIT</license>
+  <author email="thawzin@users.noreply.github.com">Thaw Zin</author>
+  <url type="repository">https://github.com/Thawzin1/vslam-sidewalk-robot</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>rospy</depend>
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>actionlib_msgs</depend>
+  <depend>tf2_ros</depend>
+  <exec_depend>move_base</exec_depend>
+  <exec_depend>move_base_msgs</exec_depend>
+  <exec_depend>dwa_local_planner</exec_depend>
+  <exec_depend>global_planner</exec_depend>
+  <exec_depend>costmap_2d</exec_depend>
+  <exec_depend>map_server</exec_depend>
+  <exec_depend>nodelet</exec_depend>
+  <exec_depend>rtabmap_util</exec_depend>
+  <exec_depend>dynamic_reconfigure</exec_depend>
+  <exec_depend>sidewalk_slam</exec_depend>
+  <exec_depend>sidewalk_perception</exec_depend>
+</package>

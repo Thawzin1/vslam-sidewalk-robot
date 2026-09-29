@@ -1,0 +1,69 @@
+<?xml version="1.0"?>
+<!--
+  system_monitor.launch — record what the accuracy costs.
+
+  Start alongside a SLAM stack to capture CPU, GPU, memory, thermal state,
+  processing latency and dropped-frame rate for the duration of a run.
+
+      roslaunch sidewalk_evaluation system_monitor.launch \
+          label:="rtabmap alone, 1920x1200 @ 30 FPS, NEURAL depth" \
+          process:=rtabmap duration:=300
+
+  Two ways to use it, and they answer different questions:
+
+    * With all three stacks running concurrently, the figures describe the
+      COMBINED configuration. That is the honest number for "can this robot run
+      all three at once", and it is what the concurrent comparison protocol
+      produces.
+
+    * Replaying one rosbag once per stack, with `process:=` naming that stack,
+      gives clean PER-ALGORITHM cost. That is what belongs in a comparison
+      table. Save each as system_load_<stack>.json in the results directory.
+-->
+<launch>
+
+  <arg name="duration" default="0.0"
+       doc="seconds to record (0 = until Ctrl-C)"/>
+
+  <arg name="interval" default="1.0"
+       doc="seconds between samples"/>
+
+  <arg name="label" default=""
+       doc="what configuration this recording describes — written into the
+            output and into the report"/>
+
+  <arg name="process" default=""
+       doc="substring of a process command line to attribute memory to,
+            e.g. rtabmap. Leave empty to measure the whole machine."/>
+
+  <!-- Per-camera namespace, so the second ZED X needs no edits here. -->
+  <arg name="camera" default="zedx_front"/>
+
+  <arg name="topic"
+       default="/$(arg camera)/zed_node/left/image_rect_color"
+       doc="topic to measure capture-to-arrival latency and drops on"/>
+
+  <arg name="topic_type" default="Image"/>
+
+  <!-- Nominal publish rate. Dropped frames are inferred from gaps in the
+       capture timestamps measured against this period, so it must match what
+       the ZED wrapper is actually configured for or every frame will look
+       either dropped or duplicated. -->
+  <arg name="expected_hz" default="30.0"/>
+
+  <arg name="out" default=""
+       doc="output JSON path (default: a timestamped file in
+            logs/sidewalk_evaluation/)"/>
+
+  <node pkg="sidewalk_evaluation" type="system_monitor.py"
+        name="system_monitor" output="screen" required="true"
+        args="--duration $(arg duration)
+              --interval $(arg interval)
+              --topic $(arg topic)
+              --topic-type $(arg topic_type)
+              --expected-hz $(arg expected_hz)
+              --process '$(arg process)'
+              --label '$(arg label)'
+              --out '$(arg out)'"/>
+
+</launch>

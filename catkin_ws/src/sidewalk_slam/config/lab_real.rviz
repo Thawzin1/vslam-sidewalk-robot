@@ -1,0 +1,114 @@
+Panels:
+- Class: rviz/Displays
+  Name: Displays
+  Property Tree Widget:
+    Expanded:
+    - /Occupancy grid (2D)1
+    Splitter Ratio: 0.5
+  Tree Height: 640
+- Class: rviz/Views
+  Name: Views
+Visualization Manager:
+  Class: ''
+  Name: root
+  Global Options:
+    Background Color: 22; 22; 28
+    Default Light: true
+    Fixed Frame: map
+    Frame Rate: 15
+  Displays:
+  # Same three deliberate exclusions as slam_live_safe.rviz (docs/SOLVED.md,
+  # "Jetson livelock - RViz 11 GB", 2026-08-21): rtabmap_rviz_plugins/MapCloud
+  # on /rtabmap/mapData, rviz/Image on the full-res camera topic, and
+  # rviz/PointCloud2 on /rtabmap/cloud_map. All three accumulate unboundedly or
+  # duplicate a full-res subscription. None appears below.
+  #
+  # DIFFERENCE FROM slam_live_safe.rviz: RobotModel reads husky_description,
+  # not robot_description. On the Jetson's ROS master robot_description is the
+  # CAMERA's own description (published by the ZED wrapper's state publisher) -
+  # pointing RobotModel at it draws the camera bracket and nothing else. The
+  # Husky body lives on the ROBOT's separate master, so it is copied onto the
+  # Jetson under husky_description (see tools/jetson_demo, load_husky_urdf.py).
+  #
+  # Frame Rate is 15, not 30: this window is X-forwarded to another computer over
+  # the network, where the link, not the Jetson, is the bottleneck.
+  - Class: rviz/Grid
+    Name: Reference Grid
+    Enabled: true
+    Cell Size: 1
+    Plane Cell Count: 30
+    Color: 70; 70; 80
+    Alpha: 0.35
+  - Class: rviz/Map
+    Name: Occupancy grid (2D)
+    Enabled: true
+    Topic: /rtabmap/grid_map
+    Color Scheme: map
+    Draw Behind: true
+    Alpha: 0.9
+  - Alpha: 1
+    Class: rviz/RobotModel
+    Collision Enabled: false
+    Enabled: true
+    Links:
+      All Links Enabled: true
+      Expand Joint Details: false
+      Expand Link Details: false
+      Expand Tree: false
+      Link Tree Style: Links in Alphabetic Order
+    Name: Husky body
+    Robot Description: husky_description
+    TF Prefix: ''
+    Update Interval: 0
+    Value: true
+    Visual Enabled: true
+  - Class: rtabmap_rviz_plugins/MapGraph
+    Name: Pose graph + loop closures
+    Enabled: true
+    Topic: /rtabmap/mapGraph
+    Global loop closure: 25; 255; 0
+    Neighbor: 100; 160; 255
+    Local loop closure: 255; 255; 0
+    Neighbor merged: 200; 200; 200
+  - Class: rviz/Path
+    Name: Trajectory
+    Enabled: true
+    Topic: /rtabmap/mapPath
+    Color: 255; 170; 0
+    Line Style: Billboards
+    Line Width: 0.05
+  - Class: rviz/TF
+    Name: Camera pose (TF)
+    Enabled: false
+    Show Names: false
+    Show Axes: true
+    Show Arrows: false
+    Marker Scale: 0.6
+  Tools:
+  - Class: rviz/MoveCamera
+  - Class: rviz/Select
+  - Class: rviz/FocusCamera
+  - Class: rviz/Measure
+  Views:
+    Current:
+      Class: rviz/Orbit
+      Name: Current View
+      Target Frame: base_link
+      Distance: 12
+      Focal Point:
+        X: 0
+        Y: 0
+        Z: 0
+      Pitch: 1.1
+      Yaw: 3.14
+      Near Clip Distance: 0.05
+  Global Options Fixed Frame: map
+Window Geometry:
+  Height: 900
+  Width: 1500
+  Hide Left Dock: false
+  Hide Right Dock: true
+  Displays:
+    collapsed: false
+  Views:
+    collapsed: true

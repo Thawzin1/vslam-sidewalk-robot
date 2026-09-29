@@ -1,0 +1,8 @@
+20:55:59 1790470559.133111 jetson wpa_supplicant[481]: wlan0: CTRL-EVENT-CONNECTED - Connection to f4:bd:9e:a1:e7:02 completed [id=0 id_str=]
+21:00:59 1790470859.290101 jetson wpa_supplicant[481]: wlan0: CTRL-EVENT-CONNECTED - Connection to f4:bd:9e:a1:e7:0d completed [id=0 id_str=]
+21:10:59 1790471459.470523 jetson wpa_supplicant[481]: wlan0: CTRL-EVENT-CONNECTED - Connection to f4:bd:9e:a1:c1:8d completed [id=0 id_str=]
+21:12:44 1790471564.532133 jetson nvargus-daemon[2435]: SCF: Error InsufficientMemory:  (propagating from src/services/gl/EGLStreamProducer.cpp, function allocateAndRegisterBuffers(), line 261)
+21:12:44 1790471564.532133 jetson nvargus-daemon[2435]: SCF: Error InsufficientMemory:  (propagating from src/services/gl/EGLStreamProducer.cpp, function getBuffer(), line 411)
+21:15:59 1790471759.701413 jetson wpa_supplicant[481]: wlan0: CTRL-EVENT-CONNECTED - Connection to f4:bd:9e:a1:c1:82 completed [id=0 id_str=]
+21:17:29 1790471849.162538 jetson [remote-access service]: relay connection timed out (log line shortened)
+21:18:11 1790471891.535302 jetson [remote-access service]: retrying the name look-up for its relay (log line shortened)

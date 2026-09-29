@@ -1,0 +1,1 @@
+16:36:15 user stopped route B: robot FRONT-LEFT corner (bumper) touching the wall corner post leaving the south-east corner heading west (after goal 3 re-sent); camera crash 2 at 16:35:53

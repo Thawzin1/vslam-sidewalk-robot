@@ -1,0 +1,38 @@
+{
+  "frames": 1000,
+  "fps": 25,
+  "seconds": 40,
+  "real_drive_s": 1685.9,
+  "skipped_still": [
+    [
+      0.0,
+      302.6
+    ],
+    [
+      412.6,
+      461.9
+    ],
+    [
+      1306.8,
+      1685.9
+    ]
+  ],
+  "map_cells": [
+    501,
+    614
+  ],
+  "px_per_cell": 1.612,
+  "nodes": 1128,
+  "positions": "corrected",
+  "source": {
+    "database": "~/slam_series2/s2_static_03.db",
+    "run": "s2_static_03",
+    "positions": "corrected",
+    "poses_file": "<repo>/results/series2_static/s2_static_03/camera_corrected.tum",
+    "nodes": 1128,
+    "nodes_with_cells": 1128,
+    "graph_nodes": 446,
+    "closures": 320,
+    "tool": "tools/db/timelapse.py extract"
+  }
+}

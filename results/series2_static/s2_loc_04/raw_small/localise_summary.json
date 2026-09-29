@@ -1,0 +1,65 @@
+{
+ "run": "s2_loc_04",
+ "map_db": "~/slam_series2/localise/s2_static_10_map.db",
+ "starts": [
+  {
+   "start": 1,
+   "mark": "start_mark",
+   "t_start": 1790509163.7501464,
+   "first_fix_t": 1790509198.5973399,
+   "first_fix_kind": "uncertainty",
+   "first_fix_odom_m": 0.0,
+   "first_fix_s": 34.8,
+   "first_fix_jump_m": null,
+   "first_fix_xy": [
+    0.004,
+    -0.031,
+    -3.0
+   ],
+   "fixes": 1,
+   "global": 0,
+   "proximity": 0,
+   "suspect_jumps": 0,
+   "max_later_jump_m": 0.0,
+   "odom_m": 0.0550935047091126,
+   "last_fix_t": 1790509360.517779,
+   "pending": 1,
+   "first_pending_s": 34.9,
+   "wrong_place_fixes": 0,
+   "first_fix_dist_to_mark_m": 0.031,
+   "evidence": {
+    "uncertainty": 111
+   }
+  },
+  {
+   "start": 2,
+   "mark": "start_mark",
+   "t_start": 1790509392.3957405,
+   "first_fix_t": 1790509605.5449998,
+   "first_fix_kind": "uncertainty",
+   "first_fix_odom_m": 6.069,
+   "first_fix_s": 213.1,
+   "first_fix_jump_m": null,
+   "first_fix_xy": [
+    5.895,
+    -0.165,
+    -0.2
+   ],
+   "fixes": 577,
+   "global": 70,
+   "proximity": 506,
+   "suspect_jumps": 1,
+   "max_later_jump_m": 57.454,
+   "odom_m": 245.83741850152103,
+   "last_fix_t": 1790510872.660632,
+   "pending": 109,
+   "first_pending_s": 1.2,
+   "wrong_place_fixes": 0,
+   "first_fix_dist_to_mark_m": 0.313,
+   "evidence": {
+    "uncertainty": 1229
+   }
+  }
+ ],
+ "written": 1790510894.035835
+}

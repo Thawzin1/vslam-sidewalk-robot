@@ -1,0 +1,10 @@
+{
+  "source_bag": "~/lidar_bags/s2_loc_04_lidar.bag",
+  "topic": "/odometry/filtered",
+  "label": "/odometry/filtered",
+  "poses": 99989,
+  "skipped_no_pose": 0,
+  "duration_s": 1999.76,
+  "path_length_m_unsampled": 253.982,
+  "note": "path length here is the raw sum over every message and is NOT comparable to a figure sampled at the mapper's node spacing - see docs/SOLVED.md"
+}

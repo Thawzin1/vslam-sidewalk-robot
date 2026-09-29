@@ -1,0 +1,10 @@
+{
+  "source_bag": "~/.run_records/lab_map_08/motion/lab_map_08_robot.bag",
+  "topic": "/husky_velocity_controller/odom",
+  "label": "wheel odometry",
+  "poses": 18040,
+  "skipped_no_pose": 0,
+  "duration_s": 1804.103,
+  "path_length_m_unsampled": 95.441,
+  "note": "path length here is the raw sum over every message and is NOT comparable to a figure sampled at the mapper's node spacing - see docs/SOLVED.md"
+}

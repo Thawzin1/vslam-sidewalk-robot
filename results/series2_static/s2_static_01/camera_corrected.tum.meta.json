@@ -1,0 +1,15 @@
+{
+  "source_database": "~/slam_series2/s2_static_01.db",
+  "pose_kind": "corrected",
+  "method": "SE(2) Gauss-Newton over Link types 0-4, first graph node fixed",
+  "tool": "tools/db/optimize_graph_se2.py",
+  "graph_nodes": 570,
+  "first_node": 1,
+  "last_node": 653,
+  "closure_edges_by_type": {
+    "1": 1,
+    "2": 2
+  },
+  "end_gap_corrected_m": 0.0562,
+  "end_gap_odometry_same_nodes_m": 39.6438
+}

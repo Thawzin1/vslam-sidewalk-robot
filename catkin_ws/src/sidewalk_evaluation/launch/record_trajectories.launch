@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<!--
+  record_trajectories.launch — capture what every SLAM stack claims, live.
+
+  Start this AFTER the SLAM stacks are already running and publishing. It only
+  listens; it starts nothing and changes nothing, so it is safe to start and
+  stop mid-experiment.
+
+  Typical session:
+      roslaunch sidewalk_bringup   preflight.launch          # is the system fit?
+      roslaunch sidewalk_slam      rtabmap.launch            # the primary system
+      roslaunch sidewalk_evaluation record_trajectories.launch route:=campus_loop
+
+  Then drive the route, return the robot to its MARKED start point, and stop
+  with Ctrl-C. The trajectory files land in logs/sidewalk_evaluation/ and are
+  the input to evaluate_trajectory.py.
+-->
+<launch>
+
+  <!-- Free-text label for this run. It becomes part of the output directory
+       name, so make it something you will recognise in three months. -->
+  <arg name="route" default="run"
+       doc="short label for this run, e.g. campus_loop_dry_overcast"/>
+
+  <!-- 0 means run until Ctrl-C. Set a duration for unattended soak tests. -->
+  <arg name="duration" default="0.0"
+       doc="stop automatically after this many seconds (0 = until Ctrl-C)"/>
+
+  <!-- How long to wait for the first pose on each configured topic before
+       declaring that source dead. Generous by default: RTAB-Map does not
+       publish a localization pose until it has initialised, which on a cold
+       start with a large map can take several seconds. -->
+  <arg name="wait" default="30.0"
+       doc="seconds to wait for the first message on each pose topic"/>
+
+  <arg name="config"
+       default="$(find sidewalk_evaluation)/config/evaluation.yaml"/>
+
+  <!-- Also record system load, so accuracy can be reported alongside what it
+       cost. Set false if something else is already monitoring. -->
+  <arg name="monitor" default="true"/>
+
+  <!-- The camera namespace, so a second ZED X can be added without editing
+       anything here. -->
+  <arg name="camera" default="zedx_front"/>
+
+  <!-- Nominal camera frame rate, used to infer dropped frames from gaps in the
+       capture timestamps. Must match what the ZED wrapper is configured for. -->
+  <arg name="camera_fps" default="30.0"/>
+
+  <node pkg="sidewalk_evaluation" type="trajectory_recorder.py"
+        name="trajectory_recorder" output="screen" required="true"
+        args="--config $(arg config)
+              --duration $(arg duration)
+              --wait $(arg wait)">
+    <!-- required="true" is deliberate. If the recorder dies, the run is not
+         being recorded, and continuing to drive wastes the experiment. Better
+         to bring the launch down loudly than to discover an empty file later. -->
+  </node>
+
+  <group if="$(arg monitor)">
+    <node pkg="sidewalk_evaluation" type="system_monitor.py"
+          name="system_monitor" output="screen"
+          args="--duration $(arg duration)
+                --interval 1.0
+                --topic /$(arg camera)/zed_node/left/image_rect_color
+                --topic-type Image
+                --expected-hz $(arg camera_fps)
+                --label 'concurrent stacks, $(arg route)'"/>
+  </group>
+
+</launch>

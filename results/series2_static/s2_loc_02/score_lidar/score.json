@@ -1,0 +1,164 @@
+{
+ "run": "s2_loc_02",
+ "starts": [
+  {
+   "start": 1,
+   "mark": "start_mark",
+   "fixed": true,
+   "first_kind": "uncertainty",
+   "first_s": 34.3,
+   "first_odom_m": 0.0,
+   "suspect_jumps": 0,
+   "eval_t": 1790417913.841,
+   "camera_xy_yaw": [
+    0.039,
+    -0.036,
+    0.1
+   ],
+   "expected_xy": [
+    -0.194,
+    0.012
+   ],
+   "disagreement_m": 0.237,
+   "heading_diff_deg": -0.4,
+   "uncertainty_m": 0.073,
+   "local_pairs": 8,
+   "false_localisation": false,
+   "P2": "PASS",
+   "worst_fix_disagreement_m": 0.404,
+   "P3_false_fix": false,
+   "P1": "PASS"
+  },
+  {
+   "start": 2,
+   "mark": "A_east",
+   "fixed": true,
+   "first_kind": "cache link",
+   "first_s": 18.4,
+   "first_odom_m": 0.006,
+   "suspect_jumps": 0,
+   "eval_t": 1790418123.84,
+   "camera_xy_yaw": [
+    0.358,
+    -0.021,
+    -1.3
+   ],
+   "expected_xy": [
+    5.888,
+    0.263
+   ],
+   "disagreement_m": 5.537,
+   "heading_diff_deg": -4.1,
+   "uncertainty_m": 0.059,
+   "local_pairs": 16,
+   "false_localisation": true,
+   "P2": "FAIL",
+   "worst_fix_disagreement_m": null,
+   "P3_false_fix": null,
+   "P1": "PASS"
+  },
+  {
+   "start": 3,
+   "mark": "B_west",
+   "fixed": true,
+   "first_kind": "cache link",
+   "first_s": 1.8,
+   "first_odom_m": 0.0,
+   "suspect_jumps": 0,
+   "eval_t": 1790418321.841,
+   "camera_xy_yaw": [
+    0.088,
+    -0.015,
+    -1.4
+   ],
+   "expected_xy": [
+    10.221,
+    0.255
+   ],
+   "disagreement_m": 10.137,
+   "heading_diff_deg": -179.4,
+   "uncertainty_m": 0.064,
+   "local_pairs": 14,
+   "false_localisation": true,
+   "P2": "FAIL",
+   "worst_fix_disagreement_m": 10.149,
+   "P3_false_fix": true,
+   "P1": "FAIL"
+  },
+  {
+   "start": 4,
+   "mark": "A_west",
+   "fixed": true,
+   "first_kind": "cache link",
+   "first_s": 1.2,
+   "first_odom_m": 0.0,
+   "suspect_jumps": 1,
+   "eval_t": 1790418513.84,
+   "camera_xy_yaw": [
+    0.077,
+    -0.014,
+    -1.4
+   ],
+   "expected_xy": [
+    5.665,
+    0.344
+   ],
+   "disagreement_m": 5.6,
+   "heading_diff_deg": 178.9,
+   "uncertainty_m": 0.055,
+   "local_pairs": 6,
+   "false_localisation": true,
+   "P2": "FAIL",
+   "worst_fix_disagreement_m": 5.62,
+   "P3_false_fix": true,
+   "P1": "FAIL"
+  },
+  {
+   "start": 5,
+   "mark": "C_north",
+   "fixed": true,
+   "first_kind": "cache link",
+   "first_s": 1.9,
+   "first_odom_m": 0.0,
+   "suspect_jumps": 0,
+   "eval_t": 1790418741.839,
+   "camera_xy_yaw": [
+    0.08,
+    -0.014,
+    -1.4
+   ],
+   "expected_xy": [
+    -0.03,
+    -4.012
+   ],
+   "disagreement_m": 4.0,
+   "heading_diff_deg": -90.2,
+   "uncertainty_m": 0.053,
+   "local_pairs": 9,
+   "false_localisation": true,
+   "P2": "FAIL",
+   "worst_fix_disagreement_m": 4.012,
+   "P3_false_fix": true,
+   "P1": "FAIL"
+  }
+ ],
+ "icp": {
+  "shift_m": [
+   -0.288,
+   0.027
+  ],
+  "rot_deg": 1.51,
+  "median_pair_m": 0.037,
+  "within_own_check": true
+ },
+ "P1_found_itself": "2 of 5 starts (pass line: at least 4 of 5)",
+ "P2_placed_right": "1 of 5 scorable fixed starts within 0.30 m (pass line: all but at most one; heading reported, not judged)",
+ "P3_false_fixes": "3 starts with a fix over 1.0 m from the LiDAR-derived place (pass line: 0); live suspect jumps 1",
+ "P5_keeps_up": {
+  "pictures": 1009,
+  "median_s": 0.802,
+  "p95_s": 0.977,
+  "over_1s": 24,
+  "pass": true
+ }
+}

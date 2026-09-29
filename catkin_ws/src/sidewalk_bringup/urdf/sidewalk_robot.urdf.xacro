@@ -1,0 +1,486 @@
+<?xml version="1.0"?>
+<!--
+  sidewalk_robot.urdf.xacro — the robot's body, described so software can read it.
+
+  WHAT A URDF IS
+    A simplified CAD model. It does not describe the robot precisely enough to
+    manufacture — it describes it precisely enough to REASON about: where each
+    part is, how parts connect, and how big they are.
+
+    Two things consume it:
+      • robot_state_publisher, which turns it into the live transform tree that
+        every other program queries to ask "where is the camera right now?"
+      • RViz, which draws it, so you can SEE whether your measurements are right.
+
+    That second use is underrated. Load this in RViz alongside a live point
+    cloud: if the ground plane in the cloud does not line up with the wheels in
+    the model, a mounting number in robot_frames.yaml is wrong. It is far easier
+    to spot a bad transform visually than in a table of numbers.
+
+  LINKS AND JOINTS
+    A link is a rigid body. A joint is the relationship between two links.
+    Here every joint is "fixed" — nothing on this robot articulates. The wheels
+    are drawn as continuous joints so the model is honest about what rotates,
+    but the camera mount must be rigid, and any flex in it is a defect.
+
+  WHY THE CAMERA MOUNT MATTERS MECHANICALLY
+    SLAM assumes the camera-to-robot transform is CONSTANT. A bracket that
+    flexes under vibration creates an unmeasured, time-varying transform. The
+    camera and IMU stay internally consistent, so nothing looks obviously
+    broken — the pose estimate just quietly degrades.
+
+    A stiff mount is therefore better than a compliant one even on a vibrating
+    chassis. A soft bracket does not isolate the camera; it lets the camera
+    oscillate independently, which is worse than transmitting the vibration.
+
+  UNITS: metres and radians throughout.
+-->
+<robot name="sidewalk_robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       Dimensions. These MUST match config/robot_frames.yaml, which is the
+       authoritative source. They are duplicated here because xacro cannot
+       read a YAML file directly; if you change one, change both.
+
+       There is a THIRD copy, as a polygon, in
+           sidewalk_navigation/config/costmap_common.yaml
+       and that one is safety-critical: it is what the planner uses to decide
+       whether the robot fits through a gap. It disagreed with
+       robot_frames.yaml by 29 cm in length and 17 cm in width before anyone
+       noticed, so nav_preflight.py now compares those two at runtime and
+       fails on mismatch.
+
+       This URDF copy is NOT covered by that check. It drives visualisation
+       and the TF tree rather than collision checking, so a mismatch here is
+       misleading rather than dangerous — but it is still a mismatch, and RViz
+       showing a robot that is not the size of the robot is exactly the kind
+       of thing that makes a real problem hard to see. Keep it in step.
+
+       STATUS: robot_frames.yaml carries `measured: false`. These are
+       UNMEASURED PLACEHOLDERS. Measure the robot before it drives.
+
+       THAT FLAG IS SCOPED TO THE CHASSIS, NOT TO THIS WHOLE FILE. It speaks
+       for robot_frames.yaml's `base:` block only — the seven dimensions
+       immediately below — and the file itself now says so at length. It does
+       NOT speak for the front camera pose further down, which WAS measured on
+       2026-08-29 and carries its own provenance where it is defined.
+       ═══════════════════════════════════════════════════════════════════ -->
+  <xacro:property name="base_length"      value="0.99"/>
+  <xacro:property name="base_width"       value="0.67"/>
+  <xacro:property name="base_height"      value="0.28"/>
+  <xacro:property name="ground_clearance" value="0.13"/>
+  <xacro:property name="wheel_radius"     value="0.165"/>
+  <xacro:property name="wheel_width"      value="0.10"/>
+  <xacro:property name="wheel_separation" value="0.55"/>
+
+  <!-- ZED X physical envelope: 163 x 32 x 37 mm, about 240 g. -->
+  <xacro:property name="zedx_length" value="0.163"/>
+  <xacro:property name="zedx_height" value="0.032"/>
+  <xacro:property name="zedx_depth"  value="0.037"/>
+  <xacro:property name="zedx_mass"   value="0.240"/>
+  <!-- Stereo baseline: the physical distance between the two lenses. This is
+       the ruler that gives stereo vision its absolute scale. -->
+  <xacro:property name="zedx_baseline" value="0.120"/>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       FRONT CAMERA POSE — and WHICH PHYSICAL POINT it describes.
+
+       THESE ARE THE MOUNT NUMBERS, NOT THE LENS NUMBERS. Read that before
+       editing them. The mount point and the left lens are 60 mm apart in y
+       and this project has already been bitten by the difference; that is
+       why robot_frames.yaml devotes half a page to it.
+
+       WHICH POINT THIS IS. The zedx_camera macro below hangs ${name}_link
+       off base_link using exactly these four values, and ${name}_link is
+       the CAMERA HOUSING — it carries the box visual, and both lens frames
+       hang off it at plus/minus half the stereo baseline in y. So the point
+       positioned here is the MOUNT / housing anchor. It is the same
+       physical point as
+           zedx_base_frame        in sidewalk_bringup/urdf/husky_a200_real.urdf
+           zedx_base_frame        in sidewalk_sim/urdf/husky_real.urdf
+           zedx_front_base_link   the ZED driver's own root frame
+       and it is NOT the left lens.
+
+       PROVENANCE — measured on this robot, 2026-08-29.
+         z = 0.547   tape measured 0.7112 m, floor to the ZED X housing
+                     UPPER SURFACE, minus 0.0159 (half the 31.8 mm body
+                     height, Stereolabs ZED X datasheet Rev 1.6), minus
+                     0.0160 (the camera's internal base-to-centre offset,
+                     read from the live transform tree), minus 0.13228
+                     (base_link above the floor, from husky_a200_real.urdf's
+                     base_footprint_joint).
+         y = -0.040  a PHYSICAL re-position of the camera toward
+                     swiftnav_link, made the same day. It was +0.070. Do not
+                     "restore" the old value — the camera actually moved.
+         x = 0.081   from the mount tuned live in simulation.
+         pitch = 0.0565 rad = 3.24 degrees NOSE DOWN. Measured twice by two
+                     methods that share no failure mode: a RANSAC floor-plane
+                     fit (a statistical fit of a flat plane to the depth
+                     image's view of the floor, discarding outliers) and the
+                     ZED's accelerometer reading of gravity.
+         roll and yaw are left at 0, but that is UNMEASURED-AND-SET-TO-ZERO,
+                     not measured-as-zero. Nobody has established that this
+                     camera is square in those two axes. Do not quote it as
+                     if they had.
+
+       THE COMMENT THAT USED TO BE HERE SAID THESE CAME FROM
+       robot_frames.yaml. THEY DID NOT, AND THEY STILL DO NOT — and it is
+       important that they do not. robot_frames.yaml's camera_front block
+       holds the LEFT LENS at (0.071, 0.020, 0.563), which is this mount
+       point PLUS the ZED's internal base-to-left-lens offset
+       (-0.010, +0.060, +0.016). Different point, on purpose, because the
+       ZED SDK reports depth from the left lens. Copying robot_frames.yaml's
+       x/y/z into these four properties would put the housing 60 mm to the
+       robot's left of where it physically is, and drag both lens frames
+       with it.
+
+       SUPERSEDED VALUES — must not reappear here or anywhere else:
+           x=0.35  y=0.00  z=0.62  pitch=0.087   what was in this file until
+                                                 2026-08-29, never measured
+           x=0.25  z=0.60                        sidewalk_multicam placeholders
+           z=0.558 / z=0.578                     intermediate working values
+           y=+0.070                              superseded; camera moved
+
+       ── THE POSE NOW LIVES IN FOUR PLACES AND THEY MOVE TOGETHER ────────
+       Nothing compares them at runtime. Change one and not the others and
+       the robot model and the camera driver quietly describe different
+       robots; no node complains, the map just comes out wrong.
+
+         sidewalk_perception/launch/zedx_front.launch
+             cam_pos_x / cam_pos_y / cam_pos_z / cam_pitch
+             THE ONE WITH TEETH. It positions the ZED driver's entire frame
+             tree, and RTAB-Map uses the driver's frames, not this file's.
+             These were 0.0 until 2026-08-29, which put every observation in
+             runs 1 through 6 about 0.54 m too low.
+         sidewalk_bringup/urdf/husky_a200_real.urdf   zedx_base_joint
+             real robot, RViz.
+         sidewalk_sim/urdf/husky_real.urdf            zedx_base_joint
+             simulation. Same physical mount, described twice.
+         sidewalk_bringup/config/robot_frames.yaml    camera_front
+             the LEFT LENS — this plus (-0.010, +0.060, +0.016). Deliberately
+             different numbers; see above before "fixing" them to match.
+
+       This file is the fifth copy, and that is the defect rather than the
+       feature. See the FRAME NAME COLLISION warning further down, just above
+       where the front camera is instantiated.
+
+       VERIFY after changing any of them — on the robot, camera running:
+           rosrun tf tf_echo zedx_base_frame zedx_front_base_link
+       must read about [0, 0, 0] in BOTH translation and rotation. That is
+       the robot model's mount point and the driver's root landing on top of
+       each other, which is the only thing that proves the copies agree.
+       ═══════════════════════════════════════════════════════════════════ -->
+  <xacro:property name="cam_front_x"     value="0.081"/>
+  <xacro:property name="cam_front_y"     value="-0.040"/>
+  <xacro:property name="cam_front_z"     value="0.547"/>
+  <xacro:property name="cam_front_pitch" value="0.0565"/>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       REAR CAMERA POSE — PLACEHOLDERS, NOT GEOMETRY. Phase 7.
+
+       These have their own properties rather than reusing cam_front_z and
+       cam_front_pitch, which is what this file did before 2026-08-29. That
+       reuse was harmless while the front numbers were themselves guesses;
+       it stopped being harmless the moment the front numbers became
+       MEASURED, because the rear camera would then silently inherit a
+       height and a tilt measured on a bracket at the other end of the robot
+       — measured-looking numbers describing hardware that does not exist.
+
+       The values below deliberately mirror robot_frames.yaml's camera_rear
+       block, placeholders and all, so the two files say the same untrue
+       thing rather than two different untrue things. They are the same
+       superseded x=-0.35 / z=0.62 / pitch=0.087 that sat on the front
+       camera until it was measured.
+
+       MEASURE THEM ON THE REAR BRACKET when the hardware is fitted, with
+       the two methods recorded in robot_frames.yaml camera_front. Do NOT
+       copy the front camera's numbers across and negate x: that is a
+       different bracket, in a different place, at a different height.
+       ═══════════════════════════════════════════════════════════════════ -->
+  <xacro:property name="cam_rear_x"     value="-0.35"/>
+  <xacro:property name="cam_rear_y"     value="0.00"/>
+  <xacro:property name="cam_rear_z"     value="0.62"/>
+  <xacro:property name="cam_rear_pitch" value="0.087"/>
+
+  <!-- Set to true when the Phase 7 rear camera is physically installed.
+
+       THIS CANNOT BE SET FROM THE COMMAND LINE, AND bringup.launch BELIEVES IT
+       CAN. Edit the value here; passing it in does nothing.
+
+       sidewalk_bringup/launch/bringup.launch builds /robot_description with
+           $(find xacro)/xacro '...sidewalk_robot.urdf.xacro'
+                    rear_camera_installed:=$(arg rear_camera)
+       and that assignment is SILENTLY DISCARDED. A xacro command-line
+       `name:=value` only ever binds a <xacro:arg>, read back as $(arg name).
+       This is a <xacro:property>, which is a different namespace; xacro does
+       not warn about a command-line assignment that matches nothing, and it
+       exits 0.
+
+       [VERIFIED 2026-08-29 on a development computer, in the local sidewalk-sim:noetic
+       container, against this exact file:
+           xacro sidewalk_robot.urdf.xacro rear_camera_installed:=true \
+             | grep -c zedx_rear     ->  0
+        with empty stderr and exit status 0. The file contains no <xacro:arg>
+        declarations at all.]
+
+       WHAT THAT COSTS TODAY: nothing, because the hardware does not exist.
+       WHAT IT COSTS ON THE DAY IT IS FITTED: `bringup.launch rear_camera:=true`
+       starts the rear ZED driver (it is a plain roslaunch `if`, so that half
+       works) while the robot model quietly stays single-camera. The rear
+       driver's frames then hang in the tree with no link to base_link, and the
+       failure surfaces as TF lookup errors far from this file.
+
+       DELIBERATELY NOT "FIXED" BY PROMOTING IT TO A <xacro:arg>. Making the
+       flag work would let one command-line word inject the cam_rear_*
+       PLACEHOLDERS above — x=-0.35, z=0.62, pitch=0.087, which describe no
+       bracket that exists — into the live transform tree, where they would be
+       indistinguishable from the measured front-camera numbers beside them.
+       The present behaviour fails SAFE: the rear camera cannot appear until
+       somebody edits this line, and whoever edits this line is looking
+       directly at the block above telling them to measure the bracket first.
+       Promote it to a <xacro:arg> at the same time as replacing those
+       placeholders with measurements, not before. -->
+  <xacro:property name="rear_camera_installed" value="false"/>
+
+  <xacro:property name="PI" value="3.14159265359"/>
+
+  <material name="grey">  <color rgba="0.35 0.35 0.38 1.0"/></material>
+  <material name="black"> <color rgba="0.10 0.10 0.10 1.0"/></material>
+  <material name="blue">  <color rgba="0.15 0.40 0.80 1.0"/></material>
+  <material name="orange"><color rgba="0.90 0.50 0.10 1.0"/></material>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       base_link — the root of everything.
+
+       Positioned at the centre of rotation, projected to the ground: the
+       midpoint of the drive axle, at z = 0. The differential-drive odometry
+       equations assume exactly this, so moving it silently biases odometry.
+       ═══════════════════════════════════════════════════════════════════ -->
+  <link name="base_link"/>
+
+  <link name="chassis_link">
+    <visual>
+      <geometry><box size="${base_length} ${base_width} ${base_height}"/></geometry>
+      <material name="grey"/>
+    </visual>
+    <collision>
+      <geometry><box size="${base_length} ${base_width} ${base_height}"/></geometry>
+    </collision>
+    <inertial>
+      <mass value="35.0"/>
+      <!-- Approximate box inertia. Adequate for visualisation and for a
+           first-pass EKF; replace with measured or CAD-derived values before
+           making any dynamic claim. -->
+      <inertia ixx="1.5" ixy="0.0" ixz="0.0" iyy="2.8" iyz="0.0" izz="3.2"/>
+    </inertial>
+  </link>
+
+  <joint name="base_to_chassis" type="fixed">
+    <parent link="base_link"/>
+    <child  link="chassis_link"/>
+    <origin xyz="0 0 ${ground_clearance + base_height/2}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ─────────────────────────── wheels ─────────────────────────────── -->
+  <xacro:macro name="wheel" params="prefix y_offset x_offset">
+    <link name="${prefix}_wheel_link">
+      <visual>
+        <origin rpy="${PI/2} 0 0"/>
+        <geometry><cylinder radius="${wheel_radius}" length="${wheel_width}"/></geometry>
+        <material name="black"/>
+      </visual>
+      <collision>
+        <origin rpy="${PI/2} 0 0"/>
+        <geometry><cylinder radius="${wheel_radius}" length="${wheel_width}"/></geometry>
+      </collision>
+      <inertial>
+        <mass value="2.5"/>
+        <inertia ixx="0.02" ixy="0" ixz="0" iyy="0.02" iyz="0" izz="0.03"/>
+      </inertial>
+    </link>
+    <joint name="${prefix}_wheel_joint" type="continuous">
+      <parent link="chassis_link"/>
+      <child  link="${prefix}_wheel_link"/>
+      <origin xyz="${x_offset} ${y_offset} ${-base_height/2 - ground_clearance + wheel_radius}"/>
+      <axis xyz="0 1 0"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:wheel prefix="front_left"  y_offset="${ wheel_separation/2}" x_offset="0.26"/>
+  <xacro:wheel prefix="front_right" y_offset="${-wheel_separation/2}" x_offset="0.26"/>
+  <xacro:wheel prefix="rear_left"   y_offset="${ wheel_separation/2}" x_offset="-0.26"/>
+  <xacro:wheel prefix="rear_right"  y_offset="${-wheel_separation/2}" x_offset="-0.26"/>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       ZED X camera macro.
+
+       THE OPTICAL FRAME IS THE SUBTLE PART. Read this before changing it.
+
+       ROS bodies use x-forward, y-left, z-up (REP-103).
+       Cameras conventionally use z-FORWARD (out of the lens), x-right,
+       y-DOWN (REP-104).
+
+       These two conventions disagree, and the rotation between them is the
+       single most common source of "my point cloud is rotated 90 degrees and
+       lying on its side". The fixed rpy="-pi/2 0 -pi/2" below is exactly that
+       conversion. It is not a fudge factor and must not be tuned.
+
+       We publish BOTH frames: a body-convention *_link for mechanical
+       reasoning, and a *_optical_frame for image and depth data.
+       ═══════════════════════════════════════════════════════════════════ -->
+  <xacro:macro name="zedx_camera" params="name x y z roll pitch yaw colour">
+
+    <!-- Housing, in body convention. -->
+    <link name="${name}_link">
+      <visual>
+        <geometry><box size="${zedx_depth} ${zedx_length} ${zedx_height}"/></geometry>
+        <material name="${colour}"/>
+      </visual>
+      <collision>
+        <geometry><box size="${zedx_depth} ${zedx_length} ${zedx_height}"/></geometry>
+      </collision>
+      <inertial>
+        <mass value="${zedx_mass}"/>
+        <inertia ixx="0.0003" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0003"/>
+      </inertial>
+    </link>
+
+    <joint name="base_to_${name}" type="fixed">
+      <parent link="base_link"/>
+      <child  link="${name}_link"/>
+      <origin xyz="${x} ${y} ${z}" rpy="${roll} ${pitch} ${yaw}"/>
+    </joint>
+
+    <!-- Left lens. The SDK reports depth relative to THIS point, which is why
+         robot_frames.yaml insists you measure to the left lens.
+
+         APPROXIMATE, AND KNOWINGLY SO. This models the housing-to-lens offset
+         as pure half-baseline in y. The ZED X's real internal offset from its
+         base to the left lens, read from the live transform tree on the
+         Jetson, is (-0.010, +0.060, +0.016) — it also steps 10 mm back and
+         16 mm up, and this macro captures neither. So with the mount set
+         correctly above, the frame produced here sits about 10 mm forward of
+         and 16 mm below the real left lens, which robot_frames.yaml records
+         at (0.071, 0.020, 0.563) relative to base_link.
+
+         That is fine for making the model look right in RViz and it is NOT a
+         number to compute with. The measured lens position is in
+         robot_frames.yaml camera_front; the accurate live frame is published
+         by the ZED driver itself — which is also what collides with this one.
+         See the FRAME NAME COLLISION warning below. -->
+    <link name="${name}_left_camera_frame"/>
+    <joint name="${name}_left_joint" type="fixed">
+      <parent link="${name}_link"/>
+      <child  link="${name}_left_camera_frame"/>
+      <origin xyz="0 ${zedx_baseline/2} 0" rpy="0 0 0"/>
+    </joint>
+
+    <!-- Body convention -> optical convention. Do not tune this. -->
+    <link name="${name}_left_camera_optical_frame"/>
+    <joint name="${name}_left_optical_joint" type="fixed">
+      <parent link="${name}_left_camera_frame"/>
+      <child  link="${name}_left_camera_optical_frame"/>
+      <origin xyz="0 0 0" rpy="${-PI/2} 0 ${-PI/2}"/>
+    </joint>
+
+    <!-- Right lens, one baseline away. Depth resolution derives directly from
+         this separation: Z = f*B/d, so a wider B improves distant depth. -->
+    <link name="${name}_right_camera_frame"/>
+    <joint name="${name}_right_joint" type="fixed">
+      <parent link="${name}_link"/>
+      <child  link="${name}_right_camera_frame"/>
+      <origin xyz="0 ${-zedx_baseline/2} 0" rpy="0 0 0"/>
+    </joint>
+
+    <link name="${name}_right_camera_optical_frame"/>
+    <joint name="${name}_right_optical_joint" type="fixed">
+      <parent link="${name}_right_camera_frame"/>
+      <child  link="${name}_right_camera_optical_frame"/>
+      <origin xyz="0 0 0" rpy="${-PI/2} 0 ${-PI/2}"/>
+    </joint>
+
+    <!-- IMU, inside the housing. The SDK knows the precise internal offset;
+         this frame exists so the transform tree is complete and so fusion
+         nodes have somewhere to attach. -->
+    <link name="${name}_imu_link"/>
+    <joint name="${name}_imu_joint" type="fixed">
+      <parent link="${name}_link"/>
+      <child  link="${name}_imu_link"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+  </xacro:macro>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       WARNING — FIVE OF THE FRAME NAMES BELOW COLLIDE WITH THE ZED DRIVER'S.
+
+       This is a live conflict, not a hypothetical one, and nothing reports it
+       at runtime. Correcting the mount numbers above makes the two
+       descriptions AGREE TODAY; it does not remove the conflict.
+
+       HOW BOTH END UP RUNNING. bringup.launch loads this file into
+       /robot_description and starts robot_state_publisher. With camera:=true
+       it ALSO includes sidewalk_perception/launch/zedx_front.launch, whose
+       include of the wrapper's zed_camera.launch.xml starts a SECOND
+       robot_state_publisher — node name "<camera_name>_state_publisher" —
+       for the driver's own description, zed_descr.urdf.xacro. That is gated
+       on publish_urdf, which DEFAULTS TO true and which zedx_front.launch
+       does not override. Static transforms go to the global /tf_static
+       regardless of the launch namespace, so both land in one tree.
+       [VERIFIED 2026-08-29 by reading zed_camera.launch.xml,
+       zed_macro.urdf.xacro and the wrapper nodelet source on the JETSON.]
+
+       THE FIVE COLLIDING NAMES, and the different parents each side gives them:
+
+         frame name                              here            ZED driver
+         ─────────────────────────────────────── ─────────────── ──────────────────────
+         zedx_front_left_camera_frame            zedx_front_link zedx_front_camera_center
+         zedx_front_left_camera_optical_frame    (left frame)    (left frame)
+         zedx_front_right_camera_frame           zedx_front_link zedx_front_camera_center
+         zedx_front_right_camera_optical_frame   (right frame)   (right frame)
+         zedx_front_imu_link                     zedx_front_link driver node, at runtime
+                                                                 (mImuFrameId =
+                                                                  camera_name+"_imu_link")
+
+       A frame in a transform tree may have exactly ONE parent. Two authorities
+       publishing the same child is not something TF raises an error about — it
+       is a race, and which description a given lookup resolves through depends
+       on publication order. Every distance computed through those frames is
+       then referenced to whichever one won, silently.
+
+       ${name}_link itself does NOT collide: the driver's macro declares no
+       bare ${name}_link. It declares ${name}_base_link, ${name}_camera_center,
+       the four lens frames above, and optional mag/baro/temp links; the node
+       adds ${name}_imu_link.
+
+       THE REAL FIX IS TO DELETE THE CAMERA FROM THIS FILE and let the driver
+       own those frames — one physical camera should have one description.
+       That is NOT done here because it is a judgement call with a real cost:
+       the camera stops appearing in RViz whenever the driver is not running,
+       which is exactly when someone is checking mounting geometry by eye, and
+       it would need the housing kept as a visual-only link under a
+       non-colliding name. It is written up for the user to decide.
+
+       UNTIL THAT DECISION IS MADE, the four numbers above must track the four
+       other copies of this pose listed in the mount-pose block near the top of
+       this file. They only agree because somebody kept them agreeing.
+       ═══════════════════════════════════════════════════════════════════ -->
+
+  <!-- Front camera — installed. MOUNT point, not the lens. See above. -->
+  <xacro:zedx_camera name="zedx_front"
+                     x="${cam_front_x}" y="${cam_front_y}" z="${cam_front_z}"
+                     roll="0" pitch="${cam_front_pitch}" yaw="0"
+                     colour="blue"/>
+
+  <!-- Rear camera — Phase 7. Facing backwards (yaw = pi).
+       Guarded so the model stays truthful about what is physically present.
+       Uses the cam_rear_* PLACEHOLDERS, deliberately not the front camera's
+       measured values — see the rear-camera block near the top of this file. -->
+  <xacro:if value="${rear_camera_installed}">
+    <xacro:zedx_camera name="zedx_rear"
+                       x="${cam_rear_x}" y="${cam_rear_y}" z="${cam_rear_z}"
+                       roll="0" pitch="${cam_rear_pitch}" yaw="${PI}"
+                       colour="orange"/>
+  </xacro:if>
+
+</robot>

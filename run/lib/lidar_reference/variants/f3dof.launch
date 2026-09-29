@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<!--
+  variants/f3dof.launch - the JETSON form of the robot's Force3DoF LiDAR yardstick (SLAM work, 2026-09-27).
+  It includes the robot's own wrapper, byte for byte (robot_copy/f3dof.launch, md5 0767fc1e94e12573e77c56d5653336e4),
+  which runs the colleague's 3dreplay_pipeline.launch sensor:=helios unchanged and adds Reg/Force3DoF=true.
+  ONE Jetson-only line follows: the Helios decoder reads robot_replay_config.yaml (beside this folder) instead
+  of the replay_config.yaml inside the Jetson's rslidar_sdk copy, because the robot's copy of that file has
+  split_angle: 180 and the Jetson's mirror copy does not (see robot_replay_config.yaml's header).
+  roslaunch keeps the LAST value given to a parameter, so this line, placed after the include, wins; the dry
+  test checks it (rosparam get /helios_driver/config_path, and the decoder's "Config loaded from PATH" line).
+  Nothing of the colleague's is edited (ENGINEERING_NOTES.md rule 18).
+-->
+<launch>
+  <arg name="db_dir"/>
+  <arg name="rslidar_config" default="$(dirname)/../robot_replay_config.yaml"/>
+  <include file="$(dirname)/../robot_copy/f3dof.launch">
+    <arg name="db_dir" value="$(arg db_dir)"/>
+  </include>
+  <param name="/helios_driver/config_path" value="$(arg rslidar_config)"/>
+</launch>

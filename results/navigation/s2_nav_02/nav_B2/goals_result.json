@@ -1,0 +1,60 @@
+{
+ "run": "s2_nav_02",
+ "goals_file": "<repo>/catkin_ws/src/sidewalk_navigation/goals_d10_route_B2.yaml",
+ "results": [
+  {
+   "k": 0,
+   "name": "B1_east_junction",
+   "goal": [
+    14.3,
+    0.0,
+    -90
+   ],
+   "result": "SUCCEEDED",
+   "time_s": 108.0,
+   "t_send_rel": 0.31,
+   "end_estimate": [
+    14.121,
+    -0.032,
+    -1.374
+   ],
+   "dist_estimate_to_goal_m": 0.182
+  },
+  {
+   "k": 1,
+   "name": "B2_SE_on_line",
+   "goal": [
+    14.6,
+    -14.62,
+    180
+   ],
+   "result": "SUCCEEDED",
+   "time_s": 69.0,
+   "t_send_rel": 118.356,
+   "end_estimate": [
+    14.501,
+    -14.484,
+    -2.914
+   ],
+   "dist_estimate_to_goal_m": 0.168
+  },
+  {
+   "k": 2,
+   "name": "W2_south_line",
+   "goal": [
+    10.5,
+    -14.62,
+    180
+   ],
+   "result": "None",
+   "time_s": 94.5,
+   "t_send_rel": 197.443,
+   "end_estimate": [
+    14.798,
+    -13.086,
+    1.37
+   ],
+   "dist_estimate_to_goal_m": 4.564
+  }
+ ]
+}

@@ -1,0 +1,367 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <world name="marc_sidewalk_driveway">
+
+    <!-- ============================================================
+         MARC / Longwood Rd S sidewalk == driveway crossing template
+         Built for: VSLAM-Based Navigation for Autonomous Sidewalk Robots
+                    (Mitacs Globalink 2026, Project 50124)
+
+         DIMENSIONS AND PROVENANCE (unchanged from the source file == these
+         are sourced numbers and are deliberately not second-guessed here):
+           - Walkway zone width  2.0 m   -> Hamilton Complete Streets
+                                            Design Guidelines (2022),
+                                            target range 1.8-2.0 m
+           - Buffer zone width   1.0 m   -> same source, target 1.0 m
+           - Curb height         0.15 m  -> generic N.A. curb-reveal
+                                            convention, NOT Hamilton-
+                                            specific, verify if it matters
+           - Driveway width      6.5 m   -> UNVERIFIED PLACEHOLDER for a
+                                            two-way commercial driveway.
+                                            Replace with a measured value
+                                            from Street View or pacing it
+                                            out at MARC.
+           - Route length        26 m    -> arbitrary, matches the earlier
+                                            plan-view sketch
+
+         Axes: +X = direction of travel along the sidewalk (0 to 26 m)
+               +Y = across the right-of-way, 0 at the building frontage,
+                    increasing toward the road
+               Driveway crossing centred at X=13, spanning X=9.75-16.25
+
+         ============================================================
+         WHAT CHANGED FROM THE SOURCE FILE, AND WHY
+         ============================================================
+         The source flagged that its material names were unverified. They
+         were checked against this Jetson's
+         /usr/share/gazebo-11/media/materials/scripts/gazebo.material:
+
+           Gazebo/Concrete   DOES NOT EXIST  -> Gazebo/Pedestrian (sidewalk.jpg)
+           Gazebo/Asphalt    DOES NOT EXIST  -> Gazebo/Road / Gazebo/Motorway
+           Gazebo/Grass      exists, textured   (kept)
+           Gazebo/Bricks     exists, textured   (kept)
+
+         Left unfixed, the walkway, driveway apron and roadway == three of
+         the six surfaces, including the one the robot drives on == would
+         have rendered untextured. That is not cosmetic. A stereo camera
+         tracks motion by matching small patterns between frames; an
+         untextured surface yields none. Measured on this exact setup, an
+         untextured world gave 13 usable keypoints in a 1920x1200 image
+         against the 20 that RTAB-Map needs, and odometry failed on every
+         frame. See ENGINEERING_NOTES.md.
+
+         Three further changes for the same reason:
+
+         1. LONG SLABS ARE TILED. Gazebo paints one copy of a texture across
+            each face of a box, so the original single 26 m walkway would
+            have stretched one image over the whole route and washed out all
+            detail. Each surface is now built from ~2 m segments, and the
+            paving alternates irregularly so the run never becomes a
+            repeating pattern (identical repeating tiles cause ambiguous
+            feature matching == many matches, almost none geometrically
+            consistent).
+
+         2. THE CURB IS TEXTURED. It was ambient/diffuse grey, i.e. a flat
+            colour, which contributes no features at all.
+
+         3. STREET FURNITURE ADDED. Poles, signs, a hydrant and a bin, all
+            in the buffer zone and clear of the 2.0 m walkway. Loop closure
+            recognises places by appearance; a bare corridor of repeating
+            paving gives it nothing distinctive to key on. Spacing is
+            deliberately irregular for the same reason.
+
+         ============================================================
+         GEOMETRY QUESTIONS THIS FILE DOES NOT DECIDE == see notes below
+         ============================================================
+         The walkway and roadway are coplanar here (both top at z=0.02),
+         with the 0.15 m curb standing between them as a wall. On a real
+         street the walkway sits ~0.15 m ABOVE the road and the curb is that
+         reveal. Also, the walkway is perfectly level == no cross-slope ==
+         and the driveway apron is flush and flat.
+
+         That makes this world FLAT, which matters for one specific
+         experiment: it cannot test what Reg/Force3DoF costs, because
+         nothing here violates the flat-ground assumption. Raised walkway,
+         2% cross-slope and a driveway dip are all deliberately NOT added,
+         because they change sourced dimensions and that is the author's
+         call, not this file's. Discussed in the accompanying message.
+         ============================================================ -->
+
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <physics type="ode">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1</real_time_factor>
+      <real_time_update_rate>1000</real_time_update_rate>
+    </physics>
+
+    <!-- ==== WALKWAY ZONE ====
+         2.0 m wide, full 26 m length, centred on y=1.0, top at z=0.02.
+         Collision is ONE slab so the driving surface stays perfectly
+         continuous (13 abutting collision boxes could catch a wheel on a
+         numerical seam); the visual is tiled purely for texture detail. -->
+    <model name="walkway">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <pose>13 1.0 0.01 0 0 0</pose>
+          <geometry><box><size>26 2.0 0.02</size></box></geometry>
+        </collision>
+
+        <visual name="w01"><pose>1 1.0 0.011 0 0 0</pose><geometry><box><size>2 2.0 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual>
+        <visual name="w02"><pose>3 1.0 0.011 0 0 0</pose><geometry><box><size>2 2.0 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Steps</name></script></material></visual>
+        <visual name="w03"><pose>5 1.0 0.011 0 0 0</pose><geometry><box><size>2 2.0 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual>
+        <visual name="w04"><pose>7 1.0 0.011 0 0 0</pose><geometry><box><size>2 2.0 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+        <visual name="w05"><pose>9 1.0 0.011 0 0 0</pose><geometry><box><size>2 2.0 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual>
+        <visual name="w06"><pose>11 1.0 0.011 0 0 0</pose><geometry><box><size>2 2.0 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Steps</name></script></material></visual>
+        <visual name="w07"><pose>13 1.0 0.011 0 0 0</pose><geometry><box><size>2 2.0 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual>
+        <visual name="w08"><pose>15 1.0 0.011 0 0 0</pose><geometry><box><size>2 2.0 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+        <visual name="w09"><pose>17 1.0 0.011 0 0 0</pose><geometry><box><size>2 2.0 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual>
+        <visual name="w10"><pose>19 1.0 0.011 0 0 0</pose><geometry><box><size>2 2.0 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Steps</name></script></material></visual>
+        <visual name="w11"><pose>21 1.0 0.011 0 0 0</pose><geometry><box><size>2 2.0 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual>
+        <visual name="w12"><pose>23 1.0 0.011 0 0 0</pose><geometry><box><size>2 2.0 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+        <visual name="w13"><pose>25 1.0 0.011 0 0 0</pose><geometry><box><size>2 2.0 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual>
+      </link>
+    </model>
+
+    <!-- ==== BUFFER ZONE ==== 1.0 m of grass, split either side of the cut -->
+    <model name="buffer_zone_west">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision"><pose>4.875 2.5 0.01 0 0 0</pose>
+          <geometry><box><size>9.75 1.0 0.02</size></box></geometry></collision>
+        <visual name="bw1"><pose>1.22 2.5 0.011 0 0 0</pose><geometry><box><size>2.44 1.0 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Grass</name></script></material></visual>
+        <visual name="bw2"><pose>3.66 2.5 0.011 0 0 0</pose><geometry><box><size>2.44 1.0 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Grass</name></script></material></visual>
+        <visual name="bw3"><pose>6.09 2.5 0.011 0 0 0</pose><geometry><box><size>2.44 1.0 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Grass</name></script></material></visual>
+        <visual name="bw4"><pose>8.53 2.5 0.011 0 0 0</pose><geometry><box><size>2.44 1.0 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Grass</name></script></material></visual>
+      </link>
+    </model>
+
+    <model name="buffer_zone_east">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision"><pose>21.125 2.5 0.01 0 0 0</pose>
+          <geometry><box><size>9.75 1.0 0.02</size></box></geometry></collision>
+        <visual name="be1"><pose>17.47 2.5 0.011 0 0 0</pose><geometry><box><size>2.44 1.0 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Grass</name></script></material></visual>
+        <visual name="be2"><pose>19.91 2.5 0.011 0 0 0</pose><geometry><box><size>2.44 1.0 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Grass</name></script></material></visual>
+        <visual name="be3"><pose>22.34 2.5 0.011 0 0 0</pose><geometry><box><size>2.44 1.0 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Grass</name></script></material></visual>
+        <visual name="be4"><pose>24.78 2.5 0.011 0 0 0</pose><geometry><box><size>2.44 1.0 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Grass</name></script></material></visual>
+      </link>
+    </model>
+
+    <!-- ==== CURB FACE ====
+         0.15 m tall, split either side of the driveway, since real curb-cut
+         driveways drop to zero height across the crossing.
+         Source had a flat grey material; textured here so it yields features. -->
+    <model name="curb_west">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision"><pose>4.875 3.05 0.075 0 0 0</pose>
+          <geometry><box><size>9.75 0.1 0.15</size></box></geometry></collision>
+        <visual name="cw1"><pose>1.22 3.05 0.075 0 0 0</pose><geometry><box><size>2.44 0.1 0.15</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+        <visual name="cw2"><pose>3.66 3.05 0.075 0 0 0</pose><geometry><box><size>2.44 0.1 0.15</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+        <visual name="cw3"><pose>6.09 3.05 0.075 0 0 0</pose><geometry><box><size>2.44 0.1 0.15</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+        <visual name="cw4"><pose>8.53 3.05 0.075 0 0 0</pose><geometry><box><size>2.44 0.1 0.15</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+      </link>
+    </model>
+
+    <model name="curb_east">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision"><pose>21.125 3.05 0.075 0 0 0</pose>
+          <geometry><box><size>9.75 0.1 0.15</size></box></geometry></collision>
+        <visual name="ce1"><pose>17.47 3.05 0.075 0 0 0</pose><geometry><box><size>2.44 0.1 0.15</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+        <visual name="ce2"><pose>19.91 3.05 0.075 0 0 0</pose><geometry><box><size>2.44 0.1 0.15</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+        <visual name="ce3"><pose>22.34 3.05 0.075 0 0 0</pose><geometry><box><size>2.44 0.1 0.15</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+        <visual name="ce4"><pose>24.78 3.05 0.075 0 0 0</pose><geometry><box><size>2.44 0.1 0.15</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+      </link>
+    </model>
+
+    <!-- ==== DRIVEWAY APRON ====
+         Flush crossing, no curb face, 6.5 m wide (UNVERIFIED PLACEHOLDER).
+         Given its own distinct material so the crossing is visually
+         identifiable == which is exactly what loop closure keys on, and
+         what makes this the landmark of the route. -->
+    <model name="driveway_apron">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision"><pose>13 2.55 0.005 0 0 0</pose>
+          <geometry><box><size>6.5 1.1 0.01</size></box></geometry></collision>
+        <visual name="da1"><pose>10.83 2.55 0.006 0 0 0</pose><geometry><box><size>2.17 1.1 0.01</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Residential</name></script></material></visual>
+        <visual name="da2"><pose>13 2.55 0.006 0 0 0</pose><geometry><box><size>2.17 1.1 0.01</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Residential</name></script></material></visual>
+        <visual name="da3"><pose>15.17 2.55 0.006 0 0 0</pose><geometry><box><size>2.17 1.1 0.01</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Residential</name></script></material></visual>
+      </link>
+    </model>
+
+    <!-- ==== ROADWAY ==== context slab beyond the curb, tiled and alternating -->
+    <model name="roadway">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision"><pose>13 6.55 0.01 0 0 0</pose>
+          <geometry><box><size>26 6.9 0.02</size></box></geometry></collision>
+        <visual name="r01"><pose>1 6.55 0.011 0 0 0</pose><geometry><box><size>2 6.9 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual>
+        <visual name="r02"><pose>3 6.55 0.011 0 0 0</pose><geometry><box><size>2 6.9 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Motorway</name></script></material></visual>
+        <visual name="r03"><pose>5 6.55 0.011 0 0 0</pose><geometry><box><size>2 6.9 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual>
+        <visual name="r04"><pose>7 6.55 0.011 0 0 0</pose><geometry><box><size>2 6.9 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Motorway</name></script></material></visual>
+        <visual name="r05"><pose>9 6.55 0.011 0 0 0</pose><geometry><box><size>2 6.9 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual>
+        <visual name="r06"><pose>11 6.55 0.011 0 0 0</pose><geometry><box><size>2 6.9 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Motorway</name></script></material></visual>
+        <visual name="r07"><pose>13 6.55 0.011 0 0 0</pose><geometry><box><size>2 6.9 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual>
+        <visual name="r08"><pose>15 6.55 0.011 0 0 0</pose><geometry><box><size>2 6.9 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Motorway</name></script></material></visual>
+        <visual name="r09"><pose>17 6.55 0.011 0 0 0</pose><geometry><box><size>2 6.9 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual>
+        <visual name="r10"><pose>19 6.55 0.011 0 0 0</pose><geometry><box><size>2 6.9 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Motorway</name></script></material></visual>
+        <visual name="r11"><pose>21 6.55 0.011 0 0 0</pose><geometry><box><size>2 6.9 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual>
+        <visual name="r12"><pose>23 6.55 0.011 0 0 0</pose><geometry><box><size>2 6.9 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Motorway</name></script></material></visual>
+        <visual name="r13"><pose>25 6.55 0.011 0 0 0</pose><geometry><box><size>2 6.9 0.02</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual>
+      </link>
+    </model>
+
+    <!-- ==== BUILDING FACADE ====
+         Five segments, five DIFFERENT textures. Distinct surfaces are what
+         stop loop closure welding two stretches of an otherwise uniform
+         corridor together. -->
+    <model name="building_wall">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision"><pose>13 -0.15 2.0 0 0 0</pose>
+          <geometry><box><size>26 0.3 4.0</size></box></geometry></collision>
+        <visual name="f1"><pose>2.6 -0.15 2.0 0 0 0</pose><geometry><box><size>5.2 0.3 4.0</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Bricks</name></script></material></visual>
+        <visual name="f2"><pose>7.8 -0.15 2.0 0 0 0</pose><geometry><box><size>5.2 0.3 4.0</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/PaintedWall</name></script></material></visual>
+        <visual name="f3"><pose>13 -0.15 2.0 0 0 0</pose><geometry><box><size>5.2 0.3 4.0</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/BuildingFrame</name></script></material></visual>
+        <visual name="f4"><pose>18.2 -0.15 2.0 0 0 0</pose><geometry><box><size>5.2 0.3 4.0</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Residential</name></script></material></visual>
+        <visual name="f5"><pose>23.4 -0.15 2.0 0 0 0</pose><geometry><box><size>5.2 0.3 4.0</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Wood</name></script></material></visual>
+      </link>
+    </model>
+
+    <!-- ==== STREET FURNITURE ====
+         All in the buffer zone (y ~2.4-2.8) or hard against the building
+         (y ~0.35), so nothing intrudes on the 2.0 m walkway == the Husky is
+         0.685 m over the tyres and drives the centreline at y=1.0, spanning
+         y 0.66-1.34. Spacing is deliberately IRREGULAR: evenly spaced
+         identical objects form the repeating pattern that causes ambiguous
+         feature matching. -->
+
+    <model name="pole_w"><static>true</static><pose>3.4 2.72 1.22 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><cylinder><radius>0.06</radius><length>2.4</length></cylinder></geometry></collision>
+        <visual name="v"><geometry><cylinder><radius>0.06</radius><length>2.4</length></cylinder></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Trunk</name></script></material></visual></link></model>
+
+    <model name="bench_w"><static>true</static><pose>5.2 0.36 0.245 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>1.6 0.45 0.45</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>1.6 0.45 0.45</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Wood</name></script></material></visual></link></model>
+
+    <model name="hydrant"><static>true</static><pose>7.1 2.62 0.345 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><cylinder><radius>0.14</radius><length>0.65</length></cylinder></geometry></collision>
+        <visual name="v"><geometry><cylinder><radius>0.14</radius><length>0.65</length></cylinder></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Steps</name></script></material></visual></link></model>
+
+    <!-- signs flanking the driveway cut == the strongest place-signature on
+         the route, and the thing a returning pass should recognise -->
+    <model name="sign_dw_west"><static>true</static><pose>9.5 2.75 1.02 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.08 0.5 2.0</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.08 0.5 2.0</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Runway</name></script></material></visual></link></model>
+
+    <model name="sign_dw_east"><static>true</static><pose>16.5 2.75 1.02 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.08 0.5 2.0</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.08 0.5 2.0</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Primary</name></script></material></visual></link></model>
+
+    <model name="bin_e"><static>true</static><pose>19.6 2.6 0.37 0 0 0.4</pose>
+      <link name="l"><collision name="c"><geometry><cylinder><radius>0.24</radius><length>0.7</length></cylinder></geometry></collision>
+        <visual name="v"><geometry><cylinder><radius>0.24</radius><length>0.7</length></cylinder></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Motorway</name></script></material></visual></link></model>
+
+    <model name="planter_e"><static>true</static><pose>21.8 0.38 0.29 0 0 0.15</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.7 0.5 0.55</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.7 0.5 0.55</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Bricks</name></script></material></visual></link></model>
+
+    <model name="pole_e"><static>true</static><pose>24.3 2.7 1.22 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><cylinder><radius>0.06</radius><length>2.4</length></cylinder></geometry></collision>
+        <visual name="v"><geometry><cylinder><radius>0.06</radius><length>2.4</length></cylinder></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual></link></model>
+
+    <!-- parked car on the roadway: large, distinctive, and only visible from
+         part of the route, which makes it a useful place signature -->
+    <model name="parked_car"><static>true</static><pose>18.5 5.2 0.75 0 0 0.015</pose>
+      <link name="l"><collision name="c"><geometry><box><size>4.4 1.8 1.5</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>4.4 1.8 1.5</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/PioneerBody</name></script></material></visual></link></model>
+
+    <scene><ambient>0.5 0.5 0.5 1</ambient><background>0.7 0.75 0.8 1</background><shadows>false</shadows></scene>
+
+    <!-- ==== INITIAL VIEWER CAMERA ====
+         Set here rather than pushed at runtime over
+         /gazebo/<world>/user_camera/pose, which proved unreliable: it left the
+         viewport black more often than not, and its hung `gz topic` processes
+         accumulated. Declared in the world, gzclient simply opens looking at
+         the right thing.
+
+         Pose is x y z roll pitch yaw. This one stands off the west end of the
+         route, above the roadway, angled down and along +X so the walkway, the
+         buffer, the kerb line and the driveway cut at X=13 are all in frame. -->
+    <gui>
+      <camera name="user_camera">
+        <pose>-1 -9 7 0 0.374 0.666</pose>
+      </camera>
+    </gui>
+
+  </world>
+</sdf>

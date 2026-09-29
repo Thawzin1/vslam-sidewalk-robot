@@ -1,0 +1,123 @@
+<?xml version="1.0"?>
+<!--
+  obstacle_segmenter.launch — start the ground/obstacle/curb segmenter.
+
+  WHAT THIS CLOSES
+    sidewalk_navigation's local costmap declares two observation sources that
+    live in this package:
+
+        /sidewalk_perception/obstacles_cloud   PointCloud2   (critical)
+        /sidewalk_perception/curb_scan         LaserScan
+
+    nav_preflight.py marks the first `critical: True`, so until this node runs,
+    navigation preflight HARD-FAILS and the local costmap has no live obstacles
+    at all — the robot would navigate purely on the recorded map and drive into
+    anything that was not there when the map was made.
+
+  ORDERING
+    This node needs two things before it can do anything useful:
+      1. the ZED wrapper publishing the registered point cloud, and
+      2. the static TF tree from sidewalk_bringup, so the cloud can be
+         transformed from the camera's optical frame into base_link.
+    It does NOT crash without them. It waits for the cloud with a specific
+    message about what to check, and skips frames for which TF cannot resolve,
+    logging why. Starting before the camera is the normal case in a launch
+    sequence, not an error.
+
+  QUICK CHECKS THAT NEED NO CAMERA, NO ROS AND NO NUMPY
+    Run obstacle_segmenter.py with the "geometry" flag to print the mount
+    derivation and the depth-noise tables, or with the "self-test" flag to run
+    the synthetic correctness suite. (Both are double-dashed on the command
+    line; XML comments may not contain a double hyphen, hence the wording.)
+-->
+<launch>
+
+  <!-- Start the camera too? Default false: in the normal robot bringup the
+       ZED wrapper is already running, and starting a second one fights the
+       first for the device. Set true only when running this node alone
+       against a live camera. -->
+  <arg name="start_camera" default="false"/>
+
+  <arg name="camera_name" default="zedx_front"
+       doc="Camera namespace. MUST match the one the wrapper was started with —
+            zedx_front, not zed_x or zed_front."/>
+
+  <arg name="config_file"
+       default="$(find sidewalk_perception)/config/obstacle_segmenter.yaml"
+       doc="Every threshold, with its derivation and what would confirm it."/>
+
+  <arg name="cloud_topic"
+       default="/$(arg camera_name)/zed_node/point_cloud/cloud_registered"
+       doc="The registered point cloud. NOTE: zedx_front.yaml sets
+            point_cloud_freq: 10.0, so this arrives at ~10 Hz even though the
+            camera runs at 30 FPS. That caps this node's output rate; raising
+            rate_hz in the config achieves nothing if the cloud is not
+            arriving faster."/>
+
+  <arg name="curb_max_range" default=""
+       doc="Override curb_max_range_m in metres; empty means use the config
+            file. Beyond ~5 m the ZED X depth error smears the curb EDGE
+            POSITION by more than one costmap cell and detection is not
+            trustworthy. Raise only for an experiment, and read the derivation
+            in the config file first."/>
+
+  <arg name="debug_clouds" default="true"
+       doc="Publish curb_cloud and ground_cloud for RViz. Turn off for a soak
+            run — the ground cloud is large and nothing in the navigation
+            stack consumes it."/>
+
+  <!-- RESPAWN IS OFF BY DEFAULT, DELIBERATELY.
+
+       The tempting argument for respawn=true is that a dead segmenter means
+       the local costmap silently stops receiving live obstacles. But that case
+       is already covered: costmap_common.yaml sets expected_update_rate: 0.5
+       on both sources, costmap_2d warns when it lapses, and safety_monitor.py
+       acts on it.
+
+       The argument against is stronger. Every way this node exits non-zero is
+       a CONFIGURATION error — numpy absent, tf2_ros absent, no ROS master, an
+       unimplemented `source` value. roslaunch respawns regardless of exit
+       code, so respawn=true would put each of those into a 5-second restart
+       loop, burying the one-line explanation the node printed under an endless
+       scroll. Per-frame errors are already caught inside the node and logged
+       without killing it, so a genuine crash here is structural and wants a
+       human, not a restart.
+
+       Set true for an unattended field run, once the configuration is known
+       good. -->
+  <arg name="respawn" default="false"/>
+
+  <arg name="output" default="screen"/>
+
+  <!-- Optional CLI overrides, assembled here rather than hidden in the config
+       so a reader can see from the launch file alone exactly what deviates
+       from the documented defaults. $(eval) is Noetic-only, which is fine —
+       this project is ROS 1 Noetic throughout.
+
+       NOTE the str().lower() dance on debug_clouds. roslaunch may hand an arg
+       to $(eval) as the STRING "false" rather than the boolean False, and the
+       string "false" is TRUTHY in Python — so a plain `if debug_clouds` would
+       silently never emit the flag, which is the exact bug this comment
+       exists to prevent someone from reintroducing. Comparing the lowercased
+       string is correct whichever type roslaunch supplies. -->
+  <arg name="extra_args"
+       default="$(eval (' --curb-max-range ' + str(curb_max_range) if str(curb_max_range).strip() else '') + ('' if str(debug_clouds).lower() == 'true' else ' --no-debug-clouds'))"/>
+
+  <group if="$(arg start_camera)">
+    <include file="$(find sidewalk_perception)/launch/zedx_front.launch">
+      <arg name="camera_name" value="$(arg camera_name)"/>
+    </include>
+  </group>
+
+  <!-- The node reads its settings from the command line and the config file
+       rather than from the parameter server, so that running it by hand
+       behaves identically to running it from this launch file. That is a
+       package-wide convention (see sensor_validator.py) and it exists because
+       "it works when I run it manually but not under roslaunch" is an
+       expensive class of bug. -->
+  <node pkg="sidewalk_perception" type="obstacle_segmenter.py"
+        name="obstacle_segmenter" output="$(arg output)"
+        respawn="$(arg respawn)" respawn_delay="5"
+        args="--config $(arg config_file) --cloud-topic $(arg cloud_topic)$(arg extra_args)"/>
+
+</launch>

@@ -1,0 +1,329 @@
+package: sidewalk_evaluation
+phase: 5
+title: "Evaluation — Turning a Working Robot into a Result"
+status: ready
+one_liner: "Measures how wrong the robot's idea of its own position is, in metres and degrees, and writes the answer into a report anyone can open."
+
+audience_summary: |
+  A robot that drives down a sidewalk without hitting anything is a
+  demonstration. A robot that drives down a sidewalk and can tell you it knew
+  where it was to within, say, eleven centimetres, on average, over two hundred
+  metres, is a result. This package is what turns the first thing into the
+  second. (That number is an illustration of the kind of answer this produces,
+  not a measurement — nothing has been measured yet.)
+
+  The idea is simple. Drive the robot along a route. The whole time, the robot
+  is keeping its own private opinion about where it is — a line on an invisible
+  map. Afterwards, compare that line with where the robot really went, and
+  measure the gap.
+
+  Two different questions get asked, and they are genuinely different
+  questions.
+
+  **How far off is the whole path?** Lay the robot's believed route on top of
+  its real route and see how far apart they are. That is the headline number.
+
+  **How wrong is each individual step?** Ignore the whole path. Look at one
+  metre of travel at a time and ask how accurately the robot measured just that
+  one metre. A robot can be superb at this and still end up hopelessly lost,
+  because tiny errors, all in slightly the wrong direction, add up.
+
+  The awkward part is the phrase "where it really went". Answering that
+  properly needs an outside measurement system more accurate than the robot —
+  the kind of camera rig used in film studios. There is no such rig on a
+  sidewalk. So this package is careful and explicit about what it is using
+  instead, and about what each substitute does and does not prove. The best of
+  the substitutes is beautifully simple: drive the robot in a loop back to a
+  chalk mark on the ground. The true distance between where it started and
+  where it finished is zero, exactly, for free. Whatever gap the robot still
+  reports is error it accumulated along the way.
+
+  Alongside the accuracy numbers, this package measures what that accuracy
+  costs: how hard the computer had to work, how much delay there was between
+  the camera seeing something and the robot knowing about it, and how many
+  camera frames were dropped because the software could not keep up. On a
+  battery-powered robot, an answer that is slightly better but arrives late and
+  flattens the processor is not obviously the better answer.
+
+  Everything ends up in one HTML file with the graphs built into it. No
+  internet, no software to install — it opens on any machine, forever.
+
+why_it_exists: |
+  The project's central claim is a comparison. Three different systems can work
+  out where the robot is — RTAB-Map, which is this project's primary choice;
+  the ZED camera's own built-in tracking; and ORB-SLAM3, a well-known research
+  system. The contribution is measuring all three fairly, on exactly the same
+  recorded data, and reporting which is better at what and at what cost.
+
+  "Fairly" is the whole difficulty. Three systems compared on three separate
+  drives down the same street are not being compared at all — the street
+  changed between drives. Three systems whose errors were computed with
+  slightly different definitions are not being compared either. A comparison
+  where each system was run once, and the winner won by less than the amount a
+  single system varies between repeat runs, is not a comparison; it is a coin
+  toss with a graph attached.
+
+  So the measuring instrument needs to be as carefully built as the thing it
+  measures. That is what this package is: the instrument, written down, so that
+  every number in the final report can be traced to the twenty lines of
+  arithmetic that produced it.
+
+  It also refuses to produce numbers that would be misleading. Asked for an
+  absolute error with nothing to compare against, it declines and explains why,
+  rather than printing a plausible-looking zero.
+
+physical_intuition: |
+  **ATE versus RPE, in mechanical terms.** Absolute trajectory error is the
+  final position deviation of an assembly. Relative pose error is the tolerance
+  on each individual joint. You can have every joint within a tight tolerance
+  and still have an end effector centimetres from where it should be, because
+  the tolerances stacked. That is exactly the relationship between a small RPE
+  and a large ATE, and it is why quoting only one of them tells half the story.
+
+  **Why small errors become large errors.** Each step the robot takes is
+  measured with a small independent error. Errors that are random and unbiased
+  do not cancel — they accumulate as a **random walk**. The expected distance
+  from the truth grows with the square root of the number of steps. Two
+  hundred steps with a 1 cm error each does not give 200 cm of error, and it
+  does not give 0 either; it gives about 14 cm. This is the same mathematics as
+  the diffusion of heat through a bar or the Brownian motion of a particle, and
+  it is why a bounded per-step error still produces unbounded position error.
+
+  **Why a systematic error is far worse than a random one.** Now suppose the
+  error is not random but a constant bias — the camera is mounted one degree
+  off from where the software thinks it is. Every step is now wrong in the
+  *same* direction. The errors add linearly, not as a square root, so error
+  grows with distance rather than its square root. Worse, a constant heading
+  bias curves the entire estimated path, so the *position* error grows with the
+  **square** of distance travelled. This is why the mounting bracket's rigidity
+  is a SLAM problem: a bracket that flexes by half a degree under acceleration
+  produces a heading bias that the algorithm cannot distinguish from real
+  rotation.
+
+  **Why a closed loop is such a powerful test.** Every measuring instrument
+  needs a reference, and references are expensive. But a route that returns to
+  its starting point provides one free: the true displacement between the first
+  and last pose is exactly zero. This is the same trick as closing a survey
+  traverse, or checking a dial indicator by returning it to its zero. The
+  misclosure *is* the accumulated error. It gives one datum rather than a whole
+  curve, but that one datum needs no equipment, no calibration and no
+  assumptions beyond the robot having genuinely been parked back on the mark.
+
+  **Why depth error grows with the square of range.** A stereo camera measures
+  distance by triangulating between two lenses 120 mm apart. The disparity
+  between the two images shrinks in proportion to 1/Z as an object gets
+  further away, so a fixed matching precision in pixels translates into a depth
+  error proportional to Z². Doubling the range quadruples the error. On the
+  ZED X this is why the manufacturer's own accuracy bound loosens from under
+  0.4% out to 2 m to under 7% at 20 m — a seventeen-fold widening for a
+  ten-fold increase in range. There are only three levers — a wider baseline,
+  a longer lens, or better sub-pixel matching — and the first two are fixed by
+  the housing and the 4.6 mm optics. That is a geometry constraint, not a
+  software one, and no algorithm choice escapes it. Note that those two
+  figures are limits the manufacturer promises not to exceed, not measurements
+  of how the camera performs; measuring it is what the depth characterization
+  experiment is for.
+
+  **Why latency is a mechanical quantity.** A pose that is 100 ms old describes
+  where the robot was, not where it is. At walking pace, 1.4 m/s, that is 14 cm
+  of stale information. The control loop is steering on a position that no
+  longer exists, which is exactly the transport delay that destabilises any
+  feedback system. Latency belongs beside accuracy in the results, not in an
+  appendix.
+
+what_it_does:
+  - Computes Absolute Trajectory Error, aligning the estimated and reference paths first with a proper least-squares (Umeyama) fit
+  - Computes Relative Pose Error over configurable separations, which needs no alignment at all and so cannot be flattered by a lucky global fit
+  - Reports drift as a percentage of distance travelled, and heading drift in degrees per metre, averaged over hundreds of overlapping segments
+  - Measures the closed-loop gap — how far the estimate says the robot is from a start point it is physically standing on
+  - Detects the moments the mapping system rewrote its own history after recognising a place, and measures how large those corrections were
+  - Counts tracking failures, and measures how often and how quickly the system recovered
+  - Records processing latency, CPU, GPU, memory, temperature and dropped-frame rate during a run
+  - Characterises the ZED X's depth accuracy against a flat wall at 1, 2, 5, 10 and 15 m, including how flat the wall appears to be
+  - Draws every result as a graph and embeds them all into one self-contained HTML report that opens offline
+  - Builds the three-way comparison table across RTAB-Map, ZED tracking and ORB-SLAM3, refusing to declare a winner where the margin is smaller than the run-to-run variation
+  - Reads the runs the navigation phase drives, checks them against a schema both packages agree on, and puts their recorded paths through the same measurement code as everything else
+  - Measures how consistently the robot repeats a route it has driven before, and reports that separately from, and never as, a measure of correctness
+  - Refuses the comparisons that would produce a confident meaningless number — the same run given twice, or two runs that drove different routes
+
+key_concepts:
+  - term: "ATE — Absolute Trajectory Error"
+    plain: "How far apart the whole believed path and the whole real path are, once you have laid one on top of the other as well as possible. The single number people quote."
+    technical: "Root-mean-square Euclidean distance between temporally associated poses after a least-squares SE(3) or Sim(3) alignment, per Sturm et al., IROS 2012."
+  - term: "RPE — Relative Pose Error"
+    plain: "How wrong each individual step of the journey was, measured one metre at a time. Ignores the whole path, so it cannot be rescued by a lucky overall fit."
+    technical: "The residual of the relative transform between pose pairs separated by a fixed delta: E = (Q_i^-1 Q_j)^-1 (P_i^-1 P_j). Alignment-invariant."
+  - term: "Trajectory alignment"
+    plain: "A mapping system invents its own starting point and its own idea of which way is north. Before you can compare its path with the real one, you have to slide and rotate it into place — otherwise you would be measuring an arbitrary choice rather than a real error."
+    technical: "Umeyama least-squares similarity transform between associated point sets, with the determinant correction that prevents the SVD returning a reflection instead of a rotation on near-planar data."
+  - term: "Drift"
+    plain: "Error that accumulates as you travel, expressed as a percentage of the distance covered. One percent drift means being about a metre out after a hundred metres."
+    technical: "KITTI-style segment-averaged translational and rotational error, evaluated over all overlapping sub-paths of several fixed lengths and normalised by segment length."
+  - term: "Loop closure"
+    plain: "The moment the software recognises a place it has already been, realises its map has slowly gone crooked, and straightens the whole thing out. On a graph the robot's estimated position visibly jumps, even though the robot did not move."
+    technical: "Addition of a place-recognition constraint to the pose graph, triggering a global bundle adjustment or pose-graph optimisation; the discontinuity in the live pose stream is the correction magnitude."
+  - term: "Relocalization"
+    plain: "What happens after the software gets completely lost — someone walks in front of the camera, or the robot drives into direct low sun — and then works out where it is again from scratch. The interesting numbers are how often it manages this, and how long it takes."
+    technical: "Re-establishment of the pose estimate after a tracking failure, by matching current observations against the existing map. Measured as success rate per loss episode and as a time-to-recovery distribution."
+  - term: "Ground truth, and what to do when you have none"
+    plain: "The real answer, measured by something more accurate than the thing you are testing. In a lab that is a motion-capture rig. On a sidewalk there is no such thing, so we use substitutes and are honest about each one's limits."
+    technical: "Reference trajectory. In the absence of mocap or RTK GNSS, this project uses closed-loop misclosure as its primary drift reference and wheel odometry as an independent short-range cross-check; cross-stack comparison measures disagreement, not accuracy."
+  - term: "Umeyama alignment"
+    plain: "The standard recipe for answering 'how do I best slide and spin one set of points onto another?'. Used here to remove the arbitrary difference in starting points before measuring the real error."
+    technical: "Closed-form least-squares estimation of rotation, translation and optional scale between two point patterns via SVD of their cross-covariance (Umeyama, PAMI 1991)."
+  - term: "TUM trajectory format"
+    plain: "A plain text file, one line per moment in time: when, where, and which way the robot was facing. Every tool in this project reads and writes it, so results from different systems can be compared directly."
+    technical: "`timestamp tx ty tz qx qy qz qw`, seconds and metres, Hamilton quaternion in x-y-z-w order, body-to-world convention. The format used by the TUM RGB-D benchmark and by the prior ORB-SLAM3 work on this project."
+  - term: "Repeatability versus accuracy"
+    plain: "Two completely different questions that produce numbers in the same units, which is why they get confused. Repeatability asks whether the robot does the same thing every time. Accuracy asks whether that thing is the right thing. A clock that is ten minutes fast is perfectly repeatable and useless. A navigation run's recorded path can answer the first question honestly and cannot answer the second at all, because the path was recorded by the same system that was steering — if it was wrong, it steered somewhere wrong and then recorded that it had arrived exactly as intended."
+    technical: "Precision versus trueness. Comparing repeated navigation runs yields the spread of the estimator-plus-controller loop about its own mean; the estimator's bias is common-mode across those runs and unobservable. Recorded in `reference_kind` as `nav_repeat_run`, which the report renders with that caveat attached. Trueness requires an independent reference: wheel odometry over short ranges, closed-loop misclosure at a surveyed mark, RTK GNSS, or motion capture."
+  - term: "The navigation run-summary schema"
+    plain: "One agreed description of what a navigation run writes down: the names of every field, the unit of every number, and which frame of reference the positions are measured in. It is written out in full inside both packages, word for word, so neither end can quietly change its mind. The reader checks what arrives against its own copy and complains by name if the two have drifted apart."
+    technical: "`run_summary.json` plus `trajectory.tum`, version 1. Documented verbatim in `sidewalk_navigation/scripts/nav_run_io.py` and `scripts/nav_run.py`. The reader states its expectations independently rather than importing the writer's constants — importing them would make the agreement a tautology and let a real divergence pass silently."
+  - term: "Waypoint arrival scatter"
+    plain: "Instead of comparing two whole journeys moment by moment, compare only where the robot came to rest at each destination. Every stop is labelled, so the same stop can be found in every run without having to line the two journeys up in time — which matters, because two drives of the same route happen at different times and at different speeds, and lining them up by the clock makes a slower run look like an inaccurate one."
+    technical: "Per-waypoint spread of the recorded arrival poses across runs: centroid, RMS and maximum radial deviation, maximum pairwise separation, and circularly-wrapped yaw deviation. Association-free and alignment-free, so it is immune to the temporal-association weakness of a rebased-timestamp ATE. Drift shared by all runs cancels, which is what makes it a repeatability figure and not an accuracy one."
+  - term: "Depth bias versus depth noise"
+    plain: "Bias is being consistently wrong in the same direction, like a ruler printed slightly short — it never averages out. Noise is being randomly wrong each time, which does average out if you take enough readings. They need completely different fixes."
+    technical: "Systematic error (calibration, baseline or rectification error, correctable) versus stochastic error (disparity-matching precision, reducible only by averaging or by a better matcher)."
+
+inputs:
+  - "Trajectory files in TUM format, one per localization system, recorded during a run by `trajectory_recorder.py`"
+  - "Optionally a reference trajectory — wheel odometry, or nothing at all if the route was a closed loop"
+  - "Optionally a tracking-status log per system, giving the moments tracking was lost and regained"
+  - "Live depth images and `camera_info` from the ZED X, for the depth characterization experiment"
+  - "`config/evaluation.yaml` — which topics to record, and every decision about how a metric is computed"
+  - "`config/depth_targets.yaml` — where the depth comes from and which distances to test"
+  - "Navigation run directories from `logs/sidewalk_navigation/runs/`, each holding `trajectory.tum` and `run_summary.json`, written by `sidewalk_navigation`'s waypoint runner"
+
+outputs:
+  - "One JSON file per localization system, containing every computed metric"
+  - "The aligned trajectories written back out as TUM files, so any result can be re-checked or re-plotted later"
+  - "PNG figures — the route seen from above, error against time, error distribution, relative error by separation, drift by segment length, depth accuracy, latency, and system load"
+  - "**`report.html`** — one self-contained file with every figure embedded, openable offline on any machine"
+  - "`comparison.json` and the three-way comparison table"
+  - "`navigation_runs.json` — for an ingested navigation run, which map, which route, which planner and which schema complaints, copied beside the metrics so the numbers outlive the directory they came from"
+  - "`repeatability.json` — the run-to-run spread, including the waypoint arrival scatter, labelled `nav_repeat_run` so it can never be read as an accuracy figure"
+  - "A timestamped run log in `logs/sidewalk_evaluation/`, plus one summary line in `logs/RUNLOG.md`"
+
+how_to_run:
+  - cmd: "rosrun sidewalk_evaluation evaluate_trajectory.py --self-test"
+    explain: "**Run this first, before any real data exists.** It builds a synthetic trajectory, injects a known error into it, and checks that the tool recovers exactly that error. It needs no camera, no robot and no ROS. If this fails, nothing else in this package can be trusted — and it is the answer to a supervisor asking how you know the numbers are right."
+  - cmd: "roslaunch sidewalk_evaluation record_trajectories.launch route:=campus_loop"
+    explain: "Start this AFTER the SLAM systems are already running, then drive the route. It listens to every localization system at once and writes each one's claimed path to its own file. Drive back to a physically marked start point before stopping — that mark is what makes the drift measurement possible."
+  - cmd: "rosrun sidewalk_evaluation evaluate_trajectory.py --loop-only --est rtabmap=RUN/rtabmap.tum"
+    explain: "The normal case when there is no reference trajectory. Measures drift from the fact that the route returned to its start, and explicitly records that absolute and relative error were NOT computed — rather than inventing a number that would look real."
+  - cmd: "rosrun sidewalk_evaluation evaluate_trajectory.py --ref RUN/wheel_odom.tum --est rtabmap=RUN/rtabmap.tum --est zed=RUN/zed.tum --reference-kind wheel_odometry --name campus_run1"
+    explain: "The full evaluation against a reference. `--reference-kind` is not optional decoration: it is recorded verbatim in the report and answers the first question any reader asks, which is what you are calling truth."
+  - cmd: "roslaunch sidewalk_evaluation depth_characterization.launch distance:=5 truth:=4.985 note:='outdoor overcast, brick'"
+    explain: "Point the camera square-on at a flat, textured wall at a measured distance and run this once per distance: 1, 2, 5, 10 and 15 m. Measure to the LEFT lens plane, not the front of the housing — at 1 m the entire acceptable error is 4 mm, which is smaller than that difference. Read `config/depth_targets.yaml` before the first measurement, and run `--self-test` first: it checks the acceptance curve against the two figures the manufacturer actually publishes, and needs no camera."
+  - cmd: "roslaunch sidewalk_evaluation system_monitor.launch label:='rtabmap alone' process:=rtabmap duration:=300"
+    explain: "Records what the accuracy costs — processor, graphics, memory, temperature, delay and dropped frames. Run it alongside the SLAM system. Accuracy figures without cost figures are half a result on a robot running off a battery."
+  - cmd: "rosrun sidewalk_evaluation ingest_navigation_run.py --self-test"
+    explain: "**Run this before ingesting real navigation data.** It writes two synthetic navigation runs with a known difference injected between them, pushes them through the whole ingestion path, and checks both that the difference is recovered and that the guards refuse the comparisons which would be meaningless. Needs no hardware and no ROS."
+  - cmd: "rosrun sidewalk_evaluation ingest_navigation_run.py --describe --run RUNDIR"
+    explain: "Prints what a navigation run contains — route, map, planner, pose count, metrics — and every complaint the schema check raised, then exits without computing anything. The fastest way to find out whether a run is worth analysing, and it works without numpy."
+  - cmd: "rosrun sidewalk_evaluation ingest_navigation_run.py --run RUNDIR"
+    explain: "The normal case for a single navigation run. Reports the closed-loop gap and the pose-graph corrections, and records explicitly that absolute and relative error were NOT computed — a navigation run's path is the robot's own estimate, and comparing it with itself would produce a beautiful zero that means nothing."
+  - cmd: "rosrun sidewalk_evaluation ingest_navigation_run.py --run RUNDIR --ref RECORD/wheel_odom.tum --reference-kind wheel_odometry"
+    explain: "The only mode that yields a defensible error figure, and only as good as the reference. Wheel odometry is the realistic choice: recorded during the same drive by `record_trajectories.launch`, it shares no sensor, no calibration and no failure mode with the visual localisation being measured."
+  - cmd: "rosrun sidewalk_evaluation ingest_navigation_run.py --repeatability --run RUN1 --run RUN2 --run RUN3"
+    explain: "Measures how consistently the robot reproduces its own answer over repeated drives of the identical route. Two figures come out: an ATE against the first run, which needs the two runs lined up in time and therefore mixes spatial deviation with speed differences, and the waypoint arrival scatter, which needs no such alignment and is the cleaner number. Neither is accuracy, and the output says so in every file it writes."
+  - cmd: "rosrun sidewalk_evaluation compare_slam.py --results RUN1 --results RUN2 --results RUN3"
+    explain: "Builds the three-way comparison table. Give it several repeats of the same route and it reports the spread as well as the average, and refuses to highlight a winner whose margin is smaller than that spread. Three repeats is the minimum before any ranking should be believed."
+  - cmd: "rosrun sidewalk_evaluation generate_report.py --results RESULTS_DIR"
+    explain: "Rebuilds the HTML report from results already computed. Useful after editing the wording, or on your own computer with the results copied across. The other tools call it automatically, so you rarely need this directly."
+  - cmd: "python3 catkin_ws/src/sidewalk_evaluation/scripts/eval_common.py"
+    explain: "Prints what this machine can and cannot do — whether numpy, matplotlib and ROS are available, and where results will be written. Run it first on any new machine to find out whether the analysis will work there before discovering it halfway through."
+
+failure_modes:
+  - symptom: "`only 3 pose(s) could be matched in time between reference and estimate`"
+    cause: "The two trajectory files have timestamps on different clocks, or are from different runs"
+    fix: "Compare the time ranges printed in the error message. If they do not overlap at all, the files are from different drives — check which run directory you passed. If they do overlap, two machines disagree about the time: fix NTP on both, and in the meantime measure the offset and pass it as `--time-offset`."
+  - symptom: "ATE looks impossibly good — a few millimetres over a 200 m route"
+    cause: "The reference and the estimate are the same data, or one system's output was used as the other's reference"
+    fix: "Check `reference_kind` in the report. If it says `cross_stack`, you have measured agreement between two estimators, not accuracy — and two systems sharing a camera, a calibration and a viewpoint share their failure modes too. Re-run against wheel odometry or use `--loop-only`."
+  - symptom: "`Sim(3) alignment finds a correction factor of 1.0412`"
+    cause: "The estimated trajectory is the wrong size, which on a stereo camera means a calibration error"
+    fix: "Read the direction carefully: this is the factor the estimate must be MULTIPLIED BY to match the reference, so 1.0412 means the estimate is about 4% too SMALL, and a factor below 1.000 means it is too large. The report also prints `estimate_oversize_pct`, which is signed and needs no interpretation. Scale is directly observable from the 120 mm baseline, so the factor should be 1.000. The usual cause is intrinsics that do not match the resolution actually being streamed. Check what resolution the ZED wrapper is publishing and what the loaded calibration was made for. A wrong baseline in the calibration file does the same thing."
+  - symptom: "Zero loop closures detected on a route that definitely revisited itself"
+    cause: "Either loop closure genuinely never fired, or the trajectory was exported after optimisation rather than recorded live"
+    fix: "Corrections are only visible in the LIVE pose stream — an exported trajectory has already had them applied. Record `/rtabmap/localization_pose` during the run, not the post-hoc export. If it was recorded live and still shows nothing, loop closure really is not firing: check RTAB-Map's detection threshold and its working-memory size."
+  - symptom: "Drift percentage rises steeply with segment length instead of staying flat"
+    cause: "A systematic heading bias, not random noise"
+    fix: "Flat means error grows in proportion to distance, which is the well-behaved case. Rising means a constant angular error is bending the whole path, so position error grows with the square of distance. Look at the camera's mounting angle in `sidewalk_bringup/config/camera_mount.yaml`, at IMU gyro bias estimation, and at whether the mounting bracket flexes under acceleration."
+  - symptom: "`only 12 of 122880 pixels in the region returned a depth value`"
+    cause: "The wall is blank, so the stereo matcher has nothing to match between the two images"
+    fix: "Tape newspaper, a poster or anything patterned across the area the camera sees. This is not cheating: it separates depth accuracy from the distinct question of texture dependence. If the wall already has texture, check that both lenses are clean and that neither is fogged or has a fingerprint."
+  - symptom: "Depth bias exceeds the datasheet envelope at every distance by roughly the same amount"
+    cause: "The reference distance was measured from the wrong place"
+    fix: "Measure to the LEFT imager's lens plane, not the front of the housing, the tripod mount or the bracket. A constant offset at every distance is the signature of this, whereas a genuine calibration error usually scales with range."
+  - symptom: "`No CameraInfo on /zedx_front/zed_node/depth/camera_info within 20 s`"
+    cause: "The camera is not connected, not powered, or its driver is not running"
+    fix: "The ZED X takes power over the coax from the ZED Link Quad card, which needs its own 9-19 V supply — the Jetson does not power it. Check that supply first, then `systemctl status zed_x_daemon`, then `rosnode list | grep zed`. `tools/health_check.sh` distinguishes these cases."
+  - symptom: "`matplotlib is not installed` and the report has no figures"
+    cause: "python3-matplotlib is missing on this machine"
+    fix: "Every number in the report is still correct and complete — only the pictures are missing, and the report says so at the top. Install with `sudo apt install python3-matplotlib` and re-run `generate_report.py --results DIR` to add them; nothing needs recomputing."
+  - symptom: "Two repeats of the same route give ATE figures that differ by a factor of two"
+    cause: "Nothing is broken. This is what drift being a random walk looks like."
+    fix: "One run is one sample from a distribution. Run the route at least three times and report the mean and the spread. `compare_slam.py` does this automatically and refuses to declare a winner whose margin is smaller than the run-to-run variation."
+  - symptom: "Latency and frame rate get worse partway through a long run"
+    cause: "The Jetson is thermally throttling"
+    fix: "`system_monitor.py` warns at the moment a thermal zone passes 85 °C, and records the temperature trace. Everything measured after that point describes a slower machine and is not comparable with the earlier part of the same run. Improve airflow, or split long experiments into shorter ones."
+  - symptom: "`rospy is not importable` when running an analysis script"
+    cause: "You are on the development PC, which runs Ubuntu 26.04 and has no ROS"
+    fix: "This is expected and mostly harmless. The analysis tools — `evaluate_trajectory.py`, `compare_slam.py`, `generate_report.py` — need no ROS and work here. Only the live recording nodes need it, and those belong on the Jetson."
+
+  - symptom: "`is schema version 3; this reader supports 1`"
+    cause: "The two ends of the navigation run-summary schema have been changed independently"
+    fix: "This is the guard working, and it must not be worked around — reading a version this side does not know would produce numbers whose meaning nobody can state. The schema is documented in a comment block duplicated verbatim in `sidewalk_navigation/scripts/nav_run_io.py` and `scripts/nav_run.py`. Bring the two blocks back into agreement, add the new version to `SUPPORTED_SCHEMA_VERSIONS`, and change both files in one commit."
+  - symptom: "`metric 'total_distance_m' arrived with unit 'ft' but this reader expects 'm'`"
+    cause: "The writing and reading ends disagree about a unit"
+    fix: "Do not use that number until they agree. The reader carries its own independent table of expected units precisely so this shows up as a named complaint rather than as a plausible figure that is off by a factor of 3.28. Fix whichever end is wrong, in both `METRIC_UNITS` (writer) and `EXPECTED_METRIC_UNITS` (reader)."
+  - symptom: "`The run 20260801-101500_waypoint_demo was given twice`"
+    cause: "The same navigation run was passed as two of the runs being compared"
+    fix: "Also the guard working. A trajectory compared with itself has exactly zero error, which looks like a spectacular result and is an arithmetic identity. Check the paths passed; two different runs have two different `run_id` values, which begin with the timestamp the run started."
+  - symptom: "Repeatability ATE looks large, but the two routes overlay almost perfectly when plotted"
+    cause: "The two runs were driven at different speeds, and after rebasing they are associated by elapsed time"
+    fix: "Expected, and it is why two figures are reported. Poses matched at the same number of seconds after each start will differ whenever one run was slower, even along an identical line. Read `waypoint_arrival_scatter` in `repeatability.json` instead: it compares the labelled arrival poses directly and needs no temporal association at all. If the scatter is small and the ATE is large, the difference between the runs is timing, not path."
+  - symptom: "A navigation run ingests, but `--repeatability` reports no waypoint arrival scatter"
+    cause: "The runs carry no per-leg arrival poses"
+    fix: "Arrival poses are recorded only when the transform from the map to the robot was available at the end of each leg. Check `end_x_m` in the `legs` array of `run_summary.json`. If it is absent, localisation was not producing a pose when the robot arrived, and the trajectory for that run will have gaps in the same places."
+
+files:
+  - path: "scripts/traj_metrics.py"
+    role: "The mathematics: alignment, ATE, RPE, drift, loop closure, tracking statistics. Pure numpy, no ROS. Run it directly for a self-test of the formulae."
+  - path: "scripts/evaluate_trajectory.py"
+    role: "Main entry point. Turns recorded trajectory files into metrics, plots and a report. Runs offline, needs no ROS. `--self-test` verifies the whole pipeline against synthetic data with a known injected error."
+  - path: "scripts/trajectory_recorder.py"
+    role: "Live ROS node. Records every localization system's claimed path simultaneously to TUM files, plus tracking status and latency samples."
+  - path: "scripts/depth_characterization.py"
+    role: "Live ROS node. Measures depth bias, noise, dropout and flatness against a flat wall at a known distance."
+  - path: "scripts/system_monitor.py"
+    role: "Records CPU, GPU, memory, temperature, processing latency and dropped-frame rate. Works with or without ROS."
+  - path: "scripts/compare_slam.py"
+    role: "Builds the three-way comparison across RTAB-Map, ZED tracking and ORB-SLAM3, aggregating repeated runs and reporting the spread."
+  - path: "scripts/generate_report.py"
+    role: "Renders results into one self-contained HTML file with every figure embedded as data, so it opens offline anywhere."
+  - path: "scripts/nav_run.py"
+    role: "Reads and validates a navigation run written by `sidewalk_navigation`, and carries this side's statement of the shared schema. Contains no metrics. Pure standard library — run it directly to describe a run, or with a self-test that needs neither numpy nor ROS."
+  - path: "scripts/ingest_navigation_run.py"
+    role: "Turns navigation runs into metrics using the existing machinery in `traj_metrics.py`. Three modes: self-consistency, against an independent reference, and repeatability across repeated drives. Refuses the comparisons that would be meaningless."
+  - path: "launch/ingest_navigation.launch"
+    role: "Offline evaluation of a navigation run, and the ingestion self-test"
+  - path: "scripts/eval_common.py"
+    role: "Shared plumbing: locating the repository, the shared logger, dependency checks with actionable messages, config reading. Run directly to find out what a given machine can do."
+  - path: "config/evaluation.yaml"
+    role: "Every decision about how a metric is computed, each one justified in a comment. Also the list of pose topics to record, and the experiment protocol."
+  - path: "config/depth_targets.yaml"
+    role: "Depth topics, test distances, and the full step-by-step protocol for the wall experiment including where exactly to hold the tape measure. Deliberately holds NO camera specification: those live once, in `sidewalk_perception/scripts/perception_common.py` (the ZEDX dict), transcribed from the manufacturer's datasheet."
+  - path: "launch/record_trajectories.launch"
+    role: "Start recording every localization system at once during a run"
+  - path: "launch/evaluate.launch"
+    role: "Offline analysis of a recorded run, and the self-test"
+  - path: "launch/depth_characterization.launch"
+    role: "One depth measurement at one distance"
+  - path: "launch/system_monitor.launch"
+    role: "Record what the accuracy costs, alongside a running experiment"
+
+logs: "logs/sidewalk_evaluation/"

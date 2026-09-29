@@ -1,0 +1,128 @@
+{
+ "camera_tracker_silences_over_1p5s": [
+  {
+   "from": "13:27:58",
+   "seconds": 3.43,
+   "overlaps_zed_diagnostic_pause": true,
+   "overlaps_db_save_over_1p5s": [
+    4.28
+   ],
+   "restart_from_tf_within_5s_after": false
+  },
+  {
+   "from": "13:28:12",
+   "seconds": 3.23,
+   "overlaps_zed_diagnostic_pause": true,
+   "overlaps_db_save_over_1p5s": [],
+   "restart_from_tf_within_5s_after": false
+  },
+  {
+   "from": "13:29:54",
+   "seconds": 6.3,
+   "overlaps_zed_diagnostic_pause": true,
+   "overlaps_db_save_over_1p5s": [],
+   "restart_from_tf_within_5s_after": true
+  },
+  {
+   "from": "13:30:35",
+   "seconds": 2.83,
+   "overlaps_zed_diagnostic_pause": true,
+   "overlaps_db_save_over_1p5s": [],
+   "restart_from_tf_within_5s_after": false
+  },
+  {
+   "from": "13:31:15",
+   "seconds": 5.77,
+   "overlaps_zed_diagnostic_pause": true,
+   "overlaps_db_save_over_1p5s": [],
+   "restart_from_tf_within_5s_after": false
+  },
+  {
+   "from": "13:31:56",
+   "seconds": 2.7,
+   "overlaps_zed_diagnostic_pause": true,
+   "overlaps_db_save_over_1p5s": [
+    2.94
+   ],
+   "restart_from_tf_within_5s_after": false
+  },
+  {
+   "from": "13:32:31",
+   "seconds": 3.77,
+   "overlaps_zed_diagnostic_pause": true,
+   "overlaps_db_save_over_1p5s": [],
+   "restart_from_tf_within_5s_after": false
+  },
+  {
+   "from": "13:33:35",
+   "seconds": 3.87,
+   "overlaps_zed_diagnostic_pause": true,
+   "overlaps_db_save_over_1p5s": [],
+   "restart_from_tf_within_5s_after": false
+  },
+  {
+   "from": "13:33:45",
+   "seconds": 5.67,
+   "overlaps_zed_diagnostic_pause": true,
+   "overlaps_db_save_over_1p5s": [],
+   "restart_from_tf_within_5s_after": false
+  },
+  {
+   "from": "13:34:44",
+   "seconds": 5.43,
+   "overlaps_zed_diagnostic_pause": true,
+   "overlaps_db_save_over_1p5s": [],
+   "restart_from_tf_within_5s_after": false
+  },
+  {
+   "from": "13:35:24",
+   "seconds": 2.7,
+   "overlaps_zed_diagnostic_pause": true,
+   "overlaps_db_save_over_1p5s": [],
+   "restart_from_tf_within_5s_after": false
+  },
+  {
+   "from": "13:35:32",
+   "seconds": 2.3,
+   "overlaps_zed_diagnostic_pause": true,
+   "overlaps_db_save_over_1p5s": [],
+   "restart_from_tf_within_5s_after": false
+  },
+  {
+   "from": "13:36:07",
+   "seconds": 3.83,
+   "overlaps_zed_diagnostic_pause": true,
+   "overlaps_db_save_over_1p5s": [],
+   "restart_from_tf_within_5s_after": true
+  },
+  {
+   "from": "13:37:12",
+   "seconds": 2.03,
+   "overlaps_zed_diagnostic_pause": true,
+   "overlaps_db_save_over_1p5s": [],
+   "restart_from_tf_within_5s_after": false
+  },
+  {
+   "from": "13:39:20",
+   "seconds": 2.47,
+   "overlaps_zed_diagnostic_pause": true,
+   "overlaps_db_save_over_1p5s": [
+    4.88
+   ],
+   "restart_from_tf_within_5s_after": false
+  },
+  {
+   "from": "13:40:53",
+   "seconds": 5.73,
+   "overlaps_zed_diagnostic_pause": true,
+   "overlaps_db_save_over_1p5s": [],
+   "restart_from_tf_within_5s_after": false
+  }
+ ],
+ "n": 16,
+ "n_overlapping_zed_diagnostic_pause": 16,
+ "n_overlapping_db_save_over_1p5s": 3,
+ "db_saves_over_1p5s": 12,
+ "longest_db_save_s": 4.88,
+ "wheel_odom_columns": "not used for motion (column meaning not checked)"
+}

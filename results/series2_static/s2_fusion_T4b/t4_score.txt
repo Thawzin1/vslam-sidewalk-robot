@@ -1,0 +1,67 @@
+1 bridge                   FAIL
+    down_events_other_than_the_forced_drop: []
+    rates_hz: {"wheel": 9.86, "imu": 19.23, "imu_raw": 19.23, "ekf": 49.31}
+    delivered_pct: {"/husky_velocity_controller/odom": [99.22, 87.94], "/imu/data": [99.18, 87.86], "/imu/data_raw": [99.18, 87.94], "/odometry/filtered": [99.2, 87.77]}
+    message_age: {"wheel": {"median_ms": 3.55, "p95_ms": 5.05, "p99_ms": 33.76, "max_ms": 2682.9}, "imu": {"median_ms": 4.25, "p95_ms": 6.08, "p99_ms": 34.0, "max_ms": 297.8}, "imu_raw": {"median_ms": 4.02, "p95_ms": 5.61, "p99_ms": 32.74, "max_ms": 297.8}, "ekf": {"median_ms": 20.46, "p95_ms": 46.87, "p99_ms": 56.48, "max_ms": 2880.7}}
+    stale_not_published: {"/husky_velocity_controller/odom": [74, 52], "/imu/data": [149, 103], "/imu/data_raw": [149, 102], "/odometry/filtered": [376, 264]}
+    note: "age = time the recorder on the Jetson received it - its stamp re-timed to the Jetson clock, so it includes the recorder's own delay"
+2 clocks                   PASS
+    share_of_pings_bound_le_5ms: 1.0
+    pings: 1937
+    applied_offset_ms: {"min": 0.351, "max": 2.505}
+    steps: [0, 0]
+    sntp_now_ms: [37.259, 33.791000000000004]
+    sntp_agrees_within_bounds: true
+    note: "sntp is run after the drive, robot still on; its own bound is large over WiFi"
+3 conditioner and rates    FAIL
+    kept_at_READY: [["+0.48", "739"]]
+    refused_imu: 0
+    nonfinite: 0
+    wheel_hz: 9.86
+    gyro_hz: 19.23
+    camera_hz_parked_5min: 6.72
+    camera_hz_whole_run: 10.03
+    camera_hz_10s_windows_parked: {"min": 4.9, "median": 7.3, "max": 7.5}
+    last_status: "EKF_INPUTS wheel 10.0Hz imu 19.5Hz vo 7.6Hz vo_dropped 0.0% bias -0.00deg/min(n=637,held while measuring) kept -0.00deg/min(n=637) still 20s hold 11.7s refused_imu 0 nonfinite 0 offset_refused 0 dropped 2  970s"
+4 parked 5 min             PASS
+    window: "03:59:32.000 - 04:04:32.000 (from the READY line, 300 s)"
+    wheels_still_throughout: true
+    fused_heading_net_deg: 0.17
+    fused_heading_max_excursion_deg: 0.19
+    fused_heading_sum_abs_steps_deg: 13.436
+    fused_position_max_excursion_m: 0.0103
+    fused_position_net_m: 0.0039
+    robot_ekf_drift_deg_per_min: 0.122
+    judged_on: "max excursion from the start value (covers the net change; the sum of steps is reported)"
+5 lens covered, parked     PASS
+    window: "04:06:31.645 - 04:07:44.880 (camera lost, wheels still)"
+    seconds: 73.2
+    pose_available_from_TF_in_window: 1079
+    latest_computed_pose_whole_run: 0
+    could_not_get_transform_whole_run: 0
+    fused_heading_max_excursion_deg: 0.14
+    fused_position_max_excursion_m: 0.0028
+6 turns                    PASS
+    blind_turns: [{"start": "04:07:44.880", "end": "04:07:51.778", "s": 6.9, "camera_lost_fraction": 1.0, "fused_dyaw": 88.44, "robot_dyaw": 88.4}, {"start": "04:07:53.186", "end": "04:07:54.880", "s": 1.7, "camera_lost_fraction": 1.0, "fused_dyaw": 1.55, "robot_dyaw": 1.46}, {"start": "04:07:56.288", "end": "04:07:56.387", "s": 0.1, "camera_lost_fraction": 1.0, "fused_dyaw": -0.29, "robot_dyaw": -0.27}, {"start": "04:09:14.376", "end": "04:09:22.682", "s": 8.3, "camera_lost_fraction": 1.0, "fused_dyaw": -87.27, "robot_dyaw": -87.66}, {"start": "04:09:26.081", "end": "04:09:26.180", "s": 0.1, "camera_lost_frac
+    blind_fused_minus_robot_deg: [0.04, 0.09, 0.02, 0.39, 0.01]
+    camera_tracking_back_after_last_blind_turn_s: 83.5
+    uncovered_turns: [{"start": "04:11:25.178", "end": "04:11:34.077", "s": 8.9, "camera_lost_fraction": 0, "fused_dyaw": 89.7, "robot_dyaw": 89.84, "camera_dyaw": 90.19}, {"start": "04:11:36.497", "end": "04:11:36.584", "s": 0.1, "camera_lost_fraction": 0, "fused_dyaw": -0.06, "robot_dyaw": -0.07, "camera_dyaw": -0.03}, {"start": "04:12:18.078", "end": "04:12:26.480", "s": 8.4, "camera_lost_fraction": 0, "fused_dyaw": -92.6, "robot_dyaw": -92.29, "camera_dyaw": -92.28}, {"start": "04:12:27.581", "end": "04:12:27.680", "s": 0.1, "camera_lost_fraction": 0, "fused_dyaw": -8.35, "robot_dyaw": -8.17, "camera_dyaw": -8
+    uncovered_largest_pairwise_diff_deg: [0.49, 0.04, 0.32, 0.33]
+    robot_heading: "the robot's own filter /robot/ekf_odom (wheels + its gyroscope)"
+7 forced drop              FAIL
+    PASS_measurable: false
+    down_within_1_5s: "NOT SCORABLE as worded: the procedure stops the receiver itself, so nothing on the Jetson is left to declare the link DOWN; the last robot reading arrived -0.01 s after the kill"
+    data_back_s_after_restart: 6.09
+    fused_heading_change_deg: 5.623
+    fused_position_change_m: 0.0441
+    conditioner_gap_messages: ["[INFO] [1790323578.582873]: gyro offset window ended by a gap (no wheel reading for 2.6 s): its kept -0.282 deg/min (n=514) stays; 2 readings not in it thrown away", "[INFO] [1790324009.455701]: gyro offset window ended by a gap (no gyro reading for 16.6 s): its kept 0.185 deg/min (n=834) stays; 2 readings not in it thrown away", "[INFO] [1790324046.740983]: gyro offset window ended by a gap (no wheel reading for 2.6 s): its kept -0.003 deg/min (n=637) stays; 3 readings not in it thrown away"]
+8 tf owners                PASS
+    checks: {"1": [["odom", "base_link", ["/ekf_fused"]]], "2": [["map", "odom", ["/rtabmap/rtabmap"]], ["odom", "base_link", ["/ekf_fused"]]]}
+10 page dot                PASS
+    dot_max_excursion_m: 0.0103
+    samples: 7604
+    note: "map -> odom (the map) composed with odom -> base_link (the blend), the same pair the page draws"
+R READY                    -
+    ready_printed: ["READY: gyroscope offset +0.48 deg/min KEPT over n=739 readings. The robot may move."]
+    note: "the gate is checked only at step 6; see the report for when the kept value existed"
+segments: [{"start": "04:07:44.880", "end": "04:07:51.778", "s": 6.9, "camera_lost_fraction": 1.0, "fused_dyaw": 88.44, "robot_dyaw": 88.4}, {"start": "04:07:53.186", "end": "04:07:54.880", "s": 1.7, "camera_lost_fraction": 1.0, "fused_dyaw": 1.55, "robot_dyaw": 1.46}, {"start": "04:07:56.288", "end": "04:07:56.387", "s": 0.1, "camera_lost_fraction": 1.0, "fused_dyaw": -0.29, "robot_dyaw": -0.27}, {"start": "04:09:14.376", "end": "04:09:22.682", "s": 8.3, "camera_lost_fraction": 1.0, "fused_dyaw": -87.27, "robot_dyaw": -87.66}, {"start": "04:09:26.081", "end": "04:09:26.180", "s": 0.1, "camera_lost_fraction": 1.0, "fused_dyaw": 0.04, "robot_dyaw": 0.03}, {"start": "04:11:25.178", "end": "04:11:34.077", "s": 8.9, "camera_lost_fraction": 0, "fused_dyaw": 89.7, "robot_dyaw": 89.84, "camera_dyaw": 90.19}, {"start": "04:11:36.497", "end": "04:11:36.584", "s": 0.1, "camera_lost_fraction": 0, "fused_dyaw": -0.06, "robot_dyaw": -0.07, "camera_dyaw": -0.03}, {"start": "04:12:18.078", "end": "04:12:26.480", "s": 8.4, "camera_lost_fraction": 0, "fused_dyaw": -92.6, "robot_dyaw": -92.29, "camera_dyaw": -92.28}, {"start": "04:12:27.581", "end": "04:12:27.680", "s": 0.1, "camera_lost_fraction": 0, "fused_dyaw": -8.35, "robot_dyaw": -8.17, "camera_dyaw": -8.02}]

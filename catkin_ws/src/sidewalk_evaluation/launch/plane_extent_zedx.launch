@@ -1,0 +1,86 @@
+<launch>
+  <!-- ===================================================================
+       SCENARIO 2 - static reference plane, ZED X camera arm.
+
+       This is a MIRROR of Nicolas's launch/plane_extent.launch from
+       matt_self_navigation. The NODE SCRIPT IS HIS, BYTE FOR BYTE
+       (plane_extent.py, md5 11753c0ff450cd5a48230e8f988d0fb6, verified
+       against the robot 2026-09-14). Only the sensor differs: this points
+       the same code at the camera's point cloud instead of a LiDAR's.
+
+       WHY THIS SCENARIO EXISTS, in his words: "Deliberately contains NO
+       model fitting. Test 2 exists to validate Test 1: if the sphere result
+       came from RANSAC favouring one sensor, a fit-free measurement would
+       disagree with it."
+
+       THE ONE THING THAT IS NOT LIKE-FOR-LIKE, AND MUST BE HANDLED.
+       His box places roi_z as a height ABOVE THE FLOOR and converts it with
+       sensor_h, which is correct only if the sensor is level. Both LiDARs
+       are. THE CAMERA IS NOT - it is pitched about 2.8 degrees, which at
+       7 m displaces the box by roughly 0.34 m. Taking his roi_z unchanged
+       would put the box off the plate and the node would quietly measure
+       whatever else is in the volume.
+
+       SO ALWAYS TUNE BEFORE COLLECTING. Launch with n:=0 (the default).
+       The node re-reads roi_* every frame, so
+           rosparam set /plane_extent/roi_z 1.22
+       retunes live with no relaunch. Tune until npts is large and ext_y /
+       ext_z read close to the tape. THEN relaunch with n:=1000 and csv:=,
+       which freezes the parameters for the whole run.
+
+         roslaunch sidewalk_evaluation plane_extent_zedx.launch \
+             roi_x:=5.1143 truth_y:=<TAPED> truth_z:=<TAPED> \
+             n:=1000 csv:=~/zedx_vs_lidar_data/w3_5.0m_plane_zedx.csv
+
+       truth_y and truth_z have NO DEFAULTS ON PURPOSE. They are the tape
+       measurement of the actual board, and every width and height error in
+       the results is measured against them. roslaunch will refuse to start
+       without them, which is the intended behaviour - a guessed board size
+       would come out looking like a sensor result.
+       =================================================================== -->
+
+  <arg name="csv" default=""/>
+  <arg name="n"   default="0"/>            <!-- 0 = tuning mode, live params, runs forever -->
+
+  <!-- box centre. roi_x is the distance to the plate IN THE CAMERA'S FRAME:
+       add the measured 0.1143 m camera-forward mount offset to the tape mark,
+       exactly as the sphere runs did (roi_x:=10.1143 for the 10 m mark). -->
+  <arg name="roi_x" default="5.1143"/>
+  <arg name="roi_y" default="0.0"/>
+  <arg name="roi_z" default="1.22"/>       <!-- height above the floor; TUNE THIS, see above -->
+
+  <!-- box size. sx thin because the plate is flat; sy/sz must clear the board
+       but exclude the floor and whatever it is standing on. -->
+  <arg name="roi_sx" default="0.30"/>
+  <arg name="roi_sy" default="0.95"/>
+  <arg name="roi_sz" default="1.20"/>
+
+  <!-- true board dimensions, outside to outside, in metres. REQUIRED. -->
+  <arg name="truth_y"/>
+  <arg name="truth_z"/>
+
+  <!-- measured camera height above the floor. Walkway-3 fit gave 0.6972 m
+       (walkway-1 was 0.6794 m - an 18 mm difference that is unexplained, so
+       re-measure with camera_pose_from_floor.py rather than trusting either). -->
+  <arg name="sensor_h" default="0.6972"/>
+
+  <arg name="topic" default="/zedx_front/zed_node/point_cloud/cloud_registered"/>
+
+  <node pkg="sidewalk_evaluation" type="plane_extent.py"
+        name="plane_extent" output="screen">
+    <param name="cloud_topic"    value="$(arg topic)"/>
+    <param name="sensor_h"       value="$(arg sensor_h)"/>
+    <param name="roi_x"          value="$(arg roi_x)"/>
+    <param name="roi_y"          value="$(arg roi_y)"/>
+    <param name="roi_z"          value="$(arg roi_z)"/>
+    <param name="roi_sx"         value="$(arg roi_sx)"/>
+    <param name="roi_sy"         value="$(arg roi_sy)"/>
+    <param name="roi_sz"         value="$(arg roi_sz)"/>
+    <param name="min_points"     value="30"/>
+    <param name="target_samples" value="$(arg n)"/>
+    <param name="report_every"   value="50"/>
+    <param name="csv_path"       value="$(arg csv)"/>
+    <param name="truth_y"        value="$(arg truth_y)"/>
+    <param name="truth_z"        value="$(arg truth_z)"/>
+  </node>
+</launch>

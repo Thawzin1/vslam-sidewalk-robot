@@ -1,0 +1,20 @@
+{
+  "source_database": "~/slam_series2/s2_static_09.db",
+  "pose_kind": "corrected",
+  "method": "SE(2) Gauss-Newton over Link types 0-4, first graph node fixed",
+  "tool": "tools/db/optimize_graph_se2.py",
+  "graph_nodes": 893,
+  "first_node": 1,
+  "last_node": 1201,
+  "closure_edges_by_type": {
+    "1": 18,
+    "2": 287
+  },
+  "end_gap_corrected_m": 0.0136,
+  "end_gap_odometry_same_nodes_m": 0.7995,
+  "label": "camera, s2_static_09",
+  "loop_closures": 305,
+  "exact": false,
+  "poses": 893,
+  "why_reoptimised": "database not closed (no park; Jetson power-cycled ~21:21): Admin.opt_poses is empty, so the corrected positions are rebuilt by optimize_graph_se2.py (validated to 0.35 mm on series-1 run 8)"
+}

@@ -1,0 +1,165 @@
+Panels:
+- Class: rviz/Displays
+  Name: Displays
+  Property Tree Widget:
+    Expanded:
+    - /Camera frames (TF)1
+    - /Live depth cloud1
+    Splitter Ratio: 0.5
+  Tree Height: 640
+- Class: rviz/Views
+  Name: Views
+Visualization Manager:
+  Class: ''
+  Name: root
+  Global Options:
+    Background Color: 22; 22; 28
+    Default Light: true
+    # base_footprint, NOT map. base_footprint sits ON THE FLOOR (0.13228 m below
+    # base_link, husky_a200_real.urdf:76), so the Reference Grid below at z=0 IS
+    # the floor plane. That is the whole point of this layout: you can see at a
+    # glance whether the camera frame floats at its true mounting height and
+    # whether the depth returns land on the floor or below it.
+    #
+    # There is no `map` frame here on purpose — this check runs with the CAMERA
+    # ONLY, no RTAB-Map. Using map would make the layout depend on a mapping
+    # session that has not started.
+    Fixed Frame: base_footprint
+    Frame Rate: 15
+  Displays:
+  # The three exclusions from slam_live_safe.rviz / lab_real.rviz still apply
+  # (docs/SOLVED.md, "Jetson livelock - RViz 11 GB", 2026-08-21):
+  # rtabmap_rviz_plugins/MapCloud, rviz/Image on a full-res topic, and
+  # rviz/PointCloud2 on /rtabmap/cloud_map. None appears below.
+  #
+  # The cloud that IS here is different in kind: /point_cloud/cloud_registered is
+  # the camera's CURRENT frame, and Decay Time 0 means RViz keeps exactly one.
+  # It is bounded by construction. /rtabmap/cloud_map is the accumulated map and
+  # grows without limit — that is the one that ate 11 GB.
+  - Class: rviz/Grid
+    Name: THE FLOOR (z=0 in base_footprint)
+    Enabled: true
+    Cell Size: 0.5
+    Plane Cell Count: 20
+    Color: 90; 90; 105
+    Alpha: 0.5
+  - Alpha: 0.85
+    Class: rviz/RobotModel
+    Collision Enabled: false
+    Enabled: true
+    Links:
+      All Links Enabled: true
+      Expand Joint Details: false
+      Expand Link Details: false
+      Expand Tree: false
+      Link Tree Style: Links in Alphabetic Order
+    Name: Husky body
+    # husky_description, not robot_description: on the Jetson's master
+    # robot_description belongs to the CAMERA (published by the ZED wrapper's own
+    # state publisher). real_robot_model.launch copies the Husky URDF in under
+    # husky_description. Pointing this at robot_description draws the camera
+    # bracket alone and no robot.
+    Robot Description: husky_description
+    TF Prefix: ''
+    Update Interval: 0
+    Value: true
+    Visual Enabled: true
+  - Class: rviz/TF
+    Name: Camera frames (TF)
+    Enabled: true
+    # SHOW NAMES OFF. This robot publishes 78 frames, of which 56 are the PACS
+    # mounting-grid cells A01..G08. With names on, every one draws a label and
+    # the view becomes unreadable overlapping text - the camera frames, which
+    # are the entire point of this layout, are buried under grid-cell labels.
+    #
+    # The axes alone carry the information: red = X (forward), green = Y (left),
+    # blue = Z (up). To identify a specific frame, click it, or turn this back on
+    # temporarily after narrowing the Frames list below.
+    Show Names: false
+    Show Axes: true
+    Show Arrows: false
+    # 0.35 m axes read clearly against a 0.99 m robot without swamping it.
+    Marker Scale: 0.35
+    # ONLY the frames this check is about. "All Enabled: false" alone is not
+    # enough - RViz adds newly-seen frames with Value: true unless each one is
+    # listed, which is why the first version of this layout still drew all 78.
+    Frames:
+      All Enabled: false
+      base_footprint:
+        Value: true
+      base_link:
+        Value: true
+      zedx_base_frame:
+        Value: true
+      zedx_body:
+        Value: true
+      zedx_front_base_link:
+        Value: true
+      zedx_front_camera_center:
+        Value: true
+      zedx_front_left_camera_frame:
+        Value: true
+  - Alpha: 1
+    Class: rviz/PointCloud2
+    Name: Live depth cloud (decimated)
+    Enabled: true
+    # NOT /point_cloud/cloud_registered. Measured on this rig 2026-08-29, the raw
+    # topic runs at 307.76 MB/s — 36.86 MB per message, 2.3 million points. Over
+    # an X-forwarded RViz that stops the window repainting entirely and the
+    # desktop reports "rviz is not responding". It is the link and the client
+    # that cannot cope, not the camera.
+    #
+    # /zedx_front/cloud_light is the same cloud with every 401st point kept, from
+    # sidewalk_perception/scripts/cloud_decimator.py. Measured: 152.65 KB/s,
+    # 92 KB per message — roughly 2000x smaller, and still perfectly adequate for
+    # seeing which plane the floor is on.
+    #
+    #   rosrun sidewalk_perception cloud_decimator.py _stride:=401 _rate:=2.0
+    Topic: /zedx_front/cloud_light
+    # Decay Time 0 = keep only the newest frame. Bounded by construction.
+    Decay Time: 0
+    Queue Size: 1
+    Size (Pixels): 4
+    Style: Points
+    # Colour by height so the floor reads as one flat band and any vertical
+    # offset is obvious without measuring.
+    Color Transformer: AxisColor
+    Axis: Z
+    Autocompute Intensity Bounds: false
+    Min Intensity: -1
+    Max Intensity: 2
+    Use Fixed Frame: true
+    Invert Rainbow: false
+  Tools:
+  - Class: rviz/MoveCamera
+  - Class: rviz/Select
+  - Class: rviz/FocusCamera
+  # Measure is the point of this layout — use it to check the camera frame's
+  # height against the grid, and the depth cloud's floor against z=0.
+  - Class: rviz/Measure
+  Views:
+    Current:
+      Class: rviz/Orbit
+      Name: Current View
+      # Look from the side, slightly above, so height differences are visible as
+      # height rather than foreshortened. A top-down view would hide the entire
+      # defect this layout exists to reveal.
+      Target Frame: base_footprint
+      Distance: 4
+      Focal Point:
+        X: 0.3
+        Y: 0
+        Z: 0.4
+      Pitch: 0.25
+      Yaw: 2.2
+      Near Clip Distance: 0.01
+  Global Options Fixed Frame: base_footprint
+Window Geometry:
+  Height: 900
+  Width: 1500
+  Hide Left Dock: false
+  Hide Right Dock: true
+  Displays:
+    collapsed: false
+  Views:
+    collapsed: true

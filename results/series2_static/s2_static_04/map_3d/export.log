@@ -1,0 +1,14 @@
+Opening database "d4.db"...
+Opening database "d4.db"... done (0.000348s).
+Optimizing the map (Full global optimization)...
+Optimizing the map (Full global optimization)... done (0.018676s, poses=284, links=747).
+Create and assemble the clouds...
+Create and assemble the clouds... done (17.227879s, 6134108 points).
+Voxel grid filtering of the assembled cloud... (voxel=0.030000, 6134108 points)
+Voxel grid filtering of the assembled cloud.... done! (0.662269s, 1279563 points)
+Computing normals of the assembled cloud... (k=20, 1279563 points)
+Computing normals of the assembled cloud... done! (1.023746s, 1279563 points)
+Adjust normals to viewpoints of the assembled cloud... (1279563 points)
+Adjust normals to viewpoints of the assembled cloud... (2.808744s, 1279563 points)
+Saving <scratch> (1279563 points)
+Saving <scratch> done!

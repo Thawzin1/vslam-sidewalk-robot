@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<!--
+  husky_sidewalk_gazebo.launch - the real Husky on the OUTDOOR sidewalk world.
+
+  A thin wrapper around husky_real_gazebo.launch. It exists only to change two
+  things, and deliberately duplicates nothing else: two launch files describing
+  the same robot would drift apart the first time either is edited.
+
+    world    -> sidewalk.world instead of office.world
+    spawn_z  -> 0.35 instead of 0.1, because the pavement surface sits at
+                z = 0.15. At the office default the robot would spawn INSIDE
+                the slab and be ejected by the physics solver.
+
+  WHAT THIS WORLD IS FOR
+    Measuring a claim the project has written down but never tested. From
+    sidewalk_slam/config/rtabmap_zedx.yaml, on Reg/Force3DoF:
+
+      "It is WRONG on a real sidewalk. Kerb ramps, driveway crossings and camber
+       all violate the flat-ground assumption..."
+
+    On a flat office floor that setting is free. Here the robot is never level -
+    the pavement carries a continuous 2% cross-slope toward the road, plus two
+    kerb ramps and a driveway dip. Run the same route both ways and compare:
+
+      roslaunch sidewalk_slam rtabmap_mapping.launch use_sim_time:=true \
+          approx_sync:=true wait_imu_to_init:=false force_3dof:=true  ...
+      roslaunch sidewalk_slam rtabmap_mapping.launch use_sim_time:=true \
+          approx_sync:=true wait_imu_to_init:=false force_3dof:=false ...
+
+    The difference in ATE against ground truth is the number that replaces that
+    comment. force_3dof is an argument of the SLAM launch, not this one, which
+    is why it is not re-exposed here.
+
+  USAGE
+    roslaunch sidewalk_sim husky_sidewalk_gazebo.launch gui:=false rviz:=true zedx:=true
+
+  BEFORE DRIVING, measure the feature count (see ENGINEERING_NOTES.md). A world that looks
+  fine can still be unmappable: the untextured office world gave 13 ORB keypoints
+  against the 20 RTAB-Map needs, and no amount of tuning could fix that.
+-->
+<launch>
+
+  <arg name="gui"   default="true"/>
+  <arg name="rviz"  default="true"/>
+  <arg name="zedx"  default="false"/>
+  <arg name="zedx_parent" default="zedx_base_frame"/>
+  <arg name="zedx_xyz"    default="0 0 0"/>
+  <arg name="zedx_rpy"    default="0 0 0"/>
+
+  <include file="$(find sidewalk_sim)/launch/husky_real_gazebo.launch">
+    <arg name="world"       value="$(find sidewalk_sim)/worlds/sidewalk.world"/>
+    <arg name="spawn_z"     value="0.35"/>
+    <arg name="gui"         value="$(arg gui)"/>
+    <arg name="rviz"        value="$(arg rviz)"/>
+    <arg name="zedx"        value="$(arg zedx)"/>
+    <arg name="zedx_parent" value="$(arg zedx_parent)"/>
+    <arg name="zedx_xyz"    value="$(arg zedx_xyz)"/>
+    <arg name="zedx_rpy"    value="$(arg zedx_rpy)"/>
+  </include>
+
+</launch>

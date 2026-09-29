@@ -1,0 +1,59 @@
+{
+ "camera_tracker_silences_over_1p5s": [
+  {
+   "from": "20:57:10",
+   "seconds": 5.27,
+   "overlaps_zed_diagnostic_pause": true,
+   "overlaps_db_save_over_1p5s": [],
+   "restart_from_tf_within_5s_after": true
+  },
+  {
+   "from": "20:58:16",
+   "seconds": 1.97,
+   "overlaps_zed_diagnostic_pause": true,
+   "overlaps_db_save_over_1p5s": [],
+   "restart_from_tf_within_5s_after": false
+  },
+  {
+   "from": "21:01:57",
+   "seconds": 2.83,
+   "overlaps_zed_diagnostic_pause": true,
+   "overlaps_db_save_over_1p5s": [],
+   "restart_from_tf_within_5s_after": false
+  },
+  {
+   "from": "21:03:00",
+   "seconds": 2.17,
+   "overlaps_zed_diagnostic_pause": true,
+   "overlaps_db_save_over_1p5s": [],
+   "restart_from_tf_within_5s_after": false
+  },
+  {
+   "from": "21:05:05",
+   "seconds": 1.53,
+   "overlaps_zed_diagnostic_pause": true,
+   "overlaps_db_save_over_1p5s": [],
+   "restart_from_tf_within_5s_after": false
+  },
+  {
+   "from": "21:05:35",
+   "seconds": 2.77,
+   "overlaps_zed_diagnostic_pause": true,
+   "overlaps_db_save_over_1p5s": [],
+   "restart_from_tf_within_5s_after": false
+  },
+  {
+   "from": "21:12:13",
+   "seconds": 42.97,
+   "overlaps_zed_diagnostic_pause": true,
+   "overlaps_db_save_over_1p5s": [],
+   "restart_from_tf_within_5s_after": true
+  }
+ ],
+ "n": 7,
+ "n_overlapping_zed_diagnostic_pause": 7,
+ "n_overlapping_db_save_over_1p5s": 0,
+ "db_saves_over_1p5s": 84,
+ "longest_db_save_s": 4.76,
+ "wheel_odom_columns": "not used for motion (column meaning not checked)"
+}

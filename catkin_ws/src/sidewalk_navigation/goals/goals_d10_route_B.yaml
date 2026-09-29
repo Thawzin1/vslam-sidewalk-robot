@@ -1,0 +1,8 @@
+# Route B - "the loop" (optional, only after route A passes): ~58 m, east, south, west, north.
+# Every corridor here was driven in this direction on drive 10 (camera_corrected.tum: north corridor east
+# 157-216 s; east corridor south 666-822 s; south corridor west 838-890 s; west corridor north 437-466 s).
+goals:
+  - {name: B1_east_junction, x: 14.30, y: 0.00,   yaw_deg: -90, timeout_s: 150}  # turn to face south
+  - {name: B2_SE_corner,     x: 14.50, y: -14.70, yaw_deg: 180, timeout_s: 180}  # turn to face west
+  - {name: B3_SW_corner,     x: 0.15,  y: -14.10, yaw_deg: 90,  timeout_s: 180}  # turn to face north
+  - {name: B4_start_mark,    x: 0.25,  y: 0.00,   yaw_deg: 0,   timeout_s: 180}  # turn to face east

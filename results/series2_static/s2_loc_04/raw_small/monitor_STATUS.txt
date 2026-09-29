@@ -1,0 +1,1 @@
+t=1744s  est=(0.031, -0.041)  pos_err=n/a (no ground truth)  quality=155  resets=110  ACCEPTED_LC=646 (71 global + 575 prox)  rejected_LC=0

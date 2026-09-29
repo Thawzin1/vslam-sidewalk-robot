@@ -1,0 +1,15 @@
+{
+ "P1_camera_silences_over_1p5s": [
+  2.93
+ ],
+ "P2_wheel_silences_inbound_held": [],
+ "P3_camera_gyro_max_gap_s": 0.036,
+ "P4_zed_diagnostic_pauses_over_2s": [
+  3.8
+ ],
+ "P5_parsed_iterations": 517,
+ "P5_db_nodes": 540,
+ "saves_over_5p5s": 0,
+ "other_wheel_silences_over_1p5s": [],
+ "verdict": "FAIL"
+}

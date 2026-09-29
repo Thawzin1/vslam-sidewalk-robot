@@ -1,0 +1,55 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <!--
+    Mcity mesh, rescaled 2026-08-21 from the 0.254 that shipped with
+    osrf/car_demo to 0.127 == exactly half.
+
+    WHY, AND WHY THIS IS NOT AN ARBITRARY "MAKE IT SMALLER"
+      0.254 is the inches-to-metres constant, so whoever wrote the
+      original assumed the .obj was authored in inches. Measured against
+      real-world dimensions, that assumption is off by a factor of two:
+
+                              at 0.254     at 0.127     real
+        kerb reveal            0.316 m      0.158 m     0.15 m (US 6 in)
+        town footprint      584x925 m    292x463 m     ~360 m across
+        typical sidewalk      10.12 m       5.19 m
+
+      The kerb is the decisive ruler here, and not for tidiness. The
+      Husky's wheel radius is 0.1651 m. A 0.316 m kerb is 1.9x the wheel
+      radius == a wall the robot physically cannot mount, so every kerb in
+      town was an impassable barrier. At 0.127 the kerb is 0.158 m, just
+      under one wheel radius: climbable with effort, which is exactly the
+      real sidewalk-robot problem this project exists to study.
+
+      So the rescale fixes a physics error and halves the map at the same
+      time. It is not a cosmetic change.
+
+    EVERY COORDINATE IN THIS WORLD IS TIED TO THIS NUMBER. Changing it
+    again invalidates the spawn pose and all prop placements in
+    mcity.world, and the sidewalk surface height they are measured from
+    (now z = 0.158, was 0.316). Feature-richness measurements must also be
+    redone == the camera sees the same geometry at a different distance.
+  -->
+  <model name="mcity">
+    <static>true</static>
+    <link name="link">
+      <collision name="collision">
+        <geometry>
+          <mesh>
+            <scale>0.127 0.127 0.127</scale>
+            <uri>model://mcity/meshes/mcity.obj</uri>
+          </mesh>
+        </geometry>
+      </collision>
+
+      <visual name="visual">
+        <geometry>
+          <mesh>
+            <scale>0.127 0.127 0.127</scale>
+            <uri>model://mcity/meshes/mcity.obj</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+  </model>
+</sdf>

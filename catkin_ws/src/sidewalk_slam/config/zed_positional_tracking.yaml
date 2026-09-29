@@ -1,0 +1,105 @@
+# =============================================================================
+# zed_positional_tracking.yaml — settings for BASELINE 1: the ZED SDK's own
+# visual-inertial positional tracking.
+#
+# HOW TO USE THIS FILE
+#   These are parameters of the ZED wrapper node, NOT of anything in this
+#   package. They must be on the parameter server BEFORE the wrapper starts;
+#   a node reads its parameters once, at construction. Loading them afterwards
+#   changes nothing and produces a baseline run that silently used the wrapper's
+#   defaults instead.
+#
+#   So either:
+#     (a) load this file inside the camera launch, before the zed node tag, or
+#     (b) run  roslaunch sidewalk_slam zed_baseline.launch  BEFORE starting the
+#         camera - it loads these into the wrapper's namespace and waits.
+#
+#   `roslaunch sidewalk_slam zed_baseline.launch` prints a reminder about this
+#   because getting it wrong is quiet and easy.
+#
+# WHY THIS BASELINE EXISTS
+#   The ZED SDK's tracker is the one thing in this comparison that is not open.
+#   It is a closed-source, GPU-accelerated visual-inertial odometry running
+#   inside the camera driver, tuned by the people who built the sensor. It is
+#   the commercial floor: any research system that cannot beat it is not worth
+#   deploying, and any that does beat it has to explain why.
+#
+#   It is also the fairest possible odometry source, because it has access to
+#   the raw sensor timing and the factory camera-IMU calibration that neither
+#   RTAB-Map nor ORB-SLAM3 can see.
+# =============================================================================
+
+pos_tracking:
+
+  # Turn the tracker on. Off by default in some wrapper versions - if the pose
+  # topic exists but never publishes, this is the first thing to check.
+  pos_tracking_enabled: true
+
+  # THE CRITICAL ONE.
+  #
+  # The ZED wrapper will happily publish map -> odom on TF. So will RTAB-Map.
+  # TF is a tree: exactly one publisher per edge. Two publishers means poses
+  # that flicker between two answers several times a second, and every
+  # transform lookup in the system returns whichever arrived last. The symptom
+  # is a robot model that vibrates in RViz and navigation that behaves as if
+  # possessed.
+  #
+  # So during the ZED baseline run this may be true; during any RTAB-Map run it
+  # MUST be false. Keeping it false here and recording the pose from the TOPIC
+  # instead of from TF means the baseline never fights anyone.
+  publish_tf: false
+  publish_map_tf: false
+
+  # Area memory is the SDK's loop closure: it remembers places and corrects
+  # drift when it recognises one.
+  #
+  # Enabled makes it a fair comparison against RTAB-Map, which also closes
+  # loops. Disabled turns it into pure visual-inertial ODOMETRY, which is a
+  # different and also interesting baseline - it shows how much of RTAB-Map's
+  # accuracy comes from loop closure rather than from front-end quality.
+  #
+  # Run BOTH, and label them. area_memory:=false is the honest "no loop
+  # closure" reference line on the error plot.
+  area_memory: true
+  area_file_path: ""
+
+  # Fuse the IMU. Without it the tracker is pure stereo visual odometry and
+  # will lose tracking on any fast rotation - which on a differential-drive
+  # robot means every time it spins in place at a corner.
+  imu_fusion: true
+
+  # Assume the camera is on a wheeled vehicle constrained to a plane. This is
+  # the SDK's equivalent of RTAB-Map's Reg/Force3DoF, and the same caveat
+  # applies: correct indoors, wrong on a cambered sidewalk with kerb ramps.
+  # Keep the two systems' assumptions matched, or the comparison measures the
+  # assumption rather than the algorithm.
+  set_as_static: false
+  set_gravity_as_origin: true
+  floor_alignment: false
+
+  # Start at the identity pose. Both other stacks start at their own origin, so
+  # starting anywhere else would require an extra alignment step for no gain.
+  initial_base_pose: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+  # Only publish a pose once the tracker is confident. A low-confidence pose is
+  # worse than no pose: it looks like data.
+  path_pub_rate: 2.0
+  depth_min_range: 1.0
+
+sensors:
+  # The ZED X IMU runs at 200 Hz (datasheet, "Output Data Rate"; this comment
+  # said 400 Hz until 2026-08-29, which is the ZED 2's figure). Publishing all
+  # of it is the point - the inertial baseline is only as good as the rate it
+  # integrates at, and decimating to 100 Hz throws away half the information
+  # about the fast rotations that vision handles worst.
+  publish_imu_tf: true
+  sensors_timestamp_sync: false
+
+general:
+  # Timestamps must come from the SDK's own capture clock, not from the moment
+  # ROS happened to receive the frame. The difference is the USB/GMSL2 transfer
+  # and driver latency - tens of milliseconds, varying frame to frame. At
+  # 1.5 m/s that is centimetres of position error injected purely by
+  # bookkeeping, and it would be attributed to the algorithm.
+  grab_frame_rate: 30
+  self_calib: true

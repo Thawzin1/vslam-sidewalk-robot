@@ -1,0 +1,122 @@
+<?xml version="1.0"?>
+<!--
+  replay_drive.launch - re-run a recorded mapping drive from its recordings, with no robot.
+
+  WHAT IT DOES
+    A recorded drive left two files behind:
+      fusion.bag   the robot's wheels and gyroscope (and much else) as ROS messages
+      <run>.svo2   the ZED X camera's own recording (stereo pictures + the camera's sensors)
+    This launch file plays the two back together through the SAME programs the live drive
+    used, so the map is computed again from the same measurements:
+
+      fusion.bag ==> rosbag play (paused, publishes /clock) ==+==> /robot/wheel_odom, /robot/imu
+                                                               |
+      <run>.svo2 ==> ZED wrapper (replay_camera.launch) ======+==> pictures, depth, camera IMU
+                                                               v
+                                    ekf_input_conditioner.py + ekf_fused (fused_odometry.launch)
+                                                               |  TF odom => base_link, /fused/odometry
+                                                               v
+                                    rgbd_sync => rgbd_odometry => rtabmap (record_mapping_run.launch)
+                                                               |
+                                                               v
+                                    <out_dir>/<run>_replay.db  (the new map) + replay_outputs.bag
+
+  HOW THE TWO RECORDINGS STAY IN STEP (checked in the wrapper's source, see docs/REPLAY.md)
+    - /use_sim_time is true and rosbag play publishes /clock, so every program's idea of
+      "now" is the bag's recorded time.
+    - In SVO playback the ZED wrapper stamps its pictures with "now" (ros::Time::now(),
+      zed_wrapper_nodelet.cpp:4089-4091), NOT with the time stored in the file. Under a
+      /clock that "now" IS the bag's timeline, so the pictures land on the wheel data's
+      time axis automatically.
+    - svo_realtime=true (replay_camera.launch) makes the ZED SDK play the file at its recorded
+      speed by the wall clock, dropping frames if the computer is too slow (Camera.hpp,
+      svo_real_time_mode). rosbag play at rate 1.0 also follows the wall clock, so both advance
+      together.
+    - The bag starts PAUSED, placed a few seconds after the moment the camera recording began
+      (arg bag_start_offset). replay_starter.py (started by run/replay.sh) resumes it on the first
+      camera picture, measures how far ahead the bag is, and holds it for exactly that long, so
+      the two streams start together (docs/REPLAY.md section 5.1).
+
+  HOW TO RUN
+    Normally through run/replay.sh, which computes the arguments, starts a private ROS master,
+    watches the run and shuts it down in the right order. By hand:
+      roslaunch <this file> run:=s2_fusion_T5b bag:=/path/fusion.bag \
+                bag_start_offset:=32.5 database_path:=/path/out/s2_fusion_T5b_replay.db \
+                out_dir:=/path/out
+      roslaunch replay_camera.launch svo:=/path/run.svo2      (then, in a second terminal)
+    The launch does NOT set /use_sim_time on its own master before nodes start; run/replay.sh
+    does that (rosparam set /use_sim_time true) so that no node ever sees wall time first.
+
+  ARGUMENTS
+    run               the run's name (used for file names and progress lines)
+    bag               fusion.bag of the drive
+    bag_start_offset  seconds into the bag where the camera recording begins
+    database_path     where the NEW map database is written (must not exist yet)
+    out_dir           folder for replay_outputs.bag and logs
+    rate              only 1.0 is supported (see docs/REPLAY.md, "Why the rate is fixed")
+
+  INPUT TOPICS PLAYED FROM THE BAG - only what the live drive received from the robot.
+    Everything the live programs COMPUTED (/tf, /fused/*, /ekf_in/*, /rtabmap/*) is left in
+    the bag unplayed, because the replay computes it again.
+-->
+<launch>
+
+  <arg name="run"/>
+  <arg name="bag"/>
+  <arg name="bag_start_offset" default="0.0"/>
+  <arg name="database_path"/>
+  <arg name="out_dir"/>
+  <arg name="rate"              default="1.0"/>
+  <arg name="rtabmap_log"       default="$(arg out_dir)/replay_launch.log"
+       doc="the file the launch's screen output is redirected to; run_monitor.py counts
+            loop closures and odometry resets in it"/>
+
+  <!-- Everything below reads the bag's recorded time as 'now'. -->
+  <param name="/use_sim_time" value="true"/>
+
+  <!-- 1. The robot's measurements, from the bag. Paused: replay_starter.py resumes it when the
+          first camera picture arrives. The clock option publishes the recorded time on /clock; while
+          paused the clock stands still at the start point, so every node already has a valid
+          time before anything moves. The node name gives the resume service its address:
+          /replay_bag/pause_playback. -->
+  <node pkg="rosbag" type="play" name="replay_bag" output="screen"
+        args="--clock --pause --hz=200 --queue=1000 --rate=$(arg rate)
+              --start=$(arg bag_start_offset)
+              $(arg bag)
+              --topics /robot/wheel_odom /robot/imu /robot/imu_raw /tf_static"/>
+
+  <!-- 2. The blend: wheels + gyroscope + camera motion -> TF odom => base_link. Identical to
+          the live drive (fused_odometry.launch, its defaults). -->
+  <include file="$(find sidewalk_slam)/launch/fused_odometry.launch">
+    <arg name="run" value="$(arg run)_replay"/>
+  </include>
+
+  <!-- 3. The camera is NOT here: it runs in replay_camera.launch, started by run/replay.sh once
+          this launch is up. Reason: the wrapper's launch file marks the camera node required="true",
+          so if that node ever exits (a crash, or the end of the file on another wrapper build) it would
+          shut this whole launch down - RTAB-Map included - under roslaunch's 15 s limit. -->
+
+  <!-- 4. The mapping, exactly as start_drive.sh starts it for a fusion drive
+          (vo_publish_tf:=false: the blend owns odom => base_link). -->
+  <include file="$(find sidewalk_slam)/launch/record_mapping_run.launch">
+    <arg name="run_id"           value="$(arg run)_replay"/>
+    <arg name="database_path"    value="$(arg database_path)"/>
+    <arg name="rtabmap_log"      value="$(arg rtabmap_log)"/>
+    <!-- beside the replay, not in ~/.run_records (the launch's default) -->
+    <arg name="monitor_out"      value="$(arg out_dir)/monitor.csv"/>
+    <arg name="ground_truth"     value="false"/>
+    <arg name="use_sim_time"     value="true"/>
+    <arg name="wait_imu_to_init" value="true"/>
+    <arg name="force_3dof"       value="true"/>
+    <arg name="rviz"             value="false"/>
+    <arg name="vo_publish_tf"    value="false"/>
+  </include>
+
+  <!-- 5. A small record of the recomputed outputs, for scoring and for the clock-drift check
+          (the camera IMU topic carries both kinds of stamp, see docs/REPLAY.md). -->
+  <node pkg="rosbag" type="record" name="replay_record" output="screen"
+        args="-O $(arg out_dir)/replay_outputs.bag
+              /fused/odometry /rtabmap/odom /tf /tf_static /diagnostics
+              /zedx_front/zed_node/imu/data /robot/imu /clock"/>
+
+</launch>

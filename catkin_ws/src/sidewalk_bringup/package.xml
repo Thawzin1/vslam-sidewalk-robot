@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>sidewalk_bringup</name>
+  <version>0.1.0</version>
+  <description>
+    Startup orchestration and coordinate-frame definitions for the autonomous
+    sidewalk robot. This package turns a pile of separate programs into one
+    robot: it defines where every physical part sits relative to every other,
+    and provides a single command to start the system in the correct order.
+    It also hosts the shared logging helper used by every other package here.
+  </description>
+
+  <maintainer email="thawzin@users.noreply.github.com">THAW ZIN</maintainer>
+  <license>MIT</license>
+  <author email="thawzin@users.noreply.github.com">THAW ZIN</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>rospy</depend>
+  <depend>std_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
+  <depend>xacro</depend>
+  <depend>robot_state_publisher</depend>
+
+  <exec_depend>rviz</exec_depend>
+  <exec_depend>rqt_tf_tree</exec_depend>
+
+  <export>
+  </export>
+</package>

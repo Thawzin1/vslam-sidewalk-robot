@@ -1,0 +1,16 @@
+{
+ "closures": 30,
+ "first_hamilton": "13:37:06",
+ "last_hamilton": "13:37:52",
+ "span_s": 46.6,
+ "older_nodes": [
+  177,
+  221
+ ],
+ "newer_nodes": [
+  518,
+  552
+ ],
+ "joining_node_1": 0,
+ "source": "s2_static_07.db Link table types 1 and 2, once per pair, read-only (write_results_drive7.py)"
+}

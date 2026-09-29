@@ -1,0 +1,108 @@
+<?xml version="1.0"?>
+<!--
+  slam_from_recording.launch — run ONE SLAM stack over a rosbag, offline.
+
+  This is the validation path required before live hardware is trusted: prove
+  the pipeline works on data you can replay as many times as you like, where
+  every run sees exactly the same photons, before letting it drive a robot.
+
+  For the full three-way comparison use scripts/slam_runner.py instead. This
+  launch file is the single-stack version you reach for while tuning, because
+  it is fast to edit and you can watch it in rtabmap_viz.
+
+  WHY use_sim_time IS NOT OPTIONAL HERE
+      Playing a bag with clock publishing enabled puts the RECORDED time on the
+      /clock topic. Every node started with use_sim_time:=true then uses that as
+      its clock, so poses are stamped with when they were actually observed
+      rather than when you happened to replay them.
+
+      Without it, a run at 14:00 and a run at 16:00 over the same bag produce
+      trajectories two hours apart that cannot be compared pose-for-pose, and
+      any TF lookup involving the bag's own timestamps fails as "too old".
+
+  WHY PLAYBACK RATE MATTERS
+      rate:=1.0 replays in real time and therefore reproduces the real-time
+      pressure the robot experienced - including dropped frames. That is the
+      honest test of whether the system keeps up.
+
+      rate:=0.5 removes the pressure, so what you measure is the algorithm's
+      accuracy rather than the Jetson's throughput. Both are legitimate
+      experiments; they answer different questions and must be labelled.
+
+      rate greater than 1.0 is not a legitimate experiment. Each stack starts
+      dropping frames at a different point, and the comparison stops meaning
+      anything.
+-->
+<launch>
+
+  <arg name="bag" doc="Path to the recording. REQUIRED."/>
+  <arg name="rate" default="1.0"/>
+  <arg name="start" default="0.0" doc="Seconds to skip at the beginning."/>
+  <arg name="duration" default="0.0" doc="Seconds to play. 0 = all of it."/>
+  <arg name="loop" default="false"/>
+
+  <arg name="camera_name" default="zedx_front"/>
+  <arg name="node_name"   default="zed_node"/>
+
+  <arg name="run_id" default="offline"
+       doc="Identifier for the trajectory this produces."/>
+  <arg name="record" default="true"/>
+  <arg name="rtabmap_viz" default="true"
+       doc="Defaults to true here because the whole point of an offline run is
+            to WATCH what the SLAM does."/>
+  <arg name="rviz" default="false"/>
+  <arg name="database_path"
+       default="$(env HOME)/rtabmap_maps/offline_$(arg run_id).db"/>
+  <arg name="delete_db_on_start" default="true"
+       doc="TRUE here, unlike the live mapping launch. An offline replay is
+            meant to be repeatable from scratch, and a database left over from
+            the previous replay would let the second run start already knowing
+            the route - which quietly invalidates the experiment."/>
+  <arg name="force_3dof" default="true"/>
+  <arg name="delay" default="5.0"
+       doc="Seconds to wait before playback starts, so RTAB-Map is subscribed
+            before the first frame arrives. Frames published before a
+            subscriber exists are simply lost."/>
+
+  <param name="/use_sim_time" value="true"/>
+
+  <include file="$(find sidewalk_slam)/launch/rtabmap_mapping.launch">
+    <arg name="camera_name"        value="$(arg camera_name)"/>
+    <arg name="node_name"          value="$(arg node_name)"/>
+    <arg name="use_sim_time"       value="true"/>
+    <arg name="database_path"      value="$(arg database_path)"/>
+    <arg name="delete_db_on_start" value="$(arg delete_db_on_start)"/>
+    <arg name="rtabmap_viz"        value="$(arg rtabmap_viz)"/>
+    <arg name="rviz"               value="$(arg rviz)"/>
+    <arg name="force_3dof"         value="$(arg force_3dof)"/>
+  </include>
+
+  <node if="$(arg record)"
+        pkg="sidewalk_slam" type="trajectory_recorder.py"
+        name="offline_recorder" output="screen"
+        args="--stack rtabmap
+              --run-id $(arg run_id)
+              --source tf
+              --fixed-frame map
+              --body-frame base_link
+              --rate 20
+              --input-name $(arg bag)"/>
+
+  <!-- required="true" makes roslaunch shut the whole session down when playback
+       finishes, so an offline run terminates by itself instead of waiting for
+       someone to notice. The cost is that RTAB-Map gets no cooldown period: the
+       last second or two of frames may still be in its queue when the SIGINT
+       arrives. Set required="false" and stop with Ctrl-C if you need that tail,
+       or use scripts/slam_runner.py, which builds a cooldown into the run. -->
+  <node pkg="rosbag" type="play" name="rosbag_play" output="screen"
+        required="true"
+        args="--clock
+              --delay=$(arg delay)
+              --rate=$(arg rate)
+              --start=$(arg start)
+              --queue=1000
+              $(eval '--duration=' + str(arg('duration')) if float(arg('duration')) > 0 else '')
+              $(eval '--loop' if arg('loop') in ('true','True','1') else '')
+              $(arg bag)"/>
+
+</launch>

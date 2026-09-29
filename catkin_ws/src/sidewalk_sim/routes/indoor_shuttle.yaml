@@ -1,0 +1,11 @@
+# indoor_shuttle.yaml - straight back-and-forth along y = 0 in indoor.world (12 x 10 m room), for the simulation
+# timelapse (27 Sept 2026). indoor_loop.yaml's 90-degree turns slipped in the simulator and pinned the robot to the
+# north wall; here the only turns are 180 deg in the open middle of the room (>= 1.4 m from every obstacle).
+# Start at the origin facing +X.
+- {forward: 4.0}     # to (4, 0)
+- {turn: 180}
+- {forward: 8.0}     # to (-4, 0)
+- {turn: 180}
+- {forward: 8.0}     # to (4, 0) - back past the same views, facing the same way as the first leg
+- {turn: 180}
+- {forward: 4.0}     # home

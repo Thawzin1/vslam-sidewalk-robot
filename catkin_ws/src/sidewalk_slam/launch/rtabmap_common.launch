@@ -1,0 +1,407 @@
+<?xml version="1.0"?>
+<!--
+  rtabmap_common.launch — the shared RTAB-Map node stack.
+
+  DO NOT RUN THIS DIRECTLY. Run one of:
+      rtabmap_mapping.launch       build a new map
+      rtabmap_localization.launch  navigate on a map you already have
+
+  Both include this file and differ only in a handful of arguments. Keeping the
+  node graph in one place means the two modes cannot silently drift apart, which
+  is what happens when you copy a launch file and edit half of it.
+
+  ============================================================
+  THIS LAUNCH FILE DOES NOT START THE CAMERA. That is deliberate.
+
+  The camera belongs to Phase 2 (sidewalk_perception). Starting it from here
+  would mean this package could not build or launch on a machine without the
+  ZED SDK, and would make it impossible to run RTAB-Map over a rosbag or an SVO
+  file where there is no camera at all.
+
+  So: start the camera stack first, then start this. If the topics are not
+  there, RTAB-Map will sit waiting and print "did not receive data" - which is
+  the correct behaviour, and the message tells you which topic.
+  ============================================================
+  THE NODE GRAPH
+
+      camera topics
+           |
+           v
+      rgbd_sync ........ packs colour + depth + calibration into one message,
+           |             so everything downstream sees ONE timestamped bundle
+           |             instead of three streams it has to re-synchronise.
+           v
+      rgbd_odometry .... frame-to-map visual odometry -> odom -> base_link
+           |             (skipped when an external odometry source is used)
+           v
+      rtabmap .......... loop closure, graph optimisation, occupancy grid,
+                         map -> odom correction
+
+  Every node lives in the $(arg rtabmap_ns) namespace, and every frame name is
+  derived from $(arg camera_name), so a second ZED X facing the other way can be
+  brought up as a completely separate instance with no collisions.
+-->
+<launch>
+
+  <!-- ===================== camera / topic naming ===================== -->
+  <arg name="camera_name" default="zedx_front"
+       doc="Camera namespace. The second (rear-facing) ZED X will use
+            zedx_rear. Everything else is derived from this."/>
+  <arg name="node_name" default="zed_node"
+       doc="ZED wrapper node name inside the camera namespace."/>
+
+  <arg name="rgb_topic"
+       default="/$(arg camera_name)/$(arg node_name)/rgb/image_rect_color"/>
+  <arg name="depth_topic"
+       default="/$(arg camera_name)/$(arg node_name)/depth/depth_registered"/>
+  <arg name="camera_info_topic"
+       default="/$(arg camera_name)/$(arg node_name)/rgb/camera_info"/>
+  <arg name="imu_topic"
+       default="/$(arg camera_name)/$(arg node_name)/imu/data"/>
+
+  <!-- ===================== stereo mode ===================== -->
+  <arg name="stereo" default="false"
+       doc="true = consume a left/right stereo pair (stereo_sync +
+            stereo_odometry) instead of the RGB-D pipeline. Introduced for
+            Phase 1: the simulated stereo camera carries real Gaussian noise,
+            so odometry covariance is honest instead of pinned at the 1e-4
+            clamp. The back-end rtabmap node is identical in both modes - it
+            consumes the same RGBDImage bundle either way, so this switch
+            changes ONLY the front end."/>
+  <arg name="left_image_topic"
+       default="/$(arg camera_name)/$(arg node_name)/left/image_rect_color"/>
+  <arg name="right_image_topic"
+       default="/$(arg camera_name)/$(arg node_name)/right/image_rect_color"/>
+  <arg name="left_info_topic"
+       default="/$(arg camera_name)/$(arg node_name)/left/camera_info"/>
+  <arg name="right_info_topic"
+       default="/$(arg camera_name)/$(arg node_name)/right/camera_info"/>
+
+  <!-- ===================== frames ===================== -->
+  <arg name="frame_id" default="base_link"
+       doc="The rigid body whose pose RTAB-Map reports. Use the ROBOT BASE, not
+            the camera: reporting the camera's pose makes the trajectory depend
+            on where the camera happens to be bolted, which is not a property of
+            the SLAM system."/>
+  <arg name="odom_frame_id" default="odom"/>
+  <arg name="map_frame_id" default="map"/>
+
+  <!-- ===================== mode ===================== -->
+  <arg name="localization" default="false"
+       doc="false = build a map, true = localise on an existing one."/>
+  <arg name="database_path" default="/media/sidewalk/SIDEWALK128/rtabmap_maps/sidewalk_front.db"
+       doc="The map. RTAB-Map keeps EVERYTHING in this one SQLite file. Lives
+            on the 128GB SD card, not the Jetson's own ~29GB root disk - that
+            disk filled up completely once already from map files growing
+            unnoticed."/>
+  <arg name="delete_db_on_start" default="false"
+       doc="DESTRUCTIVE. Erases the map file before starting. Left false here
+            on purpose - most RTAB-Map examples ship it as true, and it is how
+            people lose a morning's mapping."/>
+
+  <!-- ===================== odometry source ===================== -->
+  <arg name="visual_odometry" default="true"
+       doc="true  = RTAB-Map computes its own visual odometry (the default,
+                    and what makes this an independent SLAM system).
+            false = consume odometry from an external topic instead, e.g. the
+                    ZED SDK's or the robot's wheel odometry. Useful as an
+                    ablation: it isolates how much of the result comes from
+                    RTAB-Map's front end versus its back end."/>
+  <arg name="odom_topic"
+       default="/$(arg camera_name)/$(arg node_name)/odom"
+       doc="Only used when visual_odometry:=false."/>
+  <!-- vo_publish_tf (added 2026-09-24 for drive 3; 03_methods/ (project records)
+       fusion_bridge_2026-09-24/DESIGN.md section 6).
+
+       true  (default) = the camera tracker (rgbd_odometry / stereo_odometry)
+                         publishes odom -> base_link itself, exactly as in
+                         drives 1-2.
+       false           = it publishes its motion on the /rtabmap/odom topic
+                         only, and the blend (fused_odometry.launch: an EKF,
+                         extended Kalman filter, fusing wheels + gyroscope +
+                         camera) owns odom -> base_link instead.
+
+       Plain terms: this decides WHO says where the robot is. Only one program
+       may say it - two publishers of the same link made the robot flicker
+       between two answers on 2026-08-24 (docs/DO_NOT_REPEAT.md). Never set
+       false without fused_odometry.launch running, or nothing publishes the
+       link and the map cannot place a single picture. -->
+  <arg name="vo_publish_tf" default="true"/>
+
+  <!-- ===================== synchronisation ===================== -->
+  <arg name="approx_sync" default="false"
+       doc="false = require EXACT matching timestamps. The ZED SDK stamps
+            colour, depth and camera_info identically because they come from
+            one grab, so exact sync is both achievable and stricter. Set true
+            only if you have inserted a republishing node that restamps."/>
+  <!-- HOW DEEP THE MESSAGE QUEUES ARE. Lowered from 30 to 5 on 2026-08-21.
+
+       This one number sets SIX real queues below == a topic queue and a sync
+       queue on each of rgbd_sync, rgbd_odometry and rtabmap. (Grep finds nine
+       parameters, not six: each node also takes the legacy `queue_size` name,
+       which is an alias for the same thing and is set for older-version
+       safety.) So it multiplies fast, and at this camera's resolution the
+       messages are large:
+
+           RGB   1920x1200 rgb8    6.91 MB
+           depth 1920x1200 32FC1   9.22 MB
+           the combined RGBDImage 16.13 MB
+
+       At 30 the three nodes could between them hold about 2.9 GB of frames
+       before anything was dropped. At 5 the same worst case is about 0.48 GB.
+
+       SMALL IS NOT A COMPROMISE HERE, IT IS CORRECT. These are real-time
+       topics: when the consumer cannot keep up you want the OLD frames thrown
+       away, not stored. A 30-deep queue means odometry eventually works on
+       two-second-old images, so the apparent motion between the frames it
+       actually processes is far larger than the true frame-to-frame motion ==
+       which is precisely what makes visual odometry lose tracking and reset.
+       So a deep queue costs memory AND accuracy, and buys nothing.
+
+       Five is ample for synchronisation because colour, depth and camera_info
+       all come from a single grab (one Gazebo plugin in sim, one ZED SDK grab
+       on the real camera) and therefore share a timestamp. The queue only has
+       to absorb transport jitter, which is well under 5 frames.
+
+       If you ever see "did not receive data" or sync warnings, raise this
+       rather than editing the nodes == it is now passed through from
+       rtabmap_mapping.launch and record_mapping_run.launch. -->
+  <arg name="queue_size" default="5"/>
+
+  <!-- ===================== tuning ===================== -->
+  <arg name="config" default="$(find sidewalk_slam)/config/rtabmap_zedx.yaml"/>
+  <arg name="localization_config"
+       default="$(find sidewalk_slam)/config/rtabmap_localization.yaml"/>
+  <arg name="force_3dof" default="true"
+       doc="Constrain the graph to x, y, yaw. Correct for indoor flat floors
+            (Phase 3-4); set false for outdoor sidewalks with kerb ramps."/>
+  <arg name="wait_imu_to_init" default="true"
+       doc="Hold odometry until the first IMU message arrives, so the very
+            first pose already has gravity-aligned roll and pitch. Without it
+            the whole map can be built tilted by however much the robot was
+            leaning at power-on."/>
+
+  <!-- ===================== visualisation / misc ===================== -->
+  <arg name="rtabmap_viz" default="false"
+       doc="RTAB-Map's own GUI. Extremely useful on the desk, expensive on the
+            robot - it competes with the SLAM for the same GPU."/>
+  <arg name="rviz" default="false"/>
+  <arg name="rtabmap_ns" default="rtabmap"/>
+  <arg name="use_sim_time" default="false"
+       doc="true when replaying a recording, so nodes stamp output with the
+            RECORDED time. Required for the three-way comparison to line up."/>
+  <arg name="output" default="screen"/>
+
+  <!-- The database-deleting flag must be passed as a command-line argument to
+       the rtabmap node, not as a parameter. arg() is used rather than a bare
+       truth test because roslaunch arguments are strings, and the string
+       "false" is truthy in Python. -->
+  <!-- extra_rtabmap_params: override ONE RTAB-Map parameter for ONE experiment
+       without editing rtabmap_zedx.yaml.
+
+       WHY THIS EXISTS. The standing rule here is one variable per experiment,
+       and until 2026-08-29 there was no way to honour it for a Grid/* or Reg/*
+       parameter: the only route was to edit the shared config, run, and edit it
+       back — which changes the file every other run reads, and leaves the tree
+       dirty if anything interrupts. This passes the parameter on the node's
+       command line instead, so the config on disk is untouched and the override
+       is visible in the run's own log.
+
+       It APPENDS rather than replaces. Setting rtabmap_args directly would
+       silently drop the (dashdash)delete_db_on_start that the line below computes, and
+       the run would then append to an existing database while appearing fresh.
+
+       RTAB-Map takes parameters as command-line arguments in the form
+           (dashdash)Section/Name value
+       so several are given as one space-separated string:
+           extra_rtabmap_params:="(dashdash)Grid/NoiseFilteringRadius 0.0 (dashdash)Grid/RayTracing false"
+
+       Whatever is passed here MUST be recorded with the run. A result produced
+       under an override that nobody wrote down is not reproducible. -->
+  <arg name="extra_rtabmap_params" default=""/>
+
+  <arg name="rtabmap_args"
+       default="$(eval ('--delete_db_on_start ' if arg('delete_db_on_start') in ('true','True','1') else '') + arg('extra_rtabmap_params'))"/>
+
+  <param name="/use_sim_time" value="$(arg use_sim_time)"/>
+
+  <group ns="$(arg rtabmap_ns)">
+
+    <!-- ========================================
+         rgbd_sync: colour + depth + calibration -> one rtabmap_msgs/RGBDImage.
+
+         Doing this once, here, means the odometry node and the SLAM node both
+         receive an already-consistent bundle instead of each running its own
+         message_filters synchroniser over three topics. That halves the
+         bandwidth on the loopback interface at 1920x1200 and removes a whole
+         class of "the two nodes paired different frames" bugs.
+         ======================================== -->
+    <node unless="$(arg stereo)"
+          pkg="rtabmap_sync" type="rgbd_sync" name="rgbd_sync"
+          output="$(arg output)">
+      <remap from="rgb/image"       to="$(arg rgb_topic)"/>
+      <remap from="depth/image"     to="$(arg depth_topic)"/>
+      <remap from="rgb/camera_info" to="$(arg camera_info_topic)"/>
+      <remap from="rgbd_image"      to="rgbd_image"/>
+
+      <param name="approx_sync"       type="bool" value="$(arg approx_sync)"/>
+      <param name="queue_size"        type="int"  value="$(arg queue_size)"/>
+      <param name="topic_queue_size"  type="int"  value="$(arg queue_size)"/>
+      <param name="sync_queue_size"   type="int"  value="$(arg queue_size)"/>
+      <!-- Depth arrives as 32-bit float metres from the ZED SDK. Leave it
+           alone: converting to 16-bit millimetres saves bandwidth but quantises
+           the near field, which is where the depth is most accurate. -->
+      <param name="depth_scale"       type="double" value="1.0"/>
+    </node>
+
+    <!-- Stereo twin of rgbd_sync: left + right + both calibrations -> the
+         SAME rtabmap_msgs/RGBDImage bundle, so everything downstream is
+         mode-agnostic. Same queue discipline for the same reasons. -->
+    <node if="$(arg stereo)"
+          pkg="rtabmap_sync" type="stereo_sync" name="stereo_sync"
+          output="$(arg output)">
+      <remap from="left/image_rect"   to="$(arg left_image_topic)"/>
+      <remap from="right/image_rect"  to="$(arg right_image_topic)"/>
+      <remap from="left/camera_info"  to="$(arg left_info_topic)"/>
+      <remap from="right/camera_info" to="$(arg right_info_topic)"/>
+      <remap from="rgbd_image"        to="rgbd_image"/>
+
+      <param name="approx_sync"       type="bool" value="$(arg approx_sync)"/>
+      <param name="queue_size"        type="int"  value="$(arg queue_size)"/>
+      <param name="topic_queue_size"  type="int"  value="$(arg queue_size)"/>
+      <param name="sync_queue_size"   type="int"  value="$(arg queue_size)"/>
+    </node>
+
+    <!-- ========================================
+         rgbd_odometry: the front end. Estimates frame-to-frame motion and
+         publishes odom -> base_link.
+
+         This is the part that drifts. Every estimate is relative to the last
+         one, so errors compound - exactly like a surveyor's traverse, where
+         each leg's small angular error is multiplied by the distance to every
+         station that follows it. Nothing here corrects that; correction is the
+         SLAM node's job, and it happens only when a place is recognised.
+         ======================================== -->
+    <node if="$(eval arg('visual_odometry') and not arg('stereo'))"
+          pkg="rtabmap_odom" type="rgbd_odometry" name="rgbd_odometry"
+          output="$(arg output)">
+      <remap from="rgbd_image" to="rgbd_image"/>
+      <remap from="imu"        to="$(arg imu_topic)"/>
+      <remap from="odom"       to="odom"/>
+
+      <param name="frame_id"        type="string" value="$(arg frame_id)"/>
+      <param name="odom_frame_id"   type="string" value="$(arg odom_frame_id)"/>
+      <param name="subscribe_rgbd"  type="bool"   value="true"/>
+      <param name="approx_sync"     type="bool"   value="$(arg approx_sync)"/>
+      <param name="queue_size"      type="int"    value="$(arg queue_size)"/>
+      <param name="topic_queue_size" type="int"   value="$(arg queue_size)"/>
+      <param name="sync_queue_size" type="int"    value="$(arg queue_size)"/>
+      <param name="wait_imu_to_init" type="bool"  value="$(arg wait_imu_to_init)"/>
+      <param name="guess_frame_id"  type="string" value=""/>
+      <param name="publish_tf"      type="bool"   value="$(arg vo_publish_tf)"/>
+
+      <rosparam command="load" file="$(arg config)"/>
+      <param name="Reg/Force3DoF" type="string" value="$(arg force_3dof)"/>
+    </node>
+
+    <!-- Stereo twin of rgbd_odometry. Identical parameter set on purpose -
+         the A/B comparison is only honest if the ONLY difference is the
+         sensor modality. It consumes the same RGBDImage bundle stereo_sync
+         produced (subscribe_rgbd), computing depth from disparity instead of
+         reading a depth image. -->
+    <node if="$(eval arg('visual_odometry') and arg('stereo'))"
+          pkg="rtabmap_odom" type="stereo_odometry" name="stereo_odometry"
+          output="$(arg output)">
+      <remap from="rgbd_image" to="rgbd_image"/>
+      <remap from="imu"        to="$(arg imu_topic)"/>
+      <remap from="odom"       to="odom"/>
+
+      <param name="frame_id"        type="string" value="$(arg frame_id)"/>
+      <param name="odom_frame_id"   type="string" value="$(arg odom_frame_id)"/>
+      <param name="subscribe_rgbd"  type="bool"   value="true"/>
+      <param name="approx_sync"     type="bool"   value="$(arg approx_sync)"/>
+      <param name="queue_size"      type="int"    value="$(arg queue_size)"/>
+      <param name="topic_queue_size" type="int"   value="$(arg queue_size)"/>
+      <param name="sync_queue_size" type="int"    value="$(arg queue_size)"/>
+      <param name="wait_imu_to_init" type="bool"  value="$(arg wait_imu_to_init)"/>
+      <param name="guess_frame_id"  type="string" value=""/>
+      <param name="publish_tf"      type="bool"   value="$(arg vo_publish_tf)"/>
+
+      <rosparam command="load" file="$(arg config)"/>
+      <param name="Reg/Force3DoF" type="string" value="$(arg force_3dof)"/>
+    </node>
+
+    <!-- ========================================
+         rtabmap: the back end. Recognises places, closes loops, optimises the
+         pose graph, maintains the occupancy grid, and publishes the
+         map -> odom correction.
+
+         The map -> odom transform IS the accumulated drift, expressed as a
+         correction. Watching it jump at the moment a loop closes is the single
+         most instructive thing you can put on screen in this whole project.
+         ======================================== -->
+    <node pkg="rtabmap_slam" type="rtabmap" name="rtabmap"
+          output="$(arg output)" args="$(arg rtabmap_args)">
+
+      <remap from="rgbd_image" to="rgbd_image"/>
+      <remap from="imu"        to="$(arg imu_topic)"/>
+      <remap unless="$(arg visual_odometry)" from="odom" to="$(arg odom_topic)"/>
+      <remap if="$(arg visual_odometry)"     from="odom" to="odom"/>
+
+      <!-- Published outputs, named explicitly so they are stable for the
+           navigation package and for the recorder. -->
+      <remap from="grid_map"  to="grid_map"/>
+      <remap from="cloud_map" to="cloud_map"/>
+      <remap from="mapData"   to="mapData"/>
+
+      <param name="frame_id"       type="string" value="$(arg frame_id)"/>
+      <param name="odom_frame_id"  type="string" value="$(arg odom_frame_id)"/>
+      <param name="map_frame_id"   type="string" value="$(arg map_frame_id)"/>
+      <param name="database_path"  type="string" value="$(arg database_path)"/>
+
+      <param name="subscribe_rgbd"  type="bool" value="true"/>
+      <param name="subscribe_depth" type="bool" value="false"/>
+      <param name="subscribe_scan"  type="bool" value="false"/>
+      <!-- LiDAR scaffolding. There is no LiDAR on this robot. When one is
+           fitted, set subscribe_scan true, remap `scan`, and change
+           Reg/Strategy in the config from 0 (vision) to 1 or 2. Until then
+           this stays false and is not presented as working. -->
+
+      <param name="approx_sync"      type="bool" value="$(arg approx_sync)"/>
+      <param name="queue_size"       type="int"  value="$(arg queue_size)"/>
+      <param name="topic_queue_size" type="int"  value="$(arg queue_size)"/>
+      <param name="sync_queue_size"  type="int"  value="$(arg queue_size)"/>
+
+      <param name="publish_tf"     type="bool" value="true"/>
+      <param name="tf_delay"       type="double" value="0.05"/>
+      <param name="map_always_update" type="bool" value="false"/>
+
+      <!-- Base tuning first, then the localisation overrides on top, then the
+           per-launch overrides. Order matters: last one wins. -->
+      <rosparam command="load" file="$(arg config)"/>
+      <rosparam if="$(arg localization)" command="load"
+                file="$(arg localization_config)"/>
+
+      <param name="Reg/Force3DoF" type="string" value="$(arg force_3dof)"/>
+      <param name="Mem/IncrementalMemory" type="string"
+             value="$(eval 'false' if arg('localization') in ('true','True','1') else 'true')"/>
+    </node>
+
+    <!-- RTAB-Map's own GUI. Shows the pose graph, the loop closures and the
+         grid live. Worth running once on the desk just to watch a loop close. -->
+    <node if="$(arg rtabmap_viz)"
+          pkg="rtabmap_viz" type="rtabmap_viz" name="rtabmap_viz"
+          output="$(arg output)">
+      <remap from="rgbd_image" to="rgbd_image"/>
+      <remap from="odom"       to="odom"/>
+      <param name="frame_id"       type="string" value="$(arg frame_id)"/>
+      <param name="subscribe_rgbd" type="bool"   value="true"/>
+      <param name="approx_sync"    type="bool"   value="$(arg approx_sync)"/>
+    </node>
+
+  </group>
+
+  <node if="$(arg rviz)" pkg="rviz" type="rviz" name="rviz"
+        args="-d $(find sidewalk_slam)/config/slam_live_safe.rviz" required="false"/>
+
+</launch>

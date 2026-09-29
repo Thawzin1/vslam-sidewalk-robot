@@ -1,0 +1,13 @@
+{
+  "source_database": "~/slam_series2/s2_static_06.db",
+  "pose_kind": "corrected",
+  "label": "camera, s2_static_06",
+  "loop_closures": 135,
+  "tool": "tools/db/db_corrected_tum.py",
+  "method": "Admin.opt_poses - RTAB-Map's own saved optimisation, full 3D",
+  "exact": true,
+  "poses": 830,
+  "first_node": 1,
+  "last_node": 1260,
+  "end_gap_corrected_m": 0.7391
+}

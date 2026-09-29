@@ -1,0 +1,242 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <world name="mcity">
+
+    <!-- ============================================================
+         Mcity == a Gazebo Classic recreation of the University of
+         Michigan's Mcity autonomous-vehicle test facility.
+
+         PROVENANCE
+           Source: osrf/car_demo (github.com/osrf/car_demo), the world
+           OSRF built for their Prius/Gazebo self-driving demo (2017,
+           ROS Kinetic + Gazebo 8/9). That repo is archived (EOL Feb
+           2025), but the standalone "mcity" model == mesh, materials
+           and its own model.sdf/model.config == loads fine on Gazebo
+           Classic 11 with no dependency on the rest of it.
+           Model author, per its own model.config: Nate Koenig, OSRF.
+
+           NOTE ON LICENSING: no LICENSE file ships with that repo. It
+           has been openly shared and reused across the ROS/Gazebo
+           community for years, but that is not the same as a formal
+           licence grant. Fine for internal research; check before it
+           appears in anything published.
+
+         ============================================================
+         SCALE WAS HALVED ON 2026-08-21 == 0.254 to 0.127
+         ============================================================
+         The mesh scale in models/mcity/model.sdf was wrong by a factor
+         of two, which made every kerb in town 0.316 m tall == 1.9x the
+         Husky's 0.1651 m wheel radius, i.e. an impassable wall. At
+         0.127 the kerb is 0.158 m, matching the US 6-inch standard and
+         just under one wheel radius. The reasoning and the measurements
+         are written up in models/mcity/model.sdf; read that before
+         changing the number again.
+
+         EVERY COORDINATE BELOW IS IN THE NEW SCALE. Sidewalk surfaces
+         are now at z = 0.158 (were 0.316) and the town is 292 x 463 m
+         (was 584 x 925). Any note or measurement from before that date
+         quoting the old numbers is stale.
+
+         ============================================================
+         VERIFIED ON THIS INSTALL (measured, not assumed)
+         ============================================================
+         Every property that has previously broken a mapping run here
+         was checked against the mesh before adopting this world:
+
+         1. TEXTURES TILE, they do not stretch.  This is the one that
+            matters most. The mesh is low-poly == 4153 vertices, 7333
+            faces, so if its UVs ran 0..1 each face would smear a single
+            copy of its texture over tens of metres and yield almost no
+            features. They do not: the UV range is u -512..417,
+            v -321..2039, i.e. the textures repeat many times per face
+            and stay sharp. For contrast, an untextured world here
+            measured 13 ORB keypoints in a 1920x1200 image against the
+            20 RTAB-Map needs.
+
+         2. IT HAS COLLISION GEOMETRY.  model.sdf declares the same
+            mesh as both <collision> and <visual>, so the robot drives
+            on it rather than falling through. There is deliberately
+            no ground_plane in this world: the mesh already provides
+            the ground, and a plane at z=0 would z-fight the roads.
+
+         3. THE SURFACES ARE REAL.  16 materials, including separate
+            Concrete_Ground (sidewalk), Curb, Crosswalk, Grass, Gravel,
+            Asphalt and FIVE road variants == Road_Blank,
+            Road_Blank_Light, Road_DoubleYellowLine,
+            Road_DoubleYellowLine_Light and Road_SingleWhiteLine. The
+            two "_Light" variants are easy to miss and cover most of the
+            streets near the spawn; a search that omits them concludes
+            there is no road nearby, which is wrong.
+
+         4. IT IS FULLY OFFLINE.  All 22 textures ship with the model.
+            Nothing is fetched from Fuel at load time.
+         ============================================================ -->
+
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <physics type="ode">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1</real_time_factor>
+      <real_time_update_rate>1000</real_time_update_rate>
+    </physics>
+
+    <include>
+      <uri>model://mcity</uri>
+    </include>
+
+
+    <!-- ==================================================================
+         PEDESTRIANS AND PARKED CARS
+         added 2026-08-21, re-placed the same day after the rescale
+
+         AUTHORED, NOT IMPORTED. Checked first: this Gazebo install ships
+         no person, pedestrian or vehicle models, and no skeleton
+         animations, and the project runs fully offline so Fuel is not an
+         option. These are therefore built from primitives.
+
+         They are STAND-INS, and honest about it: a box-and-sphere figure
+         reads as a person at 5 m but will not fool anyone up close, and
+         every surface is a building texture because those are the only
+         textured materials available. What matters for SLAM is that they
+         are vertical, feature-bearing and unevenly spaced == all three of
+         which they are.
+
+         They are STATIC. Gazebo <actor> can move a model along a
+         trajectory, but without skeleton animation files a walking person
+         would slide rather than walk. Dynamic pedestrians are Phase 7 work
+         and want doing properly.
+
+         THE SCENE THEY MAKE
+           The robot spawns on the sidewalk at (-12.375, -56.140) facing
+           -x, which puts the street on its LEFT and the walking line
+           ahead of it. So it drives the sidewalk with parked cars passing
+           on the left and pedestrians ahead == the actual situation a
+           sidewalk robot has to handle, rather than props scattered for
+           the sake of features.
+
+         PLACEMENT IS PROBED, NOT GUESSED. Each (x, y) below was tested
+         against the mesh by finding the face directly underneath it, so
+         every prop stands on a surface that is really there and its z
+         comes from that surface:
+
+             people  ->  Concrete_Ground, z = 0.158  (the sidewalk)
+             cars    ->  Road_DoubleYellowLine_Light, z = 0.000  (the road)
+
+         This replaces the first attempt, where all eight were dropped on
+         concrete because a road search that omitted the "_Light"
+         materials reported no carriageway within 45 m. One car also
+         landed over a hole in the mesh with no surface under it at all
+         and hung in mid-air, since these models are static and do not
+         fall. Probe the ground before adding anything else here.
+    ================================================================== -->
+
+    <!-- People: on the sidewalk, z 0.158. Legs 0.558, torso 1.258, head 1.658. -->
+
+    <model name="person_1"><static>true</static><pose>-16.5 -56.14 0 0 0 1.9</pose>
+      <link name="l">
+        <collision name="c"><pose>0 0 0.558 0 0 0</pose><geometry><box><size>0.34 0.26 0.80</size></box></geometry></collision>
+        <visual name="legs"><pose>0 0 0.558 0 0 0</pose><geometry><box><size>0.34 0.26 0.80</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual>
+        <visual name="torso"><pose>0 0 1.258 0 0 0</pose><geometry><box><size>0.44 0.28 0.60</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/PaintedWall</name></script></material></visual>
+        <visual name="head"><pose>0 0 1.658 0 0 0</pose><geometry><sphere><radius>0.10</radius></sphere></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodPallet</name></script></material></visual>
+      </link></model>
+
+    <model name="person_2"><static>true</static><pose>-21.0 -56.14 0 0 0 -0.6</pose>
+      <link name="l">
+        <collision name="c"><pose>0 0 0.558 0 0 0</pose><geometry><box><size>0.34 0.26 0.80</size></box></geometry></collision>
+        <visual name="legs"><pose>0 0 0.558 0 0 0</pose><geometry><box><size>0.34 0.26 0.80</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Motorway</name></script></material></visual>
+        <visual name="torso"><pose>0 0 1.258 0 0 0</pose><geometry><box><size>0.44 0.28 0.60</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Residential</name></script></material></visual>
+        <visual name="head"><pose>0 0 1.658 0 0 0</pose><geometry><sphere><radius>0.10</radius></sphere></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodPallet</name></script></material></visual>
+      </link></model>
+
+    <model name="person_3"><static>true</static><pose>-26.0 -56.14 0 0 0 2.7</pose>
+      <link name="l">
+        <collision name="c"><pose>0 0 0.558 0 0 0</pose><geometry><box><size>0.34 0.26 0.80</size></box></geometry></collision>
+        <visual name="legs"><pose>0 0 0.558 0 0 0</pose><geometry><box><size>0.34 0.26 0.80</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Steps</name></script></material></visual>
+        <visual name="torso"><pose>0 0 1.258 0 0 0</pose><geometry><box><size>0.44 0.28 0.60</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Bricks</name></script></material></visual>
+        <visual name="head"><pose>0 0 1.658 0 0 0</pose><geometry><sphere><radius>0.10</radius></sphere></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodPallet</name></script></material></visual>
+      </link></model>
+
+    <model name="person_4"><static>true</static><pose>-19.0 -54.12 0 0 0 0.4</pose>
+      <link name="l">
+        <collision name="c"><pose>0 0 0.558 0 0 0</pose><geometry><box><size>0.34 0.26 0.80</size></box></geometry></collision>
+        <visual name="legs"><pose>0 0 0.558 0 0 0</pose><geometry><box><size>0.34 0.26 0.80</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual>
+        <visual name="torso"><pose>0 0 1.258 0 0 0</pose><geometry><box><size>0.44 0.28 0.60</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Steps</name></script></material></visual>
+        <visual name="head"><pose>0 0 1.658 0 0 0</pose><geometry><sphere><radius>0.10</radius></sphere></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodPallet</name></script></material></visual>
+      </link></model>
+
+    <model name="person_5"><static>true</static><pose>-30.0 -56.14 0 0 0 1.2</pose>
+      <link name="l">
+        <collision name="c"><pose>0 0 0.558 0 0 0</pose><geometry><box><size>0.34 0.26 0.80</size></box></geometry></collision>
+        <visual name="legs"><pose>0 0 0.558 0 0 0</pose><geometry><box><size>0.34 0.26 0.80</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Motorway</name></script></material></visual>
+        <visual name="torso"><pose>0 0 1.258 0 0 0</pose><geometry><box><size>0.44 0.28 0.60</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Wood</name></script></material></visual>
+        <visual name="head"><pose>0 0 1.658 0 0 0</pose><geometry><sphere><radius>0.10</radius></sphere></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodPallet</name></script></material></visual>
+      </link></model>
+
+    <!-- Cars: on the carriageway, z 0.000. Body 0.375, cabin 1.075.
+         Yaw is set along the street (near 0 or near pi) so they read as
+         traffic rather than as boxes dropped at an angle. -->
+
+    <model name="car_1"><static>true</static><pose>-16.0 -60.40 0 0 0 0.02</pose>
+      <link name="l">
+        <collision name="c"><pose>0 0 0.375 0 0 0</pose><geometry><box><size>4.4 1.8 0.75</size></box></geometry></collision>
+        <visual name="body"><pose>0 0 0.375 0 0 0</pose><geometry><box><size>4.4 1.8 0.75</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/PioneerBody</name></script></material></visual>
+        <visual name="cabin"><pose>-0.25 0 1.075 0 0 0</pose><geometry><box><size>2.2 1.65 0.65</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+      </link></model>
+
+    <model name="car_2"><static>true</static><pose>-22.5 -62.40 0 0 0 3.13</pose>
+      <link name="l">
+        <collision name="c"><pose>0 0 0.375 0 0 0</pose><geometry><box><size>4.4 1.8 0.75</size></box></geometry></collision>
+        <visual name="body"><pose>0 0 0.375 0 0 0</pose><geometry><box><size>4.4 1.8 0.75</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Motorway</name></script></material></visual>
+        <visual name="cabin"><pose>-0.25 0 1.075 0 0 0</pose><geometry><box><size>2.2 1.65 0.65</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+      </link></model>
+
+    <model name="car_3"><static>true</static><pose>-28.0 -60.40 0 0 0 0.05</pose>
+      <link name="l">
+        <collision name="c"><pose>0 0 0.375 0 0 0</pose><geometry><box><size>4.4 1.8 0.75</size></box></geometry></collision>
+        <visual name="body"><pose>0 0 0.375 0 0 0</pose><geometry><box><size>4.4 1.8 0.75</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual>
+        <visual name="cabin"><pose>-0.25 0 1.075 0 0 0</pose><geometry><box><size>2.2 1.65 0.65</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+      </link></model>
+
+    <scene>
+      <ambient>0.55 0.55 0.55 1</ambient>
+      <background>0.72 0.77 0.83 1</background>
+      <shadows>false</shadows>
+    </scene>
+
+    <!-- Initial viewer camera, declared here rather than pushed at runtime
+         over /gazebo/<world>/user_camera/pose == that route repeatedly left
+         the viewport black and leaked hung `gz topic` processes. Placed to
+         look up the street at the spawn, so the robot, the pedestrians on
+         the sidewalk and the parked cars on the road are all in the opening
+         frame without anyone having to hunt for them. -->
+    <gui>
+      <camera name="user_camera">
+        <pose>-26.4 -72.1 14 0 0.582 0.852</pose>
+      </camera>
+    </gui>
+
+  </world>
+</sdf>

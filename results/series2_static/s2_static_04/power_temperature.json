@@ -1,0 +1,52 @@
+{
+ "log": "~/rehearsal_t5/tegrastats_drive4.log",
+ "window_hamilton": [
+  "2026-09-26 00:43:26",
+  "2026-09-26 00:54:32"
+ ],
+ "samples": 645,
+ "power_total_W": {
+  "max": {
+   "value": 36.6,
+   "at_hamilton": "00:44:21"
+  },
+  "median": 29.8
+ },
+ "tj_C_max": {
+  "value": 61.6,
+  "at_hamilton": "00:53:41"
+ },
+ "cpu_temp_C_max": {
+  "value": 61.6,
+  "at_hamilton": "00:53:41"
+ },
+ "gpu_temp_C_max": {
+  "value": 55.7,
+  "at_hamilton": "00:53:34"
+ },
+ "gpu_load_pct": {
+  "max": {
+   "value": 99,
+   "at_hamilton": "00:53:28"
+  },
+  "median": 23.0
+ },
+ "cpu_mean_of_12_cores_pct": {
+  "max": {
+   "value": 99.9,
+   "at_hamilton": "00:44:03"
+  },
+  "median": 41.2
+ },
+ "tegrastats_skips_over_2s": [
+  [
+   "00:47:02",
+   3.0
+  ]
+ ],
+ "ram_free_pct_lowest": {
+  "value": 66.2,
+  "used_GB": 10.1,
+  "at_hamilton": "00:54:21"
+ }
+}

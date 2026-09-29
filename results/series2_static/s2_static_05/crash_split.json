@@ -1,0 +1,72 @@
+{
+ "crash_hamilton": "02:25:26.207",
+ "crash_source": "roslaunch-jetson-118172.log line 63 (camera session of drive 4, ~/.run_records/s2_static_04/camera.log)",
+ "ready_hamilton": "02:14:12",
+ "park_hamilton": "02:34:48",
+ "bag_hamilton": [
+  "02:13:45",
+  "02:37:52"
+ ],
+ "last_message_received_hamilton": {
+  "/zedx_front/zed_node/imu/data": "02:25:25.5",
+  "/rtabmap/odom": "02:25:25.5",
+  "zed_diagnostic": "02:25:25.1"
+ },
+ "distance_method": "positions every 0.5 s, straight steps summed",
+ "distance_m": {
+  "blend": {
+   "ready_to_crash": 61.97,
+   "crash_to_park": 134.72,
+   "crash_to_end": 134.72,
+   "whole": 196.73,
+   "first_last_hamilton": [
+    "02:13:45",
+    "02:37:52"
+   ]
+  },
+  "robot": {
+   "ready_to_crash": 61.9,
+   "crash_to_park": 138.87,
+   "crash_to_end": 138.87,
+   "whole": 200.78,
+   "first_last_hamilton": [
+    "02:13:45",
+    "02:37:52"
+   ]
+  },
+  "robot_lidar_bag_wheel_tum": {
+   "ready_to_crash": 61.9,
+   "crash_to_park": 138.87,
+   "crash_to_end": 138.87,
+   "whole": 200.78,
+   "first_last_hamilton": [
+    "02:12:47",
+    "02:38:11"
+   ]
+  }
+ },
+ "map_nodes": {
+  "total": 688,
+  "first_hamilton": "02:13:27",
+  "last_hamilton": "02:25:25",
+  "after_crash": 0
+ },
+ "minutes": {
+  "ready_to_crash": 11.2,
+  "crash_to_park": 9.4,
+  "crash_to_map_closed": 12.4
+ },
+ "mapping_log_map_updates_after_crash": 0,
+ "live_page_frames": {
+  "total": 480,
+  "after_crash": 251,
+  "tracking_lines_after_crash": [
+   "NO DATA for 10 s - the odometry node may have stopped",
+   "NO DATA for 100 s - the odometry node may have stopped",
+   "NO DATA for 103 s - the odometry node may have stopped",
+   "NO DATA for 106 s - the odometry node may have stopped",
+   "NO DATA for 109 s - the odometry node may have stopped"
+  ],
+  "first_frame_after_crash": "230"
+ }
+}

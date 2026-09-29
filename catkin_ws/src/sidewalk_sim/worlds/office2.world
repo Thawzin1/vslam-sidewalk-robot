@@ -1,0 +1,835 @@
+<?xml version="1.0"?>
+<!--
+  office2.world: a full 24 x 18 m office-building floor plan for the Husky
+  VSLAM sim, built from a supplied architectural floor plan (transcribed by
+  the user; no image file exists in-repo, see docs/superpowers/specs for the
+  design note). Same offline-only discipline as office.world: shapes + the
+  Gazebo built-in `gazebo.material` script library only, no fuel.gazebosim.org
+  downloads, no external meshes.
+
+  Floor plan (top-down, +X east, +Y north), 24 x 18 m overall, origin at the
+  building's geometric centre:
+
+   Y=9  +==========+========+========+========+==========+==========+
+        | Pantry   |Office 1|Office 2|Meeting |Office 3  | Server/  |
+        | /Kitchen |        |        |  Room  |          | IT Room  |
+   Y=5.5+==========+========+========+========+==========+==========+
+        | Male     |                                     | Storage  |
+        | Toilet   |     corridor (north leg, 2.5 m)      |          |
+   Y=2.5+==========+=============================+==========+==========+
+        | Female   |                            |         | Copy /   |
+        | Toilet   |                            |         | Print    |
+   Y=0  +==========+  Open Office A | Open      +=========+==========+
+        :  (open   :    (6x6)       | Office B  :  (open  :
+   Y=-4 +  lobby   +================+  (6x6)    +  lobby  +
+        :  pocket  |  Reception |Office 4|Office 5|  pocket :
+   Y=-7 +==========+============+========+========+=========+
+        |      entrance / reception foyer (2.0 m, closed loop)      |
+   Y=-9 +======================[ENTRANCE]============================+
+       X=-12                          X=0                          X=12
+
+  ===========================================================================
+  WHY THIS IS A CLOSED-LOOP CORRIDOR, NOT A TREE
+  ===========================================================================
+  The source plan labels the corridor "CORRIDOR (CLOSED LOOP)": a north leg
+  (2.5 m) collects the four north-row rooms, then two side branches run SOUTH
+  AROUND the two 6x6 open-plan rooms (not between them; Open Office A and B
+  share a common centre wall at x=0), down to a 2.0 m entrance/reception foyer
+  that ties both branches back together. That foyer is the loop closure: you
+  can walk north leg, west branch, foyer, east branch, back to the north leg
+  and never retrace a corridor segment, which is exactly the kind of geometry
+  RTAB-Map loop closure needs (see office.world's own corridor-loop rationale
+  and ENGINEERING_NOTES.md's sidewalk-world loop-closure notes).
+
+  ===========================================================================
+  TEXTURE DISCIPLINE, copied verbatim from office.world, not re-derived
+  ===========================================================================
+  office.world already paid for this lesson: an all-different-flat-colour
+  wall set measured 13 ORB keypoints in a 1920x1200 frame (RTAB-Map needs 20
+  inliers just to compute one pose) until every wall got a real IMAGE texture
+  instead of a flat paint colour. Every wall segment below uses one of the
+  ~20 textured (non-flat, non-glow, non-transparent) materials in this
+  Gazebo install's own material script, cycled so touching/facing segments
+  never repeat: textured for odometry, distinct for loop closure, per
+  ENGINEERING_NOTES.md Sec 2.6/2.12. Large surfaces (the two 6x6 open-plan rooms, the
+  corridor run) are tiled in a grid rather than one stretched slab, same as
+  office.world's 4x4 floor grid: Gazebo paints one texture copy per box
+  face, so a single 6 m slab would smear one copy across the whole room.
+
+  ===========================================================================
+  DIMENSIONAL NOTE, flagged, not silently guessed
+  ===========================================================================
+  The source brief lists Server/IT (3.0x3.5), Storage (3.0x3.0), Copy/Print
+  (3.0x2.5) and Reception/Office4/Office5 (4.0-4.5 m deep) but also requires
+  an exact 24 x 18 m footprint, an exact 6x6 open-plan pair, an exact 2.5 m
+  north corridor, AND at least 2.0 m robot clearance at the entrance foyer.
+  Summing every room at its literal spec depth overshoots 18 m by about 1 m.
+  Resolved by: (a) widening the east utility stack (Server/IT, Storage,
+  Copy/Print) from 3.0 to 3.5 m to close a grid gap next to Office 3, and
+  (b) compressing the south-row rooms (Reception/Office4/Office5) from their
+  assumed 4.0 m depth to 3.0 m to preserve the entrance foyer at the robot's
+  stated MINIMUM clearance (2.0 m) rather than shrinking the explicitly
+  stated 2.5 m north corridor or the exact 6x6 open-plan rooms. Net effect:
+  total modelled room area is 247.0 sqm against the brief's 252.5 sqm target
+  (1.8% low), close enough to trust the overall layout. See the session
+  report for the full list of these flagged adjustments.
+
+  DOOR WIDTH, revised 1.00 m -> 1.80 m after live testing found it too tight
+  =========================================================================
+  The brief states door clear width as 1.00 m, but also separately asks for
+  2.0-2.5 m robot clearance "at every corridor/doorway" - a real conflict
+  for doorways specifically. The first build of this file took the literal
+  1.00 m door figure. Checking sidewalk_navigation/config/costmap_common.yaml
+  and README.md against that choice: the Husky's documented footprint is
+  0.99 x 0.67 m, circumscribed radius 0.598 m, i.e. it sweeps a 1.196 m
+  diameter circle just turning in place, already wider than a 1.00 m door
+  before the robot ever approaches at an angle. README.md itself flags this
+  footprint number as `measured: false`, an unverified placeholder, so
+  1.196 m is a floor, not a target.
+
+  Every interior and exterior doorway below is now 1.80 m clear width: about
+  50% margin over the 1.196 m sweep circle (comfortable headroom given the
+  footprint is unmeasured and could be larger), while staying visibly
+  narrower than the corridor it opens onto (2.0-2.5 m everywhere) so it still
+  reads as a doorway rather than an open wall gap at this 24x18 m scale.
+  Door centres were kept the same as the 1.00 m version wherever a room was
+  large enough to absorb the extra 0.8 m symmetrically; three doors in the
+  smaller utility rooms (Male Toilet/Storage's corridor door, and
+  Copy/Print's) were re-centred on their own room's midpoint instead, to
+  avoid leaving a near-zero sliver of wall at one end of an asymmetric room.
+  Verified live: the robot was driven at both perpendicular and diagonal
+  approach angles through doors of three different corridor/room geometries
+  and the exterior main entrance, with get_model_state pose readback after
+  each pass confirming it crossed cleanly with no collision-ejection tipping.
+  See the session report for the exact per-door pass/fail results.
+-->
+<sdf version="1.6">
+  <world name="office2">
+    <include><uri>model://sun</uri></include>
+    <include><uri>model://ground_plane</uri></include>
+
+    <!-- ==== textured floor skin ==========================================
+         VISUAL ONLY, same convention as office.world: no <collision> here,
+         physics floor stays the ground_plane above. Tiled per room (and the
+         corridor/foyer) so no single texture copy stretches across more than
+         ~3.3 m of surface. Corridor + foyer + both branch pockets share one
+         dedicated material (Gazebo/Footway) so the plan's own
+         "CORRIDOR / WALKWAY" floor legend reads as a visually distinct zone
+         from every room floor. -->
+    <model name="floor_skin">
+      <static>true</static>
+      <link name="tiles">
+        <visual name="f001"><pose>-10.25 7.25 0.002 0 0 0</pose><geometry><box><size>3.5 3.5 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodFloor</name></script></material></visual>
+        <visual name="f002"><pose>-10.25 4 0.002 0 0 0</pose><geometry><box><size>3.5 3 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual>
+        <visual name="f003"><pose>-10.25 1 0.002 0 0 0</pose><geometry><box><size>3.5 3 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual>
+        <visual name="f004"><pose>-6.5 5.625 0.002 0 0 0</pose><geometry><box><size>4 2.25 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+        <visual name="f005"><pose>-6.5 7.875 0.002 0 0 0</pose><geometry><box><size>4 2.25 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Wood</name></script></material></visual>
+        <visual name="f006"><pose>-2.5 5.625 0.002 0 0 0</pose><geometry><box><size>4 2.25 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Steps</name></script></material></visual>
+        <visual name="f007"><pose>-2.5 7.875 0.002 0 0 0</pose><geometry><box><size>4 2.25 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodFloor</name></script></material></visual>
+        <visual name="f008"><pose>0.625 5.625 0.002 0 0 0</pose><geometry><box><size>2.25 2.25 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual>
+        <visual name="f009"><pose>0.625 7.875 0.002 0 0 0</pose><geometry><box><size>2.25 2.25 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual>
+        <visual name="f010"><pose>2.875 5.625 0.002 0 0 0</pose><geometry><box><size>2.25 2.25 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+        <visual name="f011"><pose>2.875 7.875 0.002 0 0 0</pose><geometry><box><size>2.25 2.25 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Wood</name></script></material></visual>
+        <visual name="f012"><pose>6 5.625 0.002 0 0 0</pose><geometry><box><size>4 2.25 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Steps</name></script></material></visual>
+        <visual name="f013"><pose>6 7.875 0.002 0 0 0</pose><geometry><box><size>4 2.25 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodFloor</name></script></material></visual>
+        <visual name="f014"><pose>10 7.25 0.002 0 0 0</pose><geometry><box><size>4 3.5 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual>
+        <visual name="f015"><pose>10 4 0.002 0 0 0</pose><geometry><box><size>4 3 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual>
+        <visual name="f016"><pose>10 1.25 0.002 0 0 0</pose><geometry><box><size>4 2.5 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+        <visual name="f017"><pose>-4.5 -2.5 0.002 0 0 0</pose><geometry><box><size>3 3 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Wood</name></script></material></visual>
+        <visual name="f018"><pose>-4.5 0.5 0.002 0 0 0</pose><geometry><box><size>3 3 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Steps</name></script></material></visual>
+        <visual name="f019"><pose>-1.5 -2.5 0.002 0 0 0</pose><geometry><box><size>3 3 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodFloor</name></script></material></visual>
+        <visual name="f020"><pose>-1.5 0.5 0.002 0 0 0</pose><geometry><box><size>3 3 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual>
+        <visual name="f021"><pose>1.5 -2.5 0.002 0 0 0</pose><geometry><box><size>3 3 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual>
+        <visual name="f022"><pose>1.5 0.5 0.002 0 0 0</pose><geometry><box><size>3 3 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+        <visual name="f023"><pose>4.5 -2.5 0.002 0 0 0</pose><geometry><box><size>3 3 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Wood</name></script></material></visual>
+        <visual name="f024"><pose>4.5 0.5 0.002 0 0 0</pose><geometry><box><size>3 3 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Steps</name></script></material></visual>
+        <visual name="f025"><pose>-4.875 -5.5 0.002 0 0 0</pose><geometry><box><size>2.25 3 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodFloor</name></script></material></visual>
+        <visual name="f026"><pose>-2.625 -5.5 0.002 0 0 0</pose><geometry><box><size>2.25 3 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual>
+        <visual name="f027"><pose>0.5 -5.5 0.002 0 0 0</pose><geometry><box><size>4 3 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual>
+        <visual name="f028"><pose>4.25 -5.5 0.002 0 0 0</pose><geometry><box><size>3.5 3 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+        <visual name="f029"><pose>-6.85 3.25 0.002 0 0 0</pose><geometry><box><size>3.3 2.5 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Footway</name></script></material></visual>
+        <visual name="f030"><pose>-3.55 3.25 0.002 0 0 0</pose><geometry><box><size>3.3 2.5 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Footway</name></script></material></visual>
+        <visual name="f031"><pose>-0.25 3.25 0.002 0 0 0</pose><geometry><box><size>3.3 2.5 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Footway</name></script></material></visual>
+        <visual name="f032"><pose>3.05 3.25 0.002 0 0 0</pose><geometry><box><size>3.3 2.5 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Footway</name></script></material></visual>
+        <visual name="f033"><pose>6.35 3.25 0.002 0 0 0</pose><geometry><box><size>3.3 2.5 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Footway</name></script></material></visual>
+        <visual name="f034"><pose>-7.25 0.75 0.002 0 0 0</pose><geometry><box><size>2.5 2.5 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Footway</name></script></material></visual>
+        <visual name="f035"><pose>-7.25 3.25 0.002 0 0 0</pose><geometry><box><size>2.5 2.5 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Footway</name></script></material></visual>
+        <visual name="f036"><pose>-10.5 -5.375 0.002 0 0 0</pose><geometry><box><size>3 3.25 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Footway</name></script></material></visual>
+        <visual name="f037"><pose>-10.5 -2.125 0.002 0 0 0</pose><geometry><box><size>3 3.25 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Footway</name></script></material></visual>
+        <visual name="f038"><pose>-7.5 -5.375 0.002 0 0 0</pose><geometry><box><size>3 3.25 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Footway</name></script></material></visual>
+        <visual name="f039"><pose>-7.5 -2.125 0.002 0 0 0</pose><geometry><box><size>3 3.25 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Footway</name></script></material></visual>
+        <visual name="f040"><pose>7.25 1.125 0.002 0 0 0</pose><geometry><box><size>2.5 2.25 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Footway</name></script></material></visual>
+        <visual name="f041"><pose>7.25 3.375 0.002 0 0 0</pose><geometry><box><size>2.5 2.25 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Footway</name></script></material></visual>
+        <visual name="f042"><pose>7.5 -5.25 0.002 0 0 0</pose><geometry><box><size>3 3.5 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Footway</name></script></material></visual>
+        <visual name="f043"><pose>7.5 -1.75 0.002 0 0 0</pose><geometry><box><size>3 3.5 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Footway</name></script></material></visual>
+        <visual name="f044"><pose>10.5 -5.25 0.002 0 0 0</pose><geometry><box><size>3 3.5 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Footway</name></script></material></visual>
+        <visual name="f045"><pose>10.5 -1.75 0.002 0 0 0</pose><geometry><box><size>3 3.5 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Footway</name></script></material></visual>
+        <visual name="f046"><pose>-10.2857 -8 0.002 0 0 0</pose><geometry><box><size>3.42857 2 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Footway</name></script></material></visual>
+        <visual name="f047"><pose>-6.85714 -8 0.002 0 0 0</pose><geometry><box><size>3.42857 2 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Footway</name></script></material></visual>
+        <visual name="f048"><pose>-3.42857 -8 0.002 0 0 0</pose><geometry><box><size>3.42857 2 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Footway</name></script></material></visual>
+        <visual name="f049"><pose>0 -8 0.002 0 0 0</pose><geometry><box><size>3.42857 2 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Footway</name></script></material></visual>
+        <visual name="f050"><pose>3.42857 -8 0.002 0 0 0</pose><geometry><box><size>3.42857 2 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Footway</name></script></material></visual>
+        <visual name="f051"><pose>6.85714 -8 0.002 0 0 0</pose><geometry><box><size>3.42857 2 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Footway</name></script></material></visual>
+        <visual name="f052"><pose>10.2857 -8 0.002 0 0 0</pose><geometry><box><size>3.42857 2 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Footway</name></script></material></visual>
+      </link>
+    </model>
+
+    <!-- ==== building shell + interior walls (one static model) ====
+         Every one of the 37 wall segments below is a different, TEXTURED
+         Gazebo material (cycled from a 20-material pool; repeats are >=17
+         segments apart in the cycle, so no two touching/facing walls share
+         a material): see header. -->
+    <model name="building">
+      <static>true</static>
+      <link name="walls">
+
+        <!-- outer shell -->
+        <collision name="w001_c"><pose>0 9 1.25 0 0 0</pose><geometry><box><size>24 0.25 2.5</size></box></geometry></collision>
+        <visual   name="w001_v"><pose>0 9 1.25 0 0 0</pose><geometry><box><size>24 0.25 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Bricks</name></script></material></visual>
+        <collision name="w002_c"><pose>-7.2 -9 1.25 0 0 0</pose><geometry><box><size>9.6 0.25 2.5</size></box></geometry></collision>
+        <visual   name="w002_v"><pose>-7.2 -9 1.25 0 0 0</pose><geometry><box><size>9.6 0.25 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/PaintedWall</name></script></material></visual>
+        <collision name="w003_c"><pose>5.7 -9 1.25 0 0 0</pose><geometry><box><size>12.6 0.25 2.5</size></box></geometry></collision>
+        <visual   name="w003_v"><pose>5.7 -9 1.25 0 0 0</pose><geometry><box><size>12.6 0.25 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+        <collision name="w004_c"><pose>12 0 1.25 0 0 0</pose><geometry><box><size>0.25 18 2.5</size></box></geometry></collision>
+        <visual   name="w004_v"><pose>12 0 1.25 0 0 0</pose><geometry><box><size>0.25 18 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Residential</name></script></material></visual>
+        <collision name="w005_c"><pose>-12 0 1.25 0 0 0</pose><geometry><box><size>0.25 18 2.5</size></box></geometry></collision>
+        <visual   name="w005_v"><pose>-12 0 1.25 0 0 0</pose><geometry><box><size>0.25 18 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Wood</name></script></material></visual>
+
+        <!-- V1: west utility column (Pantry/Male/Female Toilet) vs Office1/corridor.
+             Doors recentred to each room own midpoint (Pantry/ServerIT 7.25,
+             MaleToilet/Storage 4.0, CopyPrint 1.25) so the wider 1.8 m opening
+             leaves balanced margins instead of a near-zero sliver at one end. -->
+        <collision name="w006_c"><pose>-8.5 8.575 1.25 0 0 0</pose><geometry><box><size>0.12 0.85 2.5</size></box></geometry></collision>
+        <visual   name="w006_v"><pose>-8.5 8.575 1.25 0 0 0</pose><geometry><box><size>0.12 0.85 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/BuildingFrame</name></script></material></visual>
+        <collision name="w007_c"><pose>-8.5 5.625 1.25 0 0 0</pose><geometry><box><size>0.12 1.45 2.5</size></box></geometry></collision>
+        <visual   name="w007_v"><pose>-8.5 5.625 1.25 0 0 0</pose><geometry><box><size>0.12 1.45 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Steps</name></script></material></visual>
+        <collision name="w008_c"><pose>-8.5 2.5 1.25 0 0 0</pose><geometry><box><size>0.12 1.2 2.5</size></box></geometry></collision>
+        <visual   name="w008_v"><pose>-8.5 2.5 1.25 0 0 0</pose><geometry><box><size>0.12 1.2 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodPallet</name></script></material></visual>
+        <collision name="w009_c"><pose>-8.5 -0.2 1.25 0 0 0</pose><geometry><box><size>0.12 0.6 2.5</size></box></geometry></collision>
+        <visual   name="w009_v"><pose>-8.5 -0.2 1.25 0 0 0</pose><geometry><box><size>0.12 0.6 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Motorway</name></script></material></visual>
+        <!-- west utility column: horizontal partitions actually separating
+             Pantry / Male Toilet / Female Toilet into 3 distinct rooms
+             (each already has its own V1 door onto Office1/corridor/branch,
+             so none of these three need a door) -->
+        <collision name="w010_c"><pose>-10.25 5.5 1.25 0 0 0</pose><geometry><box><size>3.5 0.12 2.5</size></box></geometry></collision>
+        <visual   name="w010_v"><pose>-10.25 5.5 1.25 0 0 0</pose><geometry><box><size>3.5 0.12 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Trunk</name></script></material></visual>
+        <collision name="w011_c"><pose>-10.25 2.5 1.25 0 0 0</pose><geometry><box><size>3.5 0.12 2.5</size></box></geometry></collision>
+        <visual   name="w011_v"><pose>-10.25 2.5 1.25 0 0 0</pose><geometry><box><size>3.5 0.12 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Primary</name></script></material></visual>
+        <collision name="w012_c"><pose>-10.25 -0.5 1.25 0 0 0</pose><geometry><box><size>3.5 0.12 2.5</size></box></geometry></collision>
+        <visual   name="w012_v"><pose>-10.25 -0.5 1.25 0 0 0</pose><geometry><box><size>3.5 0.12 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Secondary</name></script></material></visual>
+
+        <!-- V2-V4: north-row internal dividers (no doors needed: each room
+             reaches the corridor independently through its own south door) -->
+        <collision name="w013_c"><pose>-4.5 6.75 1.25 0 0 0</pose><geometry><box><size>0.12 4.5 2.5</size></box></geometry></collision>
+        <visual   name="w013_v"><pose>-4.5 6.75 1.25 0 0 0</pose><geometry><box><size>0.12 4.5 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/PioneerBody</name></script></material></visual>
+        <collision name="w014_c"><pose>-0.5 6.75 1.25 0 0 0</pose><geometry><box><size>0.12 4.5 2.5</size></box></geometry></collision>
+        <visual   name="w014_v"><pose>-0.5 6.75 1.25 0 0 0</pose><geometry><box><size>0.12 4.5 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pioneer2Body</name></script></material></visual>
+        <collision name="w015_c"><pose>4 6.75 1.25 0 0 0</pose><geometry><box><size>0.12 4.5 2.5</size></box></geometry></collision>
+        <visual   name="w015_v"><pose>4 6.75 1.25 0 0 0</pose><geometry><box><size>0.12 4.5 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual>
+
+        <!-- V5: east utility column (Server/IT, Storage, Copy/Print) vs Office3/corridor.
+             Stack widened to touch the exterior wall at x=12.0. It was x=11.5 with an
+             unwalled 0.5 m buffer strip left open to the exterior wall, a real gap and
+             not just a cosmetic choice, so the exterior wall itself now closes the
+             east side directly; no separate east-side wall segment is needed. -->
+        <collision name="w016_c"><pose>8 8.575 1.25 0 0 0</pose><geometry><box><size>0.12 0.85 2.5</size></box></geometry></collision>
+        <visual   name="w016_v"><pose>8 8.575 1.25 0 0 0</pose><geometry><box><size>0.12 0.85 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Tertiary</name></script></material></visual>
+        <collision name="w017_c"><pose>8 5.625 1.25 0 0 0</pose><geometry><box><size>0.12 1.45 2.5</size></box></geometry></collision>
+        <visual   name="w017_v"><pose>8 5.625 1.25 0 0 0</pose><geometry><box><size>0.12 1.45 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual>
+        <collision name="w018_c"><pose>8 2.625 1.25 0 0 0</pose><geometry><box><size>0.12 0.95 2.5</size></box></geometry></collision>
+        <visual   name="w018_v"><pose>8 2.625 1.25 0 0 0</pose><geometry><box><size>0.12 0.95 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Runway</name></script></material></visual>
+        <collision name="w019_c"><pose>8 0.175 1.25 0 0 0</pose><geometry><box><size>0.12 0.35 2.5</size></box></geometry></collision>
+        <visual   name="w019_v"><pose>8 0.175 1.25 0 0 0</pose><geometry><box><size>0.12 0.35 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Grass</name></script></material></visual>
+        <!-- east utility column: horizontal partitions actually separating
+             Server/IT / Storage / Copy-Print into 3 distinct rooms -->
+        <collision name="w020_c"><pose>10 5.5 1.25 0 0 0</pose><geometry><box><size>4 0.12 2.5</size></box></geometry></collision>
+        <visual   name="w020_v"><pose>10 5.5 1.25 0 0 0</pose><geometry><box><size>4 0.12 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodFloor</name></script></material></visual>
+        <collision name="w021_c"><pose>10 2.5 1.25 0 0 0</pose><geometry><box><size>4 0.12 2.5</size></box></geometry></collision>
+        <visual   name="w021_v"><pose>10 2.5 1.25 0 0 0</pose><geometry><box><size>4 0.12 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Bricks</name></script></material></visual>
+        <collision name="w022_c"><pose>10 0 1.25 0 0 0</pose><geometry><box><size>4 0.12 2.5</size></box></geometry></collision>
+        <visual   name="w022_v"><pose>10 0 1.25 0 0 0</pose><geometry><box><size>4 0.12 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/PaintedWall</name></script></material></visual>
+
+        <!-- V6: Open Office A / Reception vs west branch corridor -->
+        <collision name="w023_c"><pose>-6 0.95 1.25 0 0 0</pose><geometry><box><size>0.12 2.1 2.5</size></box></geometry></collision>
+        <visual   name="w023_v"><pose>-6 0.95 1.25 0 0 0</pose><geometry><box><size>0.12 2.1 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+        <collision name="w024_c"><pose>-6 -4.45 1.25 0 0 0</pose><geometry><box><size>0.12 5.1 2.5</size></box></geometry></collision>
+        <visual   name="w024_v"><pose>-6 -4.45 1.25 0 0 0</pose><geometry><box><size>0.12 5.1 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Residential</name></script></material></visual>
+
+        <!-- V7: Open Office A | Open Office B shared centre wall -->
+        <collision name="w025_c"><pose>0 -1 1.25 0 0 0</pose><geometry><box><size>0.12 6 2.5</size></box></geometry></collision>
+        <visual   name="w025_v"><pose>0 -1 1.25 0 0 0</pose><geometry><box><size>0.12 6 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Wood</name></script></material></visual>
+
+        <!-- V8: Open Office B / Office5 vs east branch corridor -->
+        <collision name="w026_c"><pose>6 0.95 1.25 0 0 0</pose><geometry><box><size>0.12 2.1 2.5</size></box></geometry></collision>
+        <visual   name="w026_v"><pose>6 0.95 1.25 0 0 0</pose><geometry><box><size>0.12 2.1 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/BuildingFrame</name></script></material></visual>
+        <collision name="w027_c"><pose>6 -4.45 1.25 0 0 0</pose><geometry><box><size>0.12 5.1 2.5</size></box></geometry></collision>
+        <visual   name="w027_v"><pose>6 -4.45 1.25 0 0 0</pose><geometry><box><size>0.12 5.1 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Steps</name></script></material></visual>
+
+        <!-- V9/V10: south-row internal dividers (no doors: each room has
+             its own south door onto the entrance foyer) -->
+        <collision name="w028_c"><pose>-1.5 -5.5 1.25 0 0 0</pose><geometry><box><size>0.12 3 2.5</size></box></geometry></collision>
+        <visual   name="w028_v"><pose>-1.5 -5.5 1.25 0 0 0</pose><geometry><box><size>0.12 3 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodPallet</name></script></material></visual>
+        <collision name="w029_c"><pose>2.5 -5.5 1.25 0 0 0</pose><geometry><box><size>0.12 3 2.5</size></box></geometry></collision>
+        <visual   name="w029_v"><pose>2.5 -5.5 1.25 0 0 0</pose><geometry><box><size>0.12 3 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Motorway</name></script></material></visual>
+
+        <!-- H1: north-row south walls vs north corridor, 4 doors. All 4 were
+             already centred on their own room, so widening kept the same
+             centres (-6.5,-2.5,1.75,6.0). -->
+        <collision name="w030_c"><pose>-7.95 4.5 1.25 0 0 0</pose><geometry><box><size>1.1 0.12 2.5</size></box></geometry></collision>
+        <visual   name="w030_v"><pose>-7.95 4.5 1.25 0 0 0</pose><geometry><box><size>1.1 0.12 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Trunk</name></script></material></visual>
+        <collision name="w031_c"><pose>-4.5 4.5 1.25 0 0 0</pose><geometry><box><size>2.2 0.12 2.5</size></box></geometry></collision>
+        <visual   name="w031_v"><pose>-4.5 4.5 1.25 0 0 0</pose><geometry><box><size>2.2 0.12 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Primary</name></script></material></visual>
+        <collision name="w032_c"><pose>-0.375 4.5 1.25 0 0 0</pose><geometry><box><size>2.45 0.12 2.5</size></box></geometry></collision>
+        <visual   name="w032_v"><pose>-0.375 4.5 1.25 0 0 0</pose><geometry><box><size>2.45 0.12 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Secondary</name></script></material></visual>
+        <collision name="w033_c"><pose>3.875 4.5 1.25 0 0 0</pose><geometry><box><size>2.45 0.12 2.5</size></box></geometry></collision>
+        <visual   name="w033_v"><pose>3.875 4.5 1.25 0 0 0</pose><geometry><box><size>2.45 0.12 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/PioneerBody</name></script></material></visual>
+        <collision name="w034_c"><pose>7.45 4.5 1.25 0 0 0</pose><geometry><box><size>1.1 0.12 2.5</size></box></geometry></collision>
+        <visual   name="w034_v"><pose>7.45 4.5 1.25 0 0 0</pose><geometry><box><size>1.1 0.12 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pioneer2Body</name></script></material></visual>
+
+        <!-- H2b: north corridor vs Open Office A/B, 2 doors -->
+        <collision name="w035_c"><pose>-4.95 2 1.25 0 0 0</pose><geometry><box><size>2.1 0.12 2.5</size></box></geometry></collision>
+        <visual   name="w035_v"><pose>-4.95 2 1.25 0 0 0</pose><geometry><box><size>2.1 0.12 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual>
+        <collision name="w036_c"><pose>0 2 1.25 0 0 0</pose><geometry><box><size>4.2 0.12 2.5</size></box></geometry></collision>
+        <visual   name="w036_v"><pose>0 2 1.25 0 0 0</pose><geometry><box><size>4.2 0.12 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Tertiary</name></script></material></visual>
+        <collision name="w037_c"><pose>4.95 2 1.25 0 0 0</pose><geometry><box><size>2.1 0.12 2.5</size></box></geometry></collision>
+        <visual   name="w037_v"><pose>4.95 2 1.25 0 0 0</pose><geometry><box><size>2.1 0.12 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual>
+
+        <!-- H3: Open Office A/B south wall vs south-row rooms (no doors:
+             both open offices already have west/east/north doors) -->
+        <collision name="w038_c"><pose>-3 -4 1.25 0 0 0</pose><geometry><box><size>6 0.12 2.5</size></box></geometry></collision>
+        <visual   name="w038_v"><pose>-3 -4 1.25 0 0 0</pose><geometry><box><size>6 0.12 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Runway</name></script></material></visual>
+        <collision name="w039_c"><pose>3 -4 1.25 0 0 0</pose><geometry><box><size>6 0.12 2.5</size></box></geometry></collision>
+        <visual   name="w039_v"><pose>3 -4 1.25 0 0 0</pose><geometry><box><size>6 0.12 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Grass</name></script></material></visual>
+
+        <!-- H4: south-row rooms vs entrance foyer, 3 doors. All 3 were already
+             centred on their own room (-3.75, 0.5, 4.25), kept unchanged. -->
+        <collision name="w040_c"><pose>-5.325 -7 1.25 0 0 0</pose><geometry><box><size>1.35 0.12 2.5</size></box></geometry></collision>
+        <visual   name="w040_v"><pose>-5.325 -7 1.25 0 0 0</pose><geometry><box><size>1.35 0.12 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodFloor</name></script></material></visual>
+        <collision name="w041_c"><pose>-1.625 -7 1.25 0 0 0</pose><geometry><box><size>2.45 0.12 2.5</size></box></geometry></collision>
+        <visual   name="w041_v"><pose>-1.625 -7 1.25 0 0 0</pose><geometry><box><size>2.45 0.12 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Bricks</name></script></material></visual>
+        <collision name="w042_c"><pose>2.375 -7 1.25 0 0 0</pose><geometry><box><size>1.95 0.12 2.5</size></box></geometry></collision>
+        <visual   name="w042_v"><pose>2.375 -7 1.25 0 0 0</pose><geometry><box><size>1.95 0.12 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/PaintedWall</name></script></material></visual>
+        <collision name="w043_c"><pose>5.575 -7 1.25 0 0 0</pose><geometry><box><size>0.85 0.12 2.5</size></box></geometry></collision>
+        <visual   name="w043_v"><pose>5.575 -7 1.25 0 0 0</pose><geometry><box><size>0.85 0.12 2.5</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual>
+
+      </link>
+    </model>
+
+    <!-- ================= props, one furnishing set per room ==============
+         Style copied from office.world: 0.3-1.0 m primitive boxes/cylinders,
+         each the sharpest feature source in its room (a box this size shows
+         one full texture copy per face). Placed clear of every doorway. -->
+
+    <!-- Reception: desk beside the main entrance -->
+    <model name="reception_desk"><static>true</static><pose>-3.75 -5.5 0.5 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>1.6 0.6 1</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>1.6 0.6 1</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Wood</name></script></material></visual></link></model>
+    <model name="reception_chair"><static>true</static><pose>-3.75 -6.2 0.225 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 0.4 0.45</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.4 0.4 0.45</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Steps</name></script></material></visual></link></model>
+    <!-- Office 1: desk, chair, bookshelf -->
+    <model name="o1_desk"><static>true</static><pose>-7.8 8 0.375 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>1.2 0.6 0.75</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>1.2 0.6 0.75</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodPallet</name></script></material></visual></link></model>
+    <model name="o1_chair"><static>true</static><pose>-7.8 7.3 0.225 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 0.4 0.45</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.4 0.4 0.45</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Steps</name></script></material></visual></link></model>
+    <model name="o1_shelf"><static>true</static><pose>-5 8.2 0.9 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.3 1 1.8</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.3 1 1.8</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Bricks</name></script></material></visual></link></model>
+    <!-- Office 2: desk, chair, cabinet -->
+    <model name="o2_desk"><static>true</static><pose>-3.8 8 0.375 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>1.2 0.6 0.75</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>1.2 0.6 0.75</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual></link></model>
+    <model name="o2_chair"><static>true</static><pose>-3.8 7.3 0.225 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 0.4 0.45</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.4 0.4 0.45</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Runway</name></script></material></visual></link></model>
+    <model name="o2_cabinet"><static>true</static><pose>-1 8.5 0.6 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.6 0.4 1.2</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.6 0.4 1.2</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual></link></model>
+    <!-- Meeting Room: conference table + 6 chairs -->
+    <model name="mtg_table"><static>true</static><pose>1.75 6.75 0.375 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>2.4 1.2 0.75</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>2.4 1.2 0.75</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Wood</name></script></material></visual></link></model>
+    <model name="mtg_chair_1"><static>true</static><pose>0.6 6 0.225 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 0.4 0.45</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.4 0.4 0.45</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodPallet</name></script></material></visual></link></model>
+    <model name="mtg_chair_2"><static>true</static><pose>1.75 6 0.225 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 0.4 0.45</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.4 0.4 0.45</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodPallet</name></script></material></visual></link></model>
+    <model name="mtg_chair_3"><static>true</static><pose>2.9 6 0.225 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 0.4 0.45</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.4 0.4 0.45</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodPallet</name></script></material></visual></link></model>
+    <model name="mtg_chair_4"><static>true</static><pose>0.6 7.5 0.225 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 0.4 0.45</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.4 0.4 0.45</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodPallet</name></script></material></visual></link></model>
+    <model name="mtg_chair_5"><static>true</static><pose>1.75 7.5 0.225 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 0.4 0.45</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.4 0.4 0.45</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodPallet</name></script></material></visual></link></model>
+    <model name="mtg_chair_6"><static>true</static><pose>2.9 7.5 0.225 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 0.4 0.45</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.4 0.4 0.45</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodPallet</name></script></material></visual></link></model>
+    <!-- Office 3: desk, chair -->
+    <model name="o3_desk"><static>true</static><pose>6.2 8 0.375 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>1.2 0.6 0.75</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>1.2 0.6 0.75</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual></link></model>
+    <model name="o3_chair"><static>true</static><pose>6.2 7.3 0.225 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 0.4 0.45</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.4 0.4 0.45</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Trunk</name></script></material></visual></link></model>
+    <!-- Server/IT Room: two server racks -->
+    <model name="rack_1"><static>true</static><pose>9.2 8.2 0.9 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.6 0.8 1.8</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.6 0.8 1.8</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/BuildingFrame</name></script></material></visual></link></model>
+    <model name="rack_2"><static>true</static><pose>10.3 8.2 0.9 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.6 0.8 1.8</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.6 0.8 1.8</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Steps</name></script></material></visual></link></model>
+    <!-- Storage: shelving units -->
+    <model name="shelf_1"><static>true</static><pose>9.2 4 0.9 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.5 2 1.8</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.5 2 1.8</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Bricks</name></script></material></visual></link></model>
+    <model name="shelf_2"><static>true</static><pose>10.5 3 0.9 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 0.4 1.8</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.4 0.4 1.8</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodPallet</name></script></material></visual></link></model>
+    <!-- Copy/Print: copier/printer unit -->
+    <model name="copier"><static>true</static><pose>9.5 1 0.5 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.8 0.7 1</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.8 0.7 1</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/PioneerBody</name></script></material></visual></link></model>
+    <!-- Open Office A: 4-desk cluster + a plant (planter-box, see header) -->
+    <model name="ooa_desk_1"><static>true</static><pose>-4.7 0.7 0.375 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>1.2 0.6 0.75</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>1.2 0.6 0.75</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodPallet</name></script></material></visual></link></model>
+    <model name="ooa_desk_2"><static>true</static><pose>-3.3 0.7 0.375 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>1.2 0.6 0.75</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>1.2 0.6 0.75</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual></link></model>
+    <model name="ooa_desk_3"><static>true</static><pose>-4.7 -0.7 0.375 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>1.2 0.6 0.75</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>1.2 0.6 0.75</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Motorway</name></script></material></visual></link></model>
+    <model name="ooa_desk_4"><static>true</static><pose>-3.3 -0.7 0.375 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>1.2 0.6 0.75</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>1.2 0.6 0.75</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual></link></model>
+    <model name="ooa_plant"><static>true</static><pose>-1.2 -3 0.35 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.5 0.5 0.7</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.5 0.5 0.7</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Grass</name></script></material></visual></link></model>
+    <!-- Open Office B: mirrors Open Office A -->
+    <model name="oob_desk_1"><static>true</static><pose>3.3 0.7 0.375 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>1.2 0.6 0.75</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>1.2 0.6 0.75</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodPallet</name></script></material></visual></link></model>
+    <model name="oob_desk_2"><static>true</static><pose>4.7 0.7 0.375 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>1.2 0.6 0.75</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>1.2 0.6 0.75</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual></link></model>
+    <model name="oob_desk_3"><static>true</static><pose>3.3 -0.7 0.375 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>1.2 0.6 0.75</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>1.2 0.6 0.75</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Motorway</name></script></material></visual></link></model>
+    <model name="oob_desk_4"><static>true</static><pose>4.7 -0.7 0.375 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>1.2 0.6 0.75</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>1.2 0.6 0.75</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Pedestrian</name></script></material></visual></link></model>
+    <model name="oob_plant"><static>true</static><pose>1.2 -3 0.35 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.5 0.5 0.7</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.5 0.5 0.7</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Grass</name></script></material></visual></link></model>
+    <!-- Pantry/Kitchen: round table + 2 chairs + counter/cabinets -->
+    <model name="pantry_table"><static>true</static><pose>-10.25 6.5 0.375 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><cylinder><radius>0.5</radius><length>0.75</length></cylinder></geometry></collision>
+        <visual name="v"><geometry><cylinder><radius>0.5</radius><length>0.75</length></cylinder></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Wood</name></script></material></visual></link></model>
+    <model name="pantry_chair_1"><static>true</static><pose>-9.5 6.5 0.225 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 0.4 0.45</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.4 0.4 0.45</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Steps</name></script></material></visual></link></model>
+    <model name="pantry_chair_2"><static>true</static><pose>-11 6.5 0.225 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 0.4 0.45</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.4 0.4 0.45</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Steps</name></script></material></visual></link></model>
+    <model name="pantry_counter"><static>true</static><pose>-10.25 8.5 0.45 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>2.4 0.5 0.9</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>2.4 0.5 0.9</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/PioneerBody</name></script></material></visual></link></model>
+    <!-- Male/Female Toilet: partition + counter/sink (no toilet-fixture
+         precedent exists in office.world: simple textured primitives,
+         flagged as an extrapolation, not a verified fixture asset).
+         mt_counter/ft_counter RELOCATED from x=-8.7 to x=-10.0: at -8.7 the
+         0.6 m-wide box (span x[-9.0,-8.4]) clipped 0.04 m past the x=-8.5
+         wall face into the corridor side (and 0.12 m through the wall itself)
+         confirmed by the live session: this exact prop, mt_counter, was one
+         of the items the user deleted after seeing it poke into the corridor
+         live in Gazebo. ft_counter had the identical latent bug but had not
+         yet been noticed/removed; fixed here too rather than leaving it. -->
+    <model name="mt_partition"><static>true</static><pose>-9.4 4 0.6 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.1 2 1.2</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.1 2 1.2</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual></link></model>
+    <model name="mt_counter"><static>true</static><pose>-10 3 0.4 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.6 0.5 0.8</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.6 0.5 0.8</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Residential</name></script></material></visual></link></model>
+    <model name="ft_partition"><static>true</static><pose>-9.4 1 0.6 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.1 2 1.2</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.1 2 1.2</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/CeilingTiled</name></script></material></visual></link></model>
+    <model name="ft_counter"><static>true</static><pose>-10 0 0.4 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.6 0.5 0.8</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.6 0.5 0.8</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Residential</name></script></material></visual></link></model>
+    <!-- Office 4: desk, chair. RELOCATED from y=-6.4/-5.7 (right against the
+         south door, centre x=0.5 matching the doorway exactly) to y=-4.6/-5.3
+         (against the north wall, shared with Open Office A/B): the desk sat
+         directly in the doorway sweep path in a room only 3.0 m deep; the user
+         deleted both o4_desk and o4_chair live rather than drive through them. -->
+    <model name="o4_desk"><static>true</static><pose>0.5 -4.6 0.375 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>1.2 0.6 0.75</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>1.2 0.6 0.75</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/WoodPallet</name></script></material></visual></link></model>
+    <model name="o4_chair"><static>true</static><pose>0.5 -5.3 0.225 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 0.4 0.45</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.4 0.4 0.45</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Steps</name></script></material></visual></link></model>
+    <!-- Office 5: desk, chair. Same relocation as Office 4, same reason:
+         the user deleted o5_desk/o5_chair too. -->
+    <model name="o5_desk"><static>true</static><pose>4.25 -4.6 0.375 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>1.2 0.6 0.75</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>1.2 0.6 0.75</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Road</name></script></material></visual></link></model>
+    <model name="o5_chair"><static>true</static><pose>4.25 -5.3 0.225 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 0.4 0.45</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.4 0.4 0.45</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Runway</name></script></material></visual></link></model>
+    <!-- Corridor pillars: DROPPED, not relocated. The user deleted both
+         cor_pillar_w (which sat exactly on Office2 doorway centre-line,
+         x=-2.5) and cor_pillar_e (which did not align with any doorway) live
+         in Gazebo. Unlike room furniture, a corridor pillar has no interior
+         to retreat into: the corridor itself is only 2.0-2.5 m wide, and
+         with doors now 1.8 m wide the through-traffic expectation is higher,
+         so a 0.36 m-diameter obstacle in the middle of it is a net negative
+         even where the math says it technically still fits. Feature richness
+         lost here is covered by the corridor doorway walls themselves (now
+         far more visible edges, since every doorway widened) and the
+         Footway-textured floor grid already tiling the whole corridor run. -->
+    <!-- Exterior entrance plaza: planter boxes flanking the main door,
+         same abstraction sidewalk.world/marc_sidewalk_driveway.world use
+         for "planted greenery": this offline install has no foliage
+         mesh, only primitive shapes + gazebo.material, so a textured box
+         plays the same role there does here (flagged in the session
+         report). -->
+    <model name="entrance_planter_w"><static>true</static><pose>-3 -9.6 0.275 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.7 0.5 0.55</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.7 0.5 0.55</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Bricks</name></script></material></visual></link></model>
+    <model name="entrance_planter_e"><static>true</static><pose>0 -9.6 0.275 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.7 0.5 0.55</size></box></geometry></collision>
+        <visual name="v"><geometry><box><size>0.7 0.5 0.55</size></box></geometry>
+          <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Bricks</name></script></material></visual></link></model>
+        <visual name="f053"><pose>-1.5 -9.6 0.002 0 0 0</pose><geometry><box><size>3 1.2 0.004</size></box></geometry>
+    <material><script><uri>file://media/materials/scripts/gazebo.material</uri><name>Gazebo/Footway</name></script></material></visual>
+
+    <!-- ==== overhead presentation camera ===============================
+         WHAT THIS IS. One downward-looking colour camera, attached to
+         nothing, hanging 26 m over the centre of the building and publishing
+         a plain image on /overhead_cam/image_raw - the same topic name
+         office.world uses, which is safe because only one world is ever
+         loaded at a time. Point a recorder at that topic and every mapping
+         run of this world produces a top-down video of the robot driving the
+         floor plan, at no extra effort during the run. There is no ceiling
+         in this world - only walls and a floor skin - so a camera above it
+         looks straight down into every room, corridor branch and the
+         entrance foyer.
+
+         WHY IT LIVES INSIDE THE WORLD INSTEAD OF BEING A SCREEN RECORDER.
+         Measured runs are launched with the graphical client switched off
+         (gui:=false) and no windows on screen, which is most of why they run
+         roughly four times faster than a watched run. There is consequently
+         nothing on screen for a screen recorder to capture. The simulation
+         server, however, renders camera sensors inside its own process
+         whether or not any window exists - that is the confirmed rule in
+         ENGINEERING_NOTES.md section 5 - so a camera placed in the world yields a real
+         rendered picture at the full headless speed. The top-down picture at
+         logs/sidewalk_evaluation/results/phase1/fix_verify/gazebo_birdseye.png
+         was produced exactly this way with a temporary camera that was never
+         kept. This is that same technique, made permanent.
+
+         THE CAVEAT THAT WILL CATCH SOMEBODY OUT. Rendering any camera at all
+         needs a graphics context, and the simulation server takes that from
+         the DISPLAY and XAUTHORITY environment variables. Launch over a
+         remote shell without both of them exported and this camera is never
+         created: no images, no camera information, and no error that names
+         the cause - just the line "Unable to create CameraSensor. Rendering
+         is disabled." in the server log, after which everything else carries
+         on normally. The robot's own stereo camera has exactly the same
+         requirement, so in practice a run that produced no overhead video is
+         a run that produced no camera images at all, and the fix is the same
+         one: export both variables before launching.
+
+         HOW THE 26 m HEIGHT WAS COMPUTED. It was derived for THIS building,
+         not copied from office.world - that floor plan is 14 by 12 m and its
+         camera hangs at 18 m. The method is the same; only the footprint
+         changes.
+
+         The lens is set to a 1.047 radian (60.0 degree) horizontal field of
+         view, matching office.world so the two videos look like the same
+         instrument. The simulator derives the vertical field of view from
+         the image shape, so an 800 by 600 picture covers a patch of floor
+         with the same 4 : 3 proportions as the picture itself:
+
+             half-width  a = height * tan(field of view / 2) = height * 0.5772
+             half-height b = a * 600 / 800                   = a * 0.75
+
+         The building is 24 m east-west by 18 m north-south, so its floor
+         half-extents are 12 m and 9 m. That is not the whole requirement,
+         because the walls are 2.5 m tall and this is a perspective lens, not
+         an overhead orthographic drawing. Seen from a point directly above
+         the centre, the TOP outer edge of a wall standing at horizontal
+         distance d appears to lie at
+
+             d * height / (height - 2.5)
+
+         so the frame has to cover more than the floor footprint or the tops
+         of the outer walls are sliced off at the edges. Requiring a further
+         10 % margin beyond even that:
+
+             east-west   0.5772 * (height - 2.5) >= 12 * 1.10 -> height >= 25.37 m
+             north-south 0.4329 * (height - 2.5) >= 9  * 1.10 -> height >= 25.37 m
+
+         Both constraints land on the same number here, unlike office.world,
+         because this building's 24 : 18 footprint is exactly the picture's
+         4 : 3 - the frame runs out of room in both directions at once.
+         Rounded up to a flat 26 m, which delivers:
+
+             ground coverage        30.02 m east-west by 22.51 m north-south
+             margin past wall tops  13.0 % in both directions
+             clear border at floor  3.01 m beyond the east and west walls,
+                                    2.26 m beyond the north and south walls,
+                                    which also keeps the entrance plaza and
+                                    its planters (out to y = -9.85) in frame
+             scale                  37.5 mm of floor per pixel, so the Husky
+                                    (about 1.0 by 0.67 m) is roughly 27 by 18
+                                    pixels - smaller than in office.world
+                                    because the building is larger, but still
+                                    plainly a robot moving between rooms,
+                                    which is all this clip has to show.
+
+         WHICH WAY IS UP IN THE PICTURE. A camera here looks along its own
+         forward axis with its own upward axis at the top of the frame.
+         Pitching it a quarter turn (1.5708 radians) nose-down aims it at the
+         floor; the further quarter turn of yaw then rolls the frame so that
+         north (+Y) is at the top and east (+X) is at the right. The video
+         therefore has the same orientation as the floor-plan sketch at the
+         top of this file, so the two can be held side by side while
+         explaining a run - which matters more here than in office.world,
+         because the closed corridor loop is hard to describe in words.
+
+         WHY THIS CANNOT DISTURB A MAPPING RUN.
+           * It is not attached to the robot. It is its own static model at a
+             fixed pose, contributing no transform, no joint and no mass to
+             the robot.
+           * Its link carries no collision shape and no visual shape at all,
+             only the sensor. The robot cannot drive into it, the navigation
+             costmap never sees it, and the robot's own stereo camera cannot
+             see it even looking straight up.
+           * It publishes on /overhead_cam/image_raw and
+             /overhead_cam/camera_info, and nothing in the mapping stack
+             subscribes to either. sidewalk_slam/launch/rtabmap_common.launch
+             was read to confirm this: it subscribes only to the colour,
+             depth, left, right, camera-information, inertial and odometry
+             topics beneath the robot camera's own namespace (zedx_front /
+             zed_node by default), plus its own internal bundled image topic.
+           * It costs roughly 7 % of what the robot's stereo pair already
+             costs: 800 by 600 at 10 frames per simulated second is 4.8
+             million pixels per second and 14.4 megabytes per second of image
+             traffic, against 69 million pixels per second and 207 megabytes
+             per second for two 1920 by 1200 colour lenses at 15 hertz. That
+             ratio is the point - this machine is already carrying physics,
+             the stereo camera and the mapping software at once, and
+             over-subscribing it has caused real failures before (see
+             docs/OPERATIONS.md on the memory and queue-depth incident).
+
+         WHY 800 BY 600 AT 10 FRAMES PER SECOND. This picture is watched, not
+         measured: no pose is ever computed from it, so the only requirement
+         is that a person can see where the robot is. 10 frames of SIMULATED
+         time per second, played back at 10 frames per second, shows the
+         motion at true speed no matter what multiple of real time the
+         simulation happened to be running at. Raising either number buys
+         nothing and takes graphics time away from the stereo camera, which
+         is the one that has to keep up. Note this is the SAME resolution as
+         office.world even though this building is larger: the extra pixels
+         would go on empty floor, and the cost is what has to stay small.
+    -->
+    <model name="overhead_cam">
+      <static>true</static>
+      <!-- 26 m above the building centre. Pitch 1.5708 aims the lens straight
+           down; the matching yaw puts north at the top of the frame. -->
+      <pose>0 0 26.0 0 1.5708 1.5708</pose>
+      <link name="lens">
+        <sensor name="overhead_camera" type="camera">
+          <always_on>true</always_on>
+          <update_rate>10</update_rate>
+          <!-- No frustum drawn in the graphical client: it would sit across
+               the middle of the scene during hand-driving sessions. -->
+          <visualize>false</visualize>
+          <camera name="overhead">
+            <horizontal_fov>1.047</horizontal_fov>
+            <image><width>800</width><height>600</height><format>R8G8B8</format></image>
+            <!-- Clipping is measured along the lens axis, and the floor is
+                 exactly 26 m along it, so the far plane only has to clear 26.
+                 50 m leaves room to raise the camera later without silently
+                 clipping the floor away. -->
+            <clip><near>1.0</near><far>50.0</far></clip>
+            <!-- Deliberately NO <noise> here. The robot's stereo camera
+                 carries Gaussian noise on purpose, because its covariance has
+                 to be honest (ENGINEERING_NOTES.md section 2.3). This one is only ever
+                 looked at, and grain would just make the video harder to
+                 read. -->
+          </camera>
+          <plugin name="overhead_cam_controller" filename="libgazebo_ros_camera.so">
+            <alwaysOn>true</alwaysOn>
+            <!-- 0.0 means "publish whenever the sensor renders", so the
+                 10 hertz above is the single place the rate is set. -->
+            <updateRate>0.0</updateRate>
+            <!-- Camera name plus image topic name is what forms the published
+                 topic: /overhead_cam/image_raw, with /overhead_cam/camera_info
+                 beside it. -->
+            <cameraName>overhead_cam</cameraName>
+            <imageTopicName>image_raw</imageTopicName>
+            <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+            <!-- Nothing publishes a transform for this frame and nothing
+                 needs one: the picture is watched in an image viewer or
+                 written to a video file, never projected into the map. -->
+            <frameName>overhead_cam_optical_frame</frameName>
+            <distortionK1>0.0</distortionK1>
+            <distortionK2>0.0</distortionK2>
+            <distortionK3>0.0</distortionK3>
+            <distortionT1>0.0</distortionT1>
+            <distortionT2>0.0</distortionT2>
+          </plugin>
+        </sensor>
+      </link>
+    </model>
+
+    <physics type="ode"><real_time_update_rate>1000</real_time_update_rate><max_step_size>0.001</max_step_size></physics>
+    <scene><ambient>0.5 0.5 0.5 1</ambient><background>0.7 0.7 0.7 1</background><shadows>false</shadows></scene>
+  </world>
+</sdf>

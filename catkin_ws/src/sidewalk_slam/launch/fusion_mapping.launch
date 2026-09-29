@@ -1,0 +1,194 @@
+<?xml version="1.0"?>
+<!--
+  fusion_mapping.launch — mapping with the ROBOT's wheel + inertial data in the loop,
+  instead of the camera working alone.
+
+  ============================================================================
+  READ THIS FIRST. THE TRANSFORM-OWNERSHIP CONSTRAINT DECIDES EVERYTHING HERE.
+  ============================================================================
+  In ROS, a coordinate frame may have exactly ONE parent. `base_link`'s parent is
+  `odom`, and on this system the ROBOT owns that link:
+
+      /ekf_localization on the robot publishes  odom to base_link  at 50 Hz
+      [VERIFIED 2026-08-25: sole publisher, confirmed twice - the frames.gv
+       broadcaster label, and 60 s of raw /tf sampling, 3002 messages, one source]
+
+  Our own `rtabmap_common.launch` hardcodes `publish_tf = true` on its odometry
+  node (lines 260/287/334), which makes the camera publish `odom to base_link`
+  too. Run both on one ROS master and two publishers fight over one link. That is
+  not theoretical: it cost this project a day on 2026-08-24 - 552
+  TF_REPEATED_DATA warnings, a graph with 279 poses and ZERO links, and a map
+  that never built (docs/SOLVED.md).
+
+  So there are exactly two consistent arrangements, and `odom_source` picks one.
+
+  ===========================================================================
+  odom_source:=robot   (DEFAULT - safe, and the vendor's own default)
+  ===========================================================================
+      The robot's fused wheel+inertial estimate drives the map. The camera is
+      used for mapping and loop closure only.
+
+          map to odom          published by rtabmap (the drift correction)
+          odom to base_link    published by the robot's filter. Untouched.
+
+      This is exactly what `demo_husky.launch` (installed on this Jetson, from
+      the RTAB-Map authors) does by default:
+          visual_odometry = false ; odom_topic = /odometry/filtered
+      [VERIFIED - file read, lines 109 and 112]
+
+      *** ITS WEAKNESS, MEASURED, AND IT IS SERIOUS ***
+      The robot's heading has NO absolute reference: `/imu_filter` has
+      `use_mag: false` and `/um7_driver` has `mag_updates: false`, so heading is
+      pure gyroscope integration. Standing perfectly still for 60 s, position
+      moved 0.000000 m while heading rotated 1.85 degrees - about 18.5 degrees
+      over a ten-minute run [VERIFIED - 60 s probe; N=1, see the caveat below].
+      Between loop closures the map smears by that much.
+
+      Today's camera-only setup does not show this problem IN THIS ROOM, because
+      visual odometry observes the world rather than integrating a rate. Run 3
+      (lab_map_03) returned 0.77 m closed-loop that way.
+
+      *** BUT DO NOT OVERSTATE THAT (supervisor correction, 2026-08-25). ***
+      "Visual odometry cannot drift in heading like a gyroscope" is true in a
+      feature-rich room and FALSE exactly where visual SLAM struggles: long blank
+      corridors, low light, motion blur, or a person filling the frame. There,
+      visual heading can drift worse than a gyroscope, or lose tracking outright.
+      Run 3's 0.77 m is a real result FOR THIS ENVIRONMENT, not a universal
+      property of the method. Which failure appears where is itself one of the
+      most interesting axes the comparison study can measure, since RTAB-Map and
+      ORB-SLAM3 degrade differently when features disappear.
+
+      *** So this mode may be a downgrade from what already works in THIS room.
+      Treat it as a measurement to make, not an improvement to assume - and not
+      as evidence that wheel odometry is generally inferior. ***
+
+  ===========================================================================
+  odom_source:=camera_with_hint   (the intended goal - BLOCKED, see below)
+  ===========================================================================
+      The camera computes motion (so heading stays honest) while the robot's
+      fused estimate feeds in as a starting guess, via `guess_frame_id`.
+
+      This is the arrangement the fusion investigation recommended, and it is
+      the better answer on paper. It CANNOT be run as-is, for a reason found
+      while building this file:
+
+        * `guess_frame_id=odom` needs the robot's `odom to base_link` present
+          in the same transform tree.
+        * The camera's odometry node then also wants to publish a transform to
+          `base_link` - which is the collision above.
+        * Turning its transform publishing off instead breaks the chain: rtabmap
+          would publish `map to vo_odom`, and nothing would connect `vo_odom` to
+          `base_link`.
+
+      *** CORRECTION (supervisor, 2026-08-25). The two options below were a
+      FALSE DICHOTOMY. There is a third design that dissolves the ownership
+      question instead of forcing a decision, and it is the right one: ***
+
+        (c) FUSE INSIDE THE ROBOT'S FILTER, NOT INSIDE RTAB-MAP.
+            Feed the camera's visual odometry into `robot_localization` as an
+            additional input, as a plain odometry MESSAGE with the camera's own
+            transform broadcast turned off. The robot's filter stays the sole
+            publisher of `odom to base_link`; RTAB-Map consumes that one fused
+            transform. No two nodes ever touch the same edge, so there is no
+            collision to arbitrate. It is two configuration flags, not a
+            philosophical decision.
+
+            Both halves verified available on this hardware:
+              * the camera wrapper exposes `pos_tracking.publish_tf`
+                [VERIFIED - zed-ros-wrapper/zed_wrapper/params/common.yaml line
+                 52 on the Jetson, commented "publish odom to base_link TF"]
+              * the robot's filter uses only `odom0` (wheels) and `imu0`, so the
+                `odom1` slot is FREE
+                [VERIFIED - rosparam get /ekf_localization; stock unmodified
+                 Clearpath config, husky_control/config/localization.yaml]
+
+      The two options originally listed here, kept for the record:
+        (a) the robot's filter stops publishing its transform (a change on the
+            robot; may affect its own navigation and teleoperation), or
+        (b) the camera's odometry is accepted as the sole owner of
+            `odom to base_link`, and the robot's estimate reaches rtabmap by some
+            route other than the transform tree.
+
+      Selecting this mode without doing (a) or (b) will produce the exact
+      failure of 2026-08-24. The launch refuses to start it silently - it
+      requires `i_understand_tf_ownership:=true` as an explicit acknowledgement.
+
+  ===========================================================================
+  USAGE
+      # the safe, testable baseline (robot's odometry drives the map)
+      roslaunch sidewalk_slam fusion_mapping.launch \
+          run_id:=lab_map_05 \
+          database_path:=/media/sidewalk/SIDEWALK128/rtabmap_maps/2026-08-26/lab_map_05.db
+
+      Camera must already be running (docs/RUN2_PROCEDURE.md, terminal 1), and
+      ROS_MASTER_URI must point at the ROBOT's master so its odometry is visible:
+          export ROS_MASTER_URI=http://<robot-usb-address>:11311
+          export ROS_IP=<jetson-usb-address>
+-->
+<launch>
+
+  <arg name="run_id"        doc="Name for this run. REQUIRED."/>
+  <arg name="database_path" doc="Where RTAB-Map writes its map. REQUIRED."/>
+
+  <arg name="odom_source" default="robot"
+       doc="robot | camera_with_hint  — see the long note above. 'robot' is the
+            only one that runs without a transform-ownership decision."/>
+  <arg name="i_understand_tf_ownership" default="false"
+       doc="Must be true to use camera_with_hint. Acknowledges that the robot's
+            filter has been stopped from publishing its transform, or that the
+            collision has otherwise been resolved."/>
+
+  <arg name="robot_odom_topic" default="/odometry/filtered"
+       doc="The robot's fused wheel+inertial estimate. VERIFIED live at 49.7 Hz,
+            frame odom -> base_link, two_d_mode true, twist covariance genuine
+            (RTAB-Map reads the twist one, not the runaway pose one)."/>
+
+  <!-- APPROXIMATE TIME MATCHING IS REQUIRED HERE, unlike the camera-only runs.
+       The camera's images share one timestamp because they come from a single
+       grab, so exact matching works. The robot's odometry is generated on a
+       DIFFERENT MACHINE with a different clock (measured offset 2-4 ms) and will
+       never match to the nanosecond. Leave this false and the synchroniser
+       simply never fires - no error, no data, a silent dead run. -->
+  <arg name="approx_sync" default="true"/>
+
+  <arg name="force_3dof" default="true"
+       doc="true = flat-floor 2D-constrained, as runs 3 and 4. Set false for the
+            3D dense map (the supervisor's step 1) - but change ONE thing at a
+            time: prove fusion first, then 3D."/>
+  <arg name="rviz"        default="false"/>
+  <arg name="queue_size"  default="5"/>
+
+  <!-- Refuse the blocked mode rather than fail mysteriously at run time. -->
+  <arg name="_guard" value="$(eval 1/0 if (arg('odom_source')=='camera_with_hint' and arg('i_understand_tf_ownership') not in ('true','True','1')) else 0)"/>
+
+  <param name="/use_sim_time" value="false"/>
+
+  <include file="$(find sidewalk_slam)/launch/rtabmap_common.launch">
+    <!-- odom_source:=robot -> the camera does NOT compute odometry, so it never
+         publishes a transform, so it cannot collide with the robot's. -->
+    <arg name="visual_odometry" value="$(eval arg('odom_source') != 'robot')"/>
+    <arg name="odom_topic"      value="$(arg robot_odom_topic)"/>
+
+    <arg name="stereo"          value="false"/>
+    <arg name="approx_sync"     value="$(arg approx_sync)"/>
+    <arg name="queue_size"      value="$(arg queue_size)"/>
+    <arg name="wait_imu_to_init" value="true"/>
+    <arg name="force_3dof"      value="$(arg force_3dof)"/>
+    <arg name="database_path"   value="$(arg database_path)"/>
+    <arg name="delete_db_on_start" value="false"/>
+    <arg name="use_sim_time"    value="false"/>
+    <arg name="rviz"            value="$(arg rviz)"/>
+  </include>
+
+  <!-- The same recorders every run gets. Never start a mapping run bare. -->
+  <node name="traj_rec_slam" pkg="sidewalk_slam" type="trajectory_recorder.py"
+        args="--stack rtabmap --run-id $(arg run_id) --source tf
+              --fixed-frame map --body-frame base_link --rate 20"
+        output="screen"/>
+
+  <node name="run_monitor" pkg="sidewalk_slam" type="run_monitor.py" output="screen">
+    <param name="out_file" value="$(env HOME)/.run_records/$(arg run_id)/monitor.csv"/>
+    <param name="rate"     value="1.0"/>
+  </node>
+
+</launch>

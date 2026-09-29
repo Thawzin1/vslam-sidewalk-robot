@@ -1,0 +1,678 @@
+# ===========================================================================
+# obstacle_segmenter.yaml — thresholds for the ground/obstacle/curb segmenter.
+#
+# ---------------------------------------------------------------------------
+# READ THIS FIRST
+# ---------------------------------------------------------------------------
+# NONE of these numbers has been validated against real hardware. No camera is
+# wired to this repository. Every value below is a REASONED STARTING VALUE
+# derived from two things only:
+#
+#   1. the ZED X datasheet (perception_common.ZEDX), and
+#   2. the mount geometry in sidewalk_bringup/config/robot_frames.yaml.
+#
+# THE MOUNT IS NO LONGER A PLACEHOLDER, AND THIS FILE USED TO SAY IT WAS.
+# The line here read "which itself still says `measured: false`, so it is a
+# placeholder too". That was true until 2026-08-29 and is now wrong in a way
+# that matters, because it invites a reader to discount every geometric figure
+# below as a guess:
+#
+#   camera_front in robot_frames.yaml carries `measured: true` — the position
+#     came from a tape measurement of the ZED X housing plus the camera's own
+#     internal offsets read from the live transform tree, and the pitch was
+#     measured twice by methods sharing no failure mode (a floor-plane fit and
+#     the accelerometer's reading of gravity).
+#   The top-level `measured: false` in that file is SCOPED TO ITS `base:`
+#     BLOCK — the chassis footprint, which is still the Clearpath A200
+#     manufacturer spec rather than a tape measurement of this unit. That file's
+#     own header states the scope and names the two programs that consume it.
+#
+# So: the CAMERA numbers below are measured. The FOOTPRINT numbers are spec.
+# Neither has been validated against a live camera, which is the separate
+# caveat at the top of this block and remains true.
+#
+# EVERY GEOMETRIC FIGURE QUOTED IN THIS FILE MOVED ON 2026-08-29, twice over:
+# once because the mount was measured, and once because the module that
+# consumes these values was reading the camera's z in the wrong datum. It read
+# robot_frames.yaml's `camera_front.z` — which is stated RELATIVE TO base_link
+# — as though it were a height above the FLOOR. base_link sits 0.13228 m up, so
+# every ground-intercept figure was computed for a camera 132 mm too low, and
+# the near blind zone in front of the bumper was under-reported as 0.582 m when
+# it is really 0.818 m. Under-reporting is the dangerous direction. Anything
+# quoting 0.58 m, or the 0.89 m that came from the pre-measurement placeholder
+# mount, predates the correction and should be distrusted wholesale.
+#
+# Each entry states its derivation and, where it matters, what measurement
+# would confirm or refute it. Where a value is a guess, it says so.
+#
+# To see the full geometric derivation with live numbers:
+#     rosrun sidewalk_perception obstacle_segmenter.py --geometry
+# To check the algorithm still behaves as specified after an edit:
+#     rosrun sidewalk_perception obstacle_segmenter.py --self-test
+#
+# The self-test asserts the CONSISTENCY relationships between these values
+# (section 2 of its output). If you change one number and the self-test starts
+# failing, you have broken an invariant the algorithm depends on — read the
+# failure before overriding it.
+# ===========================================================================
+
+# ---------------------------------------------------------------------------
+# INPUT
+# ---------------------------------------------------------------------------
+# The registered point cloud from the ZED wrapper, in the left camera's
+# optical frame. zedx_front.yaml sets point_cloud_freq: 10.0, so this arrives
+# at ~10 Hz even though the camera runs at 30 FPS. That is deliberate — the
+# cloud is expensive to publish — and it sets the ceiling on this node's
+# output rate. If the costmap needs faster obstacle updates, raise
+# point_cloud_freq there first; raising rate_hz here achieves nothing.
+cloud_topic: "/zedx_front/zed_node/point_cloud/cloud_registered"
+source: "cloud"
+
+# ---------------------------------------------------------------------------
+# OUTPUT — THESE NAMES ARE A CONTRACT. DO NOT EDIT IN ISOLATION.
+# ---------------------------------------------------------------------------
+# Both names and BOTH MESSAGE TYPES are dictated by
+# sidewalk_navigation/config/costmap_common.yaml, and the first is additionally
+# checked as `critical: True` by sidewalk_navigation/scripts/nav_preflight.py.
+# Renaming either without changing those two files in the same commit will make
+# navigation preflight hard-fail with a confusing message.
+#
+# Note the asymmetry in message type, which is deliberate and explained at
+# length in costmap_common.yaml: the obstacle channel is a PointCloud2 (a fog
+# of 3D points is the honest representation of what a depth camera saw), while
+# the curb channel is a LaserScan (forcing the detector to commit to ONE range
+# per bearing is a stronger, more debuggable statement).
+obstacles_topic: "/sidewalk_perception/obstacles_cloud"
+curb_scan_topic: "/sidewalk_perception/curb_scan"
+
+# Debug only. Nothing in the navigation stack reads these; they exist for RViz
+# and for arguing with the algorithm. Turn them off on a soak run — the ground
+# cloud in particular is large.
+curb_cloud_topic: "/sidewalk_perception/curb_cloud"
+ground_cloud_topic: "/sidewalk_perception/ground_cloud"
+publish_debug_clouds: true
+
+# ---------------------------------------------------------------------------
+# FRAMES
+# ---------------------------------------------------------------------------
+# Everything is computed in base_link. That is not a detail — it is what makes
+# every threshold in this file mean what it says. In base_link the ground is
+# z = 0 with normal +z BY DEFINITION of the frame (base_link sits at the centre
+# of rotation projected onto the ground), so "height above ground" is just z,
+# and the RANSAC seed is free.
+target_frame: "base_link"
+
+# !! CROSS-PACKAGE COUPLING — DO NOT CHANGE THIS FRAME IN ISOLATION !!
+#
+# costmap_2d converts a LaserScan into points AT THE HEIGHT OF ITS FRAME
+# ORIGIN, transforms them into the costmap's global frame, and only then
+# filters them against min_obstacle_height / max_obstacle_height. base_link's
+# origin is at GROUND LEVEL (z = 0), so every point in this scan arrives at
+# z ~ 0.00.
+#
+# costmap_common.yaml originally set `curb_scan: min_obstacle_height: 0.02`,
+# which discarded EVERY CURB RETURN silently — the scan would publish, RViz
+# would show it, and the costmap would contain nothing. That has been changed
+# to -0.05 in sidewalk_navigation/config/costmap_common.yaml, where the
+# reasoning is written out in full.
+#
+# NOT OBSERVED ON HARDWARE — no camera is wired. The coupling follows from the
+# two configuration files. If this frame is ever moved off the ground plane,
+# that floor must move with it. FIRST THING TO CHECK when curbs appear on
+# /sidewalk_perception/curb_scan in RViz but never reach the costmap.
+scan_frame_id: "base_link"
+
+# How long to wait for the TF at the cloud's exact timestamp. 0.20 s is roughly
+# two cloud frames at 10 Hz. Longer would stall the callback and back up the
+# subscriber queue; shorter starts dropping frames whenever the EKF hiccups.
+tf_timeout_s: 0.20
+
+# ---------------------------------------------------------------------------
+# REGION OF INTEREST, metres in base_link
+# ---------------------------------------------------------------------------
+# roi_x_min — 1.00 m.
+#   Nothing closer is worth asking for. Run --geometry: with the LEFT LENS
+#   0.695 m above the FLOOR and pitched 3.24 deg down, the bottom of the
+#   51.0 deg vertical FOV first meets the ground 1.268 m ahead of the LENS,
+#   which is 1.339 m ahead of base_link. Below that there is no ground data at
+#   all, ever.
+#
+#   FIELD OF VIEW CORRECTED 2026-08-30: this said 45 deg, and gave 1.442 m /
+#   1.513 m. The camera's own calibration reports 51.0 deg. A WIDER real field
+#   of view means the ground appears NEARER, so the blind band is smaller than
+#   this file claimed - but the recommendation below was sized against the old
+#   figure and must be re-derived before it is applied.
+#
+#   RECOMMENDED CHANGE, NOT APPLIED: roi_x_min could reasonably rise to about
+#   1.45 m. The vertical FOV was corrected from a remembered 52 deg to the
+#   datasheet's 45 deg on 2026-08-29, which pushed the first ground return out
+#   from 1.313 m to 1.513 m in base_link. roi_x_min = 1.00 m therefore now asks
+#   for 0.51 m of region that can never contain ground, where it used to ask
+#   for 0.31 m. Nothing breaks — the region is simply empty, and an explicitly
+#   excluded region was always the point — but the arithmetic for the tighter
+#   value is 1.513 - 0.071 (lens offset) rounded down, i.e. ~1.45 m in
+#   base_link. LEFT ALONE DELIBERATELY: this is a tuning value, the edit that
+#   surfaced it was a datasheet correction, and one variable per experiment is
+#   a standing rule here. Change it on its own, and re-run --self-test after.
+#
+#   THE BLIND ZONE THIS IMPLIES IS REAL AND IS NOT SOLVED HERE: the front
+#   bumper is at x = 0.495 m, so there is a band 1.018 m deep across the full
+#   width of the robot that this node NEVER sees. At the 0.6 m/s speed cap that
+#   is 1.70 s of travel. (It read 0.818 m and 1.36 s until the FOV correction;
+#   before that, 0.582 m, while the camera height was being read 132 mm low.
+#   Both errors under-reported the band, which is the dangerous direction.) It is covered by costmap memory (a hazard seen from
+#   further away stays marked) and by the speed cap, NOT by detection. A hazard
+#   that appears inside the band without ever having been seen from outside it
+#   is invisible to this robot. Only a second, downward-looking sensor fixes
+#   that, and none is fitted.
+#
+#   ── RE-EXAMINED 2026-08-29, AND DELIBERATELY LEFT AT 1.00 ────────────────
+#
+#   The first ground return MOVED when the mount was measured and the height
+#   datum was corrected: it was believed to be at 1.382 m in base_link (old
+#   placeholder mount), then 1.076 m (measured mount, but with the camera's z
+#   read as a floor height when it is stated relative to base_link), and it is
+#   now 1.313 m. The old justification for 1.00 — "sits just inside that so the
+#   near edge of the real data is included rather than clipped" — was written
+#   against a first return of 1.382 m and a 0.38 m margin. It is now a 0.31 m
+#   margin. Similar, and for the same reason, but it is no longer the number it
+#   was derived from, so it has been re-derived rather than left to look right
+#   by coincidence.
+#
+#   WHAT THE MARGIN COSTS AND WHY IT IS KEPT. Between 1.00 m and 1.313 m the
+#   region of interest is permanently, structurally empty — not "usually
+#   empty", empty by geometry. That costs a little wasted filtering work on
+#   points that are never there, and it costs nothing in safety: an empty
+#   sub-region cannot hide anything, because nothing is ever measured in it.
+#   Raising roi_x_min to ~1.25 m would trim that waste. It is NOT being raised,
+#   for three reasons:
+#
+#     1. The margin is the only slack absorbing mount uncertainty. Pitch is
+#        measured to about +/-0.3 deg; roll and yaw are NOT measured (see
+#        robot_frames.yaml, which says so explicitly rather than claiming
+#        zero). Tyre compression under the sensor payload has not been checked
+#        either. A clip set exactly at the computed first return would start
+#        discarding genuine near-field ground the moment reality differs from
+#        the model by a fraction of a degree — and near-field ground is where
+#        the plane fit is best conditioned.
+#     2. curb_min_range_m is 1.00 m and is documented as matching this value.
+#        Moving one without the other silently decouples them.
+#     3. It is a TUNING value, and it is being read during a geometry
+#        correction. One variable per change: correcting a wrong number and
+#        re-tuning a right one in the same edit makes the result untraceable.
+#
+#   IF IT IS EVER CHANGED, the evidence to gather first: log how many ROI
+#   points fall in [1.00, 1.32] m on a recorded SVO. The prediction is
+#   approximately zero. If it is materially non-zero, the mount model is wrong
+#   somewhere and THAT is the finding, not the tuning.
+roi_x_min: 1.00
+
+# roi_x_max — 8.00 m.
+#   costmap_common.yaml marks obstacles only to 6.0 m (beyond that the depth
+#   error exceeds 1.5 costmap cells and marks smear). 8 m gives the PLANE FIT
+#   a longer baseline than the marking range, which measurably stabilises the
+#   fitted tilt — a plane fitted over 1-8 m is better constrained in pitch than
+#   one fitted over 1-6 m — while the extra points cost little after
+#   decimation. Points beyond 6 m still get marked here; the costmap's own
+#   obstacle_range does the final trim, which is the right place for it.
+roi_x_max: 8.00
+
+# roi_y_abs_max — 4.00 m.
+#   Half of an 8 m corridor. Wide enough to include the curbs on both sides of
+#   a typical sidewalk plus the building line, which is what the plane fit
+#   wants (camber is a CROSS-slope, so a narrow strip cannot observe it).
+#   The camera's HFOV only reaches +/-4 m at about 5.4 m range anyway, so this
+#   is not the binding constraint at close range. (5.4 m, not the 4.8 m this
+#   comment used to give: the horizontal FOV was corrected from a remembered
+#   80 deg to the datasheet's 73 deg on 2026-08-29, and a narrower fan takes
+#   longer to spread to +/-4 m. The conclusion is unchanged and in fact
+#   stronger — the ROI half-width binds even later than was claimed.)
+roi_y_abs_max: 4.00
+
+# Vertical crop. -1.0 m discards gross stereo outliers "below the floor";
+# +2.0 m discards tree canopy, awnings and building upper storeys, which are
+# numerous, well-textured, and would otherwise dominate the point budget with
+# things the robot drives straight under.
+roi_z_min: -1.00
+roi_z_max: 2.00
+
+# ---------------------------------------------------------------------------
+# DECIMATION
+# ---------------------------------------------------------------------------
+# max_points — 40000.
+#   A full ZED X cloud is 1920x1200 = 2.3 M points. RANSAC over that at 10 Hz
+#   is not achievable on the Orin in Python and is not necessary for the PLANE
+#   FIT, which is a large smooth surface sampled far more densely than it needs.
+#
+#   !! THIS PARAMETER IS NOT ONLY A SPEED KNOB. IT SETS THE CURB RANGE. !!
+#
+#   The curb detector needs `min_cell_points` (3) points inside a 0.10 m ground
+#   cell before that cell exists at all. Decimation removes points, so it moves
+#   the range at which cells start dropping out. 40 000 over 2.3 M is a stride
+#   of 58, and two models bracket what that does — run `--geometry`, which
+#   prints both and marks whichever binds:
+#
+#     uniform density  points/cell = cell_area / (stride * pixel_area)
+#                      falls below 3 at 4.11 m.
+#     raster aliasing  striding by 58 across a 1920-wide row keeps ~33 samples
+#                      in EVERY row, so the depth direction keeps full
+#                      resolution and only the lateral direction thins. Cells
+#                      owning a kept column hold res/row_spacing points, which
+#                      falls below 3 at 5.49 m, with roughly half the cells
+#                      empty in vertical stripes.
+#
+#   (Both bounds moved OUT slightly on 2026-08-29 — 3.97 -> 4.11 and
+#   5.19 -> 5.49 — because ground sampling goes as 1/h and the corrected
+#   camera height is 0.695 m rather than the 0.62 m that was being used. A
+#   higher camera looks down more steeply and samples the far ground more
+#   finely. It does not change which model binds, and it does not change the
+#   shape of the argument.)
+#
+#   Which is nearer the truth depends on the aliasing between the stride and
+#   the image width and HAS NOT BEEN MEASURED. If the uniform model is nearer,
+#   curbs beyond ~4.1 m are missed with no error and no warning — an empty curb
+#   scan is indistinguishable from "there was no curb there". That is why
+#   curb_max_range_m is set to 3.90 m, INSIDE the pessimistic bound.
+#
+#   WHAT WOULD CONFIRM IT: log len(cells) against range on a recorded SVO and
+#   find where cells begin dropping out. Then either raise max_points (80 000
+#   lifts the pessimistic bound to 5.21 m, at which point the depth-noise limit
+#   of 5.02 m becomes the binding one instead — so 80 000 buys a usable 5.02 m
+#   and no more. The ground grid is built in pure Python and roughly doubles in
+#   cost, so time it against the 10 Hz budget first) or lower curb_max_range_m
+#   to the measured value.
+#
+#   Separately: striding is not a spatial sample. It is fine for plane fitting
+#   and acceptable for large obstacles, and it IS THE FIRST THING TO REVISIT if
+#   small objects (a dropped bottle, a low bollard) start being missed at
+#   range — a true voxel filter would be the correct replacement, at real CPU
+#   cost.
+max_points: 40000
+
+# ---------------------------------------------------------------------------
+# GROUND PLANE FIT
+# ---------------------------------------------------------------------------
+# WHY A FITTED PLANE AT ALL, rather than "z > 0.10 is an obstacle":
+#   camber   pavements carry 1-2 % cross-slope for drainage. 2 % over the
+#            +/-4 m ROI is 0.08 m of genuine, drivable height change.
+#   pitch    the robot pitches on its tyres under acceleration. 1.5 deg at
+#            8 m ahead is 0.21 m — twice the entire obstacle threshold.
+#   grade    driveway aprons and kerb ramps reach 8 % (4.6 deg).
+#   All three are, to first order, exactly a plane. A fitted plane absorbs
+#   them; a fixed height cut mistakes every one of them for an obstacle.
+#   Self-test section 4 demonstrates this quantitatively: on a scene with 1.5
+#   deg pitch and 2 % camber plus one real 0.30 m box, a fixed cut produces
+#   ~4700 false obstacle points and the fitted plane produces zero.
+
+# ground_band_m — 0.30 m.
+#   Half-thickness of the slab of points considered "possibly ground" when
+#   seeding and when building the height grid. Must exceed curb_max_step_m
+#   (0.25) or a curb's upper surface falls outside the band and the step
+#   between the two levels can never be measured. 0.30 gives 5 cm of headroom.
+ground_band_m: 0.30
+
+# ransac_iterations — 80.
+#   For a 3-point sample and an inlier fraction w, the chance of at least one
+#   all-inlier sample in N draws is 1-(1-w^3)^N. At w = 0.5 that is 99.99 % by
+#   N = 80. Pavement typically gives w well above 0.5 within the seeded band,
+#   so this is generous. Raising it costs linear time for no measurable gain;
+#   lowering it below ~30 starts producing visibly jumpy planes.
+ransac_iterations: 80
+
+# ransac_inlier_tol_m — 0.040 m. THE MOST LOAD-BEARING NUMBER IN THIS FILE.
+#   Bounded hard on BOTH sides:
+#
+#   Lower bound — must exceed the real spread of ground points about the plane,
+#     or the fit finds no consensus and falls back to the TF prior every frame.
+#     Contributions: depth-derived height noise, which --geometry shows is
+#     0.0069 m at 5 m and 0.0139 m at 10 m (LINEAR in range, because only
+#     sin(depression) of the range error lands vertically — the coefficient is
+#     0.002 * h, so these grew by 12 % when h was corrected from 0.62 to the
+#     true floor-referenced 0.695 m); plus real surface
+#     roughness — aggregate, brick, expansion joints — call it +/-0.005 m; plus
+#     residual mount-calibration error. 0.040 m covers all of that with margin.
+#
+#   Upper bound — MUST STAY BELOW THE MINIMUM CURB HEIGHT (0.100 m). If the
+#     tolerance reaches the curb height, the curb's top surface is accepted as
+#     an inlier of the road plane, the two levels merge into one fitted plane,
+#     and the step disappears. The curb detector would then report nothing, on
+#     a real curb, with no error. The self-test asserts this invariant.
+#
+#   0.040 m sits at 40 % of the curb height: comfortably above the noise,
+#   comfortably below the thing we must not swallow.
+#   WHAT WOULD CONFIRM IT: record an SVO on flat pavement, run the fit, and
+#   histogram the residuals. If the 95th percentile exceeds ~0.03 m this is too
+#   tight; if it is under 0.01 m there is room to tighten and sharpen curb
+#   detection.
+ransac_inlier_tol_m: 0.040
+
+# ransac_min_inlier_fraction — 0.25.
+#   Below this, no single plane explains enough of the scene to be called "the
+#   ground", and the node falls back to the TF prior and logs it. Legitimately
+#   triggered by a flight of steps, a steep ramp transition, a crowd at close
+#   range, or the camera facing a wall. 0.25 is a judgement call, not a
+#   derivation — it is low enough not to fire on a scene half-filled with
+#   pedestrians, high enough to catch "there is no ground here".
+#   Watch frames_plane_fell_back in the run log: if it is more than a few
+#   percent on normal sidewalk, this is wrong or the ROI is.
+ransac_min_inlier_fraction: 0.25
+
+# max_plane_tilt_deg — 10.0. THIS IS THE SEED CONSTRAINT. IT IS A SAFETY GATE.
+#   Candidate planes tilted more than this from horizontal are rejected outright.
+#
+#   WHY IT EXISTS: RANSAC finds the plane with the most support, and has no
+#   idea which plane is the ground. On a narrow sidewalk a building wall
+#   frequently returns MORE points than the pavement — it is nearer
+#   perpendicular to the viewing rays so it gets far more pixels per square
+#   metre, and brick is better textured than plain concrete. Unseeded RANSAC
+#   will fit the WALL as "ground", at which point the pavement becomes a 10 m
+#   tall obstacle, the wall becomes drivable, and the robot tries to drive into
+#   the building. This is not exotic; it is the default outcome on a narrow
+#   sidewalk. Self-test section 5 reproduces it: with the gates disabled the
+#   fit returns a 90.0 deg plane; with them enabled, 0.000 deg.
+#
+#   WHY 10 deg: it must swallow everything real and reject everything else.
+#     camber 2 %            = 1.1 deg
+#     robot pitch           ~ 1.5 deg
+#     driveway apron 8 %    = 4.6 deg
+#     worst case combined   ~ 7.2 deg
+#     a wall                = 90 deg
+#   10 deg clears the worst realistic case by 40 % and misses a wall by a
+#   factor of nine. The gap between 7 deg of real world and 90 deg of wall is
+#   what makes a simple angular gate a sufficient discriminator.
+max_plane_tilt_deg: 10.0
+
+# max_plane_offset_m — 0.15 m.
+#   The second half of the seed constraint: the fitted plane must pass within
+#   0.15 m of base_link's origin in height. The robot is standing ON the
+#   ground, so the ground passes through z = 0 underneath it — this is free
+#   information and it rejects planes at the wrong HEIGHT (a wall's plane, a
+#   parked van's roof) that happen to be near-horizontal.
+#
+#   0.15 m allows the fit to sit a full curb-height below the origin, which is
+#   what happens when the robot is near an edge and the roadway occupies much
+#   of the view.
+#
+#   KNOWN LIMITATION, stated honestly: if the roadway ever contributes more
+#   points than the sidewalk, the fit can settle on the ROAD plane instead,
+#   which is still within this gate. The symptom is unmistakable once you know
+#   it — the whole sidewalk suddenly reports as a ~0.12 m obstacle band. Not
+#   observed (no camera), but it follows from the algorithm and is the second
+#   thing to check if the obstacle cloud goes solid near a kerb.
+max_plane_offset_m: 0.15
+
+# min_ground_points — 200.
+#   Fewer points than this in the ROI and we publish empty rather than guess.
+#   200 points over a 0.10 m grid is ~2 m^2 of pavement: not much, but enough
+#   that a plane through it is not pure noise.
+min_ground_points: 200
+
+# plane_smoothing — 0.30 (weight given to the NEW frame's plane).
+#   The ground plane is a property of the pavement and the suspension. Neither
+#   changes materially in 100 ms, so a plane that jumps frame to frame is
+#   measuring noise, not geometry. Every jump moves the 0.10 m obstacle floor,
+#   which makes obstacles near the threshold flicker in and out of the costmap.
+#   0.30 gives a time constant of roughly 3 frames (~0.3 s at 10 Hz).
+#   The cost is lag when the robot genuinely pitches. Bounded by the same
+#   physics: real pitch changes take longer than 0.3 s on a 0.6 m/s robot.
+#   Set to 1.0 to disable smoothing entirely when debugging the raw fit.
+plane_smoothing: 0.30
+
+# Fixed RNG seed. RANSAC is randomised; a fixed seed makes a recorded SVO
+# replay bit-identically, which is the difference between a reproducible bug
+# report and "it did it again, sometimes".
+random_seed: 0
+
+# ---------------------------------------------------------------------------
+# OBSTACLE EXTRACTION
+# ---------------------------------------------------------------------------
+# These deliberately MATCH costmap_common.yaml's zed_obstacles source
+# (min_obstacle_height 0.10, max_obstacle_height 1.90). Filtering here as well
+# as there is not redundant: doing it here shrinks the published cloud, and the
+# heights here are relative to the FITTED PLANE (so they survive camber and
+# pitch) whereas the costmap's are absolute in the global frame.
+#
+# 0.10 m floor: below this we are inside the plane-fit residual plus depth
+#   noise and cannot distinguish a bump from the pavement. Curbs live below
+#   this line, which is exactly why they get their own channel.
+# 1.90 m ceiling: well above the robot, low enough to ignore tree canopy,
+#   awnings and signage the robot drives under.
+obstacle_min_height: 0.10
+obstacle_max_height: 1.90
+
+# ---------------------------------------------------------------------------
+# CURB / STEP DETECTION
+# ---------------------------------------------------------------------------
+# A curb is a HEIGHT DISCONTINUITY IN THE GROUND, not an object standing on it.
+# Detected as a step in local height relative to the fitted plane between
+# adjacent ground cells, and classified by sign.
+
+# grid_res_m — 0.10 m.
+#   Twice the 0.05 m costmap resolution. Finer would be false precision: at 5 m
+#   the depth error already smears a point's position along the ground by
+#   0.05 m, so cells smaller than that measure noise. Coarser would blur the
+#   curb line across more than one costmap cell.
+grid_res_m: 0.10
+
+# min_cell_points — 3.
+#   Cells with fewer points are discarded: the per-cell MEDIAN height needs
+#   several samples to be robust, and a median of one point is just that point.
+#   (Median rather than mean throughout — one stereo outlier moves a mean by
+#   centimetres, the same order as the curb we are hunting, and moves a median
+#   not at all.)
+#
+#   THIS IMPOSES ITS OWN SILENT RANGE LIMIT, which is worth understanding.
+#   Ground sampling coarsens as z^2: one pixel row spans 0.028 m of ground at
+#   5 m but 0.109 m at 10 m. Once a row spans a whole cell, cells start coming
+#   up empty, the grid develops holes, 4-connectivity between neighbours breaks
+#   and step detection quietly stops finding anything — no error, no warning,
+#   just an empty curb scan. --geometry reports where that crossover sits
+#   (9.56 m for a 0.10 m cell), safely beyond curb_max_range_m. Self-test 8b
+#   demonstrates the failure directly.
+#
+#   THIS IS THE RAW SENSOR LIMIT AND IT IS NOT THE ONE THAT BINDS. It ignores
+#   decimation entirely. The limit that actually applies to this node is the
+#   cell-population bound in the max_points block above (4.11 m pessimistic),
+#   which is nearly 5.5 m tighter. Do not read the 9.56 m figure as headroom.
+min_cell_points: 3
+
+# curb_min_step_m — 0.060 m.
+#   The smallest height discontinuity called a curb. Must exceed
+#   ransac_inlier_tol_m (0.040) or plane-fit residual alone would trip it.
+#   Must sit below a standard 100 mm curb with margin, or real curbs are missed
+#   as they approach the detection limit. 0.060 sits between the two, at 1.5x
+#   the tolerance and 60 % of the shortest standard curb.
+#   Deliberately BELOW the 100-150 mm nominal range: worn kerbs, dropped kerbs
+#   at crossings, and partially buried edges are all shallower than nominal,
+#   and a dropped kerb is still a hazard worth knowing about.
+curb_min_step_m: 0.060
+
+# curb_max_step_m — 0.250 m.
+#   Above this it is not a curb — it is the foot of a wall, a step, or a
+#   planter. Those are already handled correctly, and at their true full
+#   height, by the obstacle channel. Admitting them here would put a duplicate,
+#   weaker mark in the curb scan and could mask a genuine curb running along
+#   the base of the same wall. 0.250 clears the tallest standard curb (150 mm)
+#   by 100 mm to allow for stacked or unusually tall kerbing.
+curb_max_step_m: 0.250
+
+# curb_max_range_m — 3.90 m. SET BY CELL POPULATION AFTER DECIMATION, not by
+# depth noise. costmap_common.yaml's curb_scan source carries its own 5.0 m
+# hard stop, which was derived from the depth-noise limit; this value is
+# tighter and is therefore the one that actually governs.
+#
+#   (The heading here read "5.00 m. THE DEPTH-NOISE LIMIT. Matches the hard
+#   stop already written into costmap_common.yaml" while the value below was
+#   3.90. Both halves of that sentence were wrong: wrong number, and wrong
+#   reason. The two limits are compared explicitly further down.)
+#
+#   ZED X range error grows as the square of distance: sigma ~ 0.002 * z^2 m.
+#
+#   WHERE 0.002 COMES FROM — CORRECTED 2026-08-29. This line used to say it was
+#   obtained "fitting the datasheet's 0.2 % at 1 m and 3.1 % at 15 m". NEITHER
+#   FIGURE IS IN THE DATASHEET. Stereolabs publishes exactly two accuracy
+#   bounds for the ZED X 4.6 mm: "< 0.4% to 2m" and "< 7% at 20m", which imply
+#   coefficients of 0.0020 and 0.0035 respectively. They are inequalities, so no
+#   single quadratic honours both; 0.002 honours the NEAR one and is optimistic
+#   by 1.75x at 20 m. That is a real engineering choice which had been
+#   disguised as a fit, and it is now stated as a choice.
+#
+#   RECOMMENDED, NOT APPLIED: if the far bound is the one to respect, the
+#   coefficient becomes 0.0035, the edge-localisation limit below falls from
+#   5.02 m to 3.81 m, and curb_max_range_m (3.90 m) would have to come down to
+#   about 3.80 m — the self-test would fail until it did, which is the check
+#   working correctly. Not changed here, for the same one-variable-per-change
+#   reason as roi_x_min above. The measurement that settles it is the parked-
+#   at-a-known-distance-from-a-measured-curb test named further down.
+#
+#   The intuitive worry — height noise — is NOT what binds. Only sin(depression)
+#   of a range error lands vertically, and for a grazing ground ray that factor
+#   is small, giving sigma_height ~ 0.00139 * z: 6.9 mm at 5 m, 13.9 mm at
+#   10 m. Against a 120 mm curb, none of those is fatal. (The coefficient is
+#   0.002 * h and h is the camera's height ABOVE THE FLOOR, 0.695 m. It read
+#   0.00124 while that height was mistakenly taken as 0.62 m.)
+#
+#   WHAT BINDS IS EDGE LOCALISATION. The same error slides the point ALONG the
+#   ground by essentially its full magnitude:
+#         5 m -> 0.05 m      8 m -> 0.13 m      10 m -> 0.20 m
+#   The costmap resolution is 0.05 m. At 5 m the uncertainty in WHERE the curb
+#   is has grown to exactly one costmap cell. At 10 m it is four cells, and a
+#   curb smeared over 20 cm is not a barrier — it is either a phantom wall
+#   across the sidewalk or a hole in the real one, depending on which way the
+#   noise went that frame. --geometry solves this exactly and reports 5.02 m.
+#
+#   Beyond this range steps are still computed but NOT emitted into the scan.
+#   WHAT WOULD CONFIRM IT: park the robot a measured distance from a real curb,
+#   record 200 frames, and take the standard deviation of the reported edge
+#   range. If sigma at 5 m is materially worse than 0.05 m, this number is too
+#   optimistic and must come down. Pavement texture drives it, and pavement
+#   texture is exactly what a synthetic test cannot simulate.
+#
+# ---------------------------------------------------------------------------
+# !! TWO INDEPENDENT LIMITS APPLY, AND THE SMALLER ONE WINS !!
+# ---------------------------------------------------------------------------
+#   (a) DEPTH NOISE, derived above ................................. 5.02 m
+#   (b) CELL POPULATION after decimation, from the max_points block . 4.11 m
+#       (pessimistic uniform-density model; the optimistic raster
+#        model gives 5.49 m, and which applies HAS NOT BEEN MEASURED)
+#
+#   The value below is therefore set from (b), not (a).
+#
+#   WHY THE PESSIMISTIC BOUND IS THE RIGHT DEFAULT. If the uniform model is
+#   nearer the truth and this were left at 5.00, then between 4.11 m and 5.00 m
+#   the ground grid has too few points per cell to form cells at all — and an
+#   empty curb scan is INDISTINGUISHABLE from "there is no curb there". The
+#   system would report clear ground, confidently, in a band where it is simply
+#   blind.
+#
+#   A curb is the boundary between the pavement and the road. Of all the things
+#   this robot must not silently miss, that is the first. Claiming 4 m and being
+#   reliable within it beats claiming 5 m and being unknowingly blind for the
+#   last metre. Under-promising costs a little planning horizon; over-promising
+#   costs a robot in traffic.
+#
+#   3.90 IS NOT RE-TUNED HERE. (b) moved from 3.97 m to 4.11 m when the camera
+#   height was corrected on 2026-08-29, so the 0.07 m of margin this value held
+#   below the bound became 0.21 m. That is a change in the SAFETY MARGIN, not
+#   in the safety of the value: 3.90 is still inside the bound, which is the
+#   property that matters. Raising it toward 4.11 is a tuning decision that
+#   needs the measurement below, not a side effect of a geometry correction.
+#
+#   TO RAISE IT, in this order:
+#     1. Log len(cells) against range on a recorded SVO2 and find where cells
+#        actually start dropping out — that settles (b) empirically.
+#     2. If (b) turns out generous, raise max_points (80 000 lifts (b) to
+#        5.21 m, so the 5.02 m depth-noise bound (a) becomes the binding one
+#        and 5.02 m is all it buys) and TIME the pure-Python ground grid
+#        against the 10 Hz budget on the Orin before trusting it.
+#     3. Only then raise this value, and never above the measured (b) or the
+#        5.02 m depth-noise bound, whichever is smaller.
+#
+#   `--geometry` prints both limits and marks whichever binds.
+curb_max_range_m: 3.90
+
+# curb_min_range_m — 1.00 m. Matches roi_x_min; there is no ground data
+# closer, so a "detection" there would be an artefact.
+curb_min_range_m: 1.00
+
+# mark_down_steps_in_obstacle_cloud — true.
+#   A DOWN-step (a drop to the roadway) defeats the obstacle channel twice: the
+#   road surface sits BELOW the ground plane so it fails min_obstacle_height
+#   and contributes nothing, AND the rays that reach it pass over the lip, so
+#   raytracing actively CLEARS the cells at the edge. Left alone, the costmap's
+#   considered opinion of a 150 mm drop into traffic is "free space".
+#
+#   With this enabled, virtual points are injected at robot height on the NEAR
+#   LIP of every down-step, turning the drop into something the ordinary
+#   obstacle machinery understands — so a costmap with the curb channel
+#   disabled or misconfigured still refuses to drive over it.
+#
+#   HONEST CAVEAT: these points are NOT measured. They are an assertion by this
+#   node inside a cloud that is otherwise pure sensor data, and they live on a
+#   topic whose costmap source has clearing: true — so a frame in which the
+#   drop is not detected will raytrace through and erase them. This
+#   STRENGTHENS a good configuration; it does not rescue a bad one. The
+#   authoritative curb channel remains curb_scan, which is never cleared.
+mark_down_steps_in_obstacle_cloud: true
+
+# Heights above the fitted plane at which the virtual points are placed. Three
+# of them so the barrier survives a costmap height band that clips either end.
+# They are CLAMPED into [obstacle_min_height, obstacle_max_height] before
+# publishing — costmap_2d filters on absolute z in the global frame, not on
+# height above our plane, and at a drop-off the fitted plane sits several
+# centimetres below z = 0, which was enough to push the lowest point under the
+# 0.10 m floor and have the costmap silently discard the barrier. The self-test
+# caught exactly that.
+down_step_virtual_heights: [0.15, 0.30, 0.45]
+
+# ---------------------------------------------------------------------------
+# SYNTHETIC CURB SCAN
+# ---------------------------------------------------------------------------
+# +/-90 deg. Wider than the camera's 73 deg HFOV, and deliberately so — but
+# NOT for the reason this comment used to give.
+#
+#   THE OLD REASON, NOW WRONG: "the cloud is expressed in base_link, whose
+#   origin is 0.35 m BEHIND the lens, so a point at the edge of the camera's
+#   view subtends a larger bearing from base_link than from the camera." The
+#   parallax argument is sound; the number was a placeholder. The measured lens
+#   sits 0.071 m ahead of base_link, not 0.35 m, so the shift is about a fifth
+#   of what was claimed. At the 3.90 m curb range it is worth roughly 1 deg of
+#   extra bearing, not 5. The parallax alone does not justify +/-90 deg.
+#
+#   THE REASON IT STAYS AT +/-90 ANYWAY: an unfilled bearing costs nothing.
+#   Bearings with no detection stay at +inf, and costmap_common.yaml sets
+#   inf_is_valid: false for this source, so infinity is correctly read as
+#   "nothing seen here" rather than "clear to the horizon" — the right
+#   semantics for a detector that is silent on most bearings. The extra bins
+#   are a few hundred floats per message and they mean the scan does not have
+#   to be re-sized if the camera is ever re-aimed, a second camera is added, or
+#   the lens offset is re-measured. Headroom, honestly labelled as headroom,
+#   rather than a derivation that no longer derives anything.
+scan_angle_min: -1.5708
+scan_angle_max: 1.5708
+
+# 0.5 deg -> 361 bins. At the 3.90 m curb detection limit one bin subtends
+# 0.034 m, against 0.030 m of edge-localisation noise at that range: the bin is
+# the same size as the uncertainty, which is the right place for it to be.
+# Finer would be false precision. (This read "at the 5 m detection limit one
+# bin subtends 0.044 m" — the limit is 3.90 m, not 5 m.)
+scan_angle_increment: 0.008727
+
+scan_range_min: 0.20
+scan_range_max: 8.00
+
+# ---------------------------------------------------------------------------
+# RUNTIME
+# ---------------------------------------------------------------------------
+# rate_hz is advisory — the node is driven by cloud arrivals, not by a timer.
+# It is used only to fill LaserScan.scan_time. The real rate is set by
+# point_cloud_freq in zedx_front.yaml (10 Hz).
+#
+# costmap_common.yaml sets expected_update_rate: 0.5 s on both sources, so
+# anything below ~2 Hz will start producing staleness warnings that
+# safety_monitor.py acts on.
+rate_hz: 10.0
+
+# Seconds between heartbeat lines in the run log. Also throttles repeated error
+# messages — a per-frame failure would otherwise print 10x a second.
+log_period_s: 10.0

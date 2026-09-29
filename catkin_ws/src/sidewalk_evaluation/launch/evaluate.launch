@@ -1,0 +1,111 @@
+<?xml version="1.0"?>
+<!--
+  evaluate.launch — offline analysis of a recorded run.
+
+  This launch file starts NO ROS communication. It exists purely so the
+  analysis can be invoked the same way as everything else in the project, and
+  so the parameters of an evaluation are written down in a file rather than
+  retyped on a command line and forgotten.
+
+  The analysis itself needs no ROS at all: `evaluate_trajectory.py` runs
+  equally well on your own computer with the trajectory files copied across, which is
+  how a supervisor will actually look at the results.
+
+  Verify the evaluation code itself, with no hardware and no data:
+      roslaunch sidewalk_evaluation evaluate.launch self_test:=true
+
+  Evaluate one run of three stacks against wheel odometry:
+      roslaunch sidewalk_evaluation evaluate.launch \
+          run_dir:=~/Mitacs\ Internship/logs/sidewalk_evaluation/20260801-103000_record \
+          reference:=wheel_odom reference_kind:=wheel_odometry \
+          name:=campus_loop_run1
+
+  Evaluate with no reference at all — the normal case without motion capture:
+      roslaunch sidewalk_evaluation evaluate.launch \
+          run_dir:=.../20260801-103000_record loop_only:=true
+-->
+<launch>
+
+  <arg name="self_test" default="false"
+       doc="verify the metric mathematics against synthetic data, then exit"/>
+
+  <arg name="run_dir" default=""
+       doc="directory produced by trajectory_recorder.py, containing *.tum"/>
+
+  <arg name="name" default=""
+       doc="label for the results directory and the report title"/>
+
+  <!-- Which recorded trajectory to treat as the reference. `wheel_odom` is the
+       usual choice when it exists: it is completely independent of vision, so
+       a visual failure and an odometry failure have no common cause. -->
+  <arg name="reference" default="wheel_odom"
+       doc="basename (without .tum) of the reference trajectory in run_dir"/>
+
+  <!-- WHAT you are calling truth. This is recorded verbatim in the report and
+       is the first question a reader will ask. Set it honestly. Run
+       `evaluate_trajectory.py -h` for what each value does and does not prove;
+       the same explanation appears at the top of every generated report. -->
+  <arg name="reference_kind" default="wheel_odometry"
+       doc="motion_capture | rtk_gnss | simulator_ground_truth |
+            closed_loop | cross_stack | wheel_odometry |
+            nav_repeat_run | synthetic_ground_truth | unspecified.
+            simulator_ground_truth = Gazebo model_states truth;
+            synthetic_ground_truth is SELF-TEST ONLY and reports
+            refuse to render robot data labelled with it."/>
+
+  <arg name="loop_only" default="false"
+       doc="no reference available; report drift from the closed-loop return
+            to the marked start only. ATE and RPE are then explicitly recorded
+            as not computed rather than fabricated."/>
+
+  <arg name="align" default="se3"
+       doc="se3 | sim3 | origin | none — see config/evaluation.yaml"/>
+
+  <arg name="stacks" default="rtabmap zed orbslam3"
+       doc="space-separated basenames (without .tum) to evaluate"/>
+
+  <arg name="config"
+       default="$(find sidewalk_evaluation)/config/evaluation.yaml"/>
+
+  <!-- Self-test path: no data required, no hardware required. -->
+  <group if="$(arg self_test)">
+    <node pkg="sidewalk_evaluation" type="evaluate_trajectory.py"
+          name="evaluate_self_test" output="screen" required="true"
+          args="--self-test"/>
+  </group>
+
+  <!--
+    Real evaluation.
+
+    The whole argument string is built by a single $(eval ...) expression.
+    roslaunch requires that: an $(eval ...) must span the ENTIRE attribute
+    value and cannot be mixed with literal text or with $(arg ...). Splitting
+    it into several evals is the mistake to avoid here — it parses, then fails
+    at launch time with a confusing message.
+
+    EVERY PATH IS SINGLE-QUOTED, and that is not decoration. This repository
+    lives at a path containing a space ("<repo folder>"), and
+    $(find sidewalk_evaluation) therefore expands to a path with a space in it.
+    roslaunch tokenises a node's args with shlex, so an unquoted path would
+    arrive at argparse split into two arguments and the run would die with a
+    confusing "unrecognized arguments" error. The quotes keep each path one
+    token. `eval_common.unquote()` strips any that survive, so the scripts are
+    correct whether or not the quotes are consumed during splitting.
+
+    The `.tum` files are named after the stack, which is how
+    trajectory_recorder.py writes them.
+
+    If you prefer, call the script directly. It is a plain command-line tool,
+    it needs no ROS, and that is the intended way to use it. The full command
+    with all its flags is in this package's README.md and in the "How to run
+    it" section of EXPLAIN.html — it cannot be written here, because an XML
+    comment is not permitted to contain two consecutive hyphens and every one
+    of those flags starts with a pair.
+  -->
+  <group unless="$(arg self_test)">
+    <node pkg="sidewalk_evaluation" type="evaluate_trajectory.py"
+          name="evaluate_trajectory" output="screen" required="true"
+          args="$(eval ' '.join(['--config', &quot;'&quot; + config + &quot;'&quot;, '--align', align, '--reference-kind', reference_kind] + (['--name', &quot;'&quot; + name + &quot;'&quot;] if name else []) + (['--loop-only'] if str(loop_only).lower() in ('true', '1') else ['--ref', &quot;'&quot; + run_dir + '/' + reference + '.tum' + &quot;'&quot;]) + [tok for s in stacks.split() for tok in ('--est', s + '=' + &quot;'&quot; + run_dir + '/' + s + '.tum' + &quot;'&quot;)]))"/>
+  </group>
+
+</launch>

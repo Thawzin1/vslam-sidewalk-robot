@@ -1,0 +1,100 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+<!--
+  zedx_rod_holder.urdf.xacro - purely VISUAL geometry for the real,
+  3D-printed bracket that clamps the ZED X to the Ouster's support rod
+  (the same rod the LiDAR itself sits on, from D05). Source: four STLs
+  measured from the actual parts (docs in <repo folder>/Week 6/), copied
+  into sidewalk_bringup/meshes/zedx_holder/.
+
+  DEBUG BUILD: every piece is a distinct bright colour, and two reference
+  rod cylinders are included, purely so the render is diagnosable.
+    red     = rod_tighter_front (rod 1, +y)      orange = rod_tighter_back (rod 1, +y)
+    magenta = rod_tighter_front (rod 2, -y)       yellow = rod_tighter_back (rod 2, -y)
+    blue    = holder_block_left                   green  = holder_block_right
+    cyan    = reference rod cylinders (not a real mesh - just shows where
+              the actual rods should be, so clamp-vs-rod alignment is
+              checkable by eye)
+
+  The reference rods live on a SEPARATE, unrotated link from the STL
+  meshes - rendering showed the identity axis mapping is wrong (clamps
+  floating next to the rods, not wrapped around them), and the fix is a
+  rotation applied to the mesh group only; the reference rods must stay
+  put or they stop being a useful reference. mesh_rpy is the knob.
+-->
+
+  <xacro:property name="zedx_rod_spacing" value="0.05"/>
+  <xacro:property name="zedx_rod_radius" value="0.004"/>
+  <xacro:property name="zedx_rod_visible_length" value="0.15"/>
+
+  <xacro:macro name="zedx_rod_holder" params="name parent xyz rpy mesh_rpy">
+
+    <link name="${name}_holder_ref">
+      <visual>
+        <geometry>
+          <cylinder radius="${zedx_rod_radius}" length="${zedx_rod_visible_length}"/>
+        </geometry>
+        <origin xyz="0 ${zedx_rod_spacing/2} 0" rpy="0 0 0"/>
+        <material name="ref_cyan"><color rgba="0.0 0.9 0.9 0.6"/></material>
+      </visual>
+      <visual>
+        <geometry>
+          <cylinder radius="${zedx_rod_radius}" length="${zedx_rod_visible_length}"/>
+        </geometry>
+        <origin xyz="0 ${-zedx_rod_spacing/2} 0" rpy="0 0 0"/>
+        <material name="ref_cyan"/>
+      </visual>
+    </link>
+    <joint name="${parent}_to_${name}_ref" type="fixed">
+      <parent link="${parent}"/>
+      <child link="${name}_holder_ref"/>
+      <origin xyz="${xyz}" rpy="${rpy}"/>
+    </joint>
+
+    <link name="${name}_holder_visual">
+      <visual>
+        <geometry>
+          <mesh filename="package://sidewalk_bringup/meshes/zedx_holder/rod_tighter_front.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <origin xyz="0 ${zedx_rod_spacing/2} 0" rpy="0 0 0"/>
+        <material name="dbg_red"><color rgba="0.9 0.1 0.1 1.0"/></material>
+      </visual>
+      <visual>
+        <geometry>
+          <mesh filename="package://sidewalk_bringup/meshes/zedx_holder/rod_tighter_back.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <origin xyz="0 ${zedx_rod_spacing/2} 0" rpy="0 0 0"/>
+        <material name="dbg_orange"><color rgba="0.9 0.5 0.0 1.0"/></material>
+      </visual>
+      <visual>
+        <geometry>
+          <mesh filename="package://sidewalk_bringup/meshes/zedx_holder/rod_tighter_front.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <origin xyz="0 ${-zedx_rod_spacing/2} 0" rpy="0 0 0"/>
+        <material name="dbg_magenta"><color rgba="0.9 0.1 0.9 1.0"/></material>
+      </visual>
+      <visual>
+        <geometry>
+          <mesh filename="package://sidewalk_bringup/meshes/zedx_holder/rod_tighter_back.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <origin xyz="0 ${-zedx_rod_spacing/2} 0" rpy="0 0 0"/>
+        <material name="dbg_yellow"><color rgba="0.9 0.9 0.0 1.0"/></material>
+      </visual>
+      <!-- holder_block_left removed for now, per user - focusing on the
+           rod-tighter Front/Back clamp fit first. -->
+      <visual>
+        <geometry>
+          <mesh filename="package://sidewalk_bringup/meshes/zedx_holder/holder_block_right.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="dbg_green"><color rgba="0.1 0.8 0.2 1.0"/></material>
+      </visual>
+    </link>
+
+    <joint name="${parent}_to_${name}_holder" type="fixed">
+      <parent link="${parent}"/>
+      <child link="${name}_holder_visual"/>
+      <origin xyz="${xyz}" rpy="${mesh_rpy}"/>
+    </joint>
+
+  </xacro:macro>
+</robot>

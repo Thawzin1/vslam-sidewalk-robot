@@ -1,0 +1,191 @@
+%YAML:1.0
+#===========================================================================
+# ORB-SLAM3 settings for the ZED X in STEREO-INERTIAL mode.
+#
+# <<TEMPLATE-ONLY
+# THIS FILE IS THE TEMPLATE. The double-brace placeholders are filled in by
+#   rosrun sidewalk_slam make_orbslam3_config.py --imu
+# Edit THIS file to change how every generated configuration looks.
+# TEMPLATE-ONLY>>
+#
+# Identical to the stereo template plus the IMU block. Stereo-inertial is
+# the fairer comparison against RTAB-Map, because RTAB-Map is also given the
+# ZED X IMU. Comparing inertial-aided RTAB-Map against pure-stereo
+# ORB-SLAM3 would be measuring the sensor suite, not the algorithm.
+#===========================================================================
+
+Camera.type: "PinHole"
+
+Camera.fx: {{FX}}
+Camera.fy: {{FY}}
+Camera.cx: {{CX}}
+Camera.cy: {{CY}}
+
+Camera.k1: 0.0
+Camera.k2: 0.0
+Camera.p1: 0.0
+Camera.p2: 0.0
+
+Camera.width: {{WIDTH}}
+Camera.height: {{HEIGHT}}
+
+Camera.fps: {{FPS}}
+
+# fx * baseline. Measured baseline for THIS unit: {{BASELINE_MM}} mm
+Camera.bf: {{BF}}
+Camera.RGB: 1
+
+# far-point threshold = {{TH_DEPTH_M}} m at this baseline
+ThDepth: {{TH_DEPTH}}
+
+#---------------------------------------------------------------------------
+# IMU Parameters
+#
+# T_b_c1 is the rigid transform from the LEFT CAMERA frame to the IMU (body)
+# frame, as a 4x4 homogeneous matrix in row-major order.
+#
+# THIS IS THE PARAMETER THAT BREAKS STEREO-INERTIAL SLAM. The IMU sits a few
+# centimetres from the optical centre. Any rotation about a point offset by
+# a lever arm r produces a centripetal acceleration omega^2 * r that the
+# accelerometer measures and the camera does not. Get the offset wrong by
+# 2 cm and, at a modest 1 rad/s yaw rate, you have injected a systematic
+# 0.02 m/s^2 error - small, constant, and integrated twice into position.
+# The trajectory bends smoothly and looks fine.
+#
+# So this must come from the ZED SDK's own factory camera-IMU calibration,
+# read off the TF tree at runtime, never typed in by hand.
+#
+# Source used for this file: {{TBC_SOURCE}}
+#---------------------------------------------------------------------------
+IMU.T_b_c1: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: f
+   data: [{{TBC_DATA}}]
+
+# Noise densities and random-walk terms.
+#
+# CORRECTION, 2026-08-29. This block used to state that Stereolabs publishes
+# the ZED X IMU's ranges and resolution "but NOT its noise density or bias
+# instability", and concluded that a 3+ hour Allan-variance run was required
+# before any stereo-inertial result could be believed. THE FIRST HALF OF THAT
+# IS FALSE and it was blocking work on a prerequisite that does not exist.
+#
+# The ZED X datasheet (Official Resources/ZED X - ZED X Mini - Datasheet.pdf,
+# Rev 1.6), section "Sensors Specifications" -> "Motion Sensors", publishes six
+# figures, not four. Printed in this order, in one table:
+#
+#     Accelerometer Range          +/- 12 G
+#     Accelerometer Resolution     0.36 mg
+#     Accelerometer Noise Density  2.3 mg          <-- published
+#     Gyroscope Range              +/- 1000 dps
+#     Gyroscope Resolution         0.03 dps
+#     Gyroscope Noise Density      0.20 dps        <-- published
+#     Sensitivity Error            +/- 0.5%        <-- published
+#     Output Data Rate             200 Hz
+#
+# The two noise densities sit directly beneath the resolution figures the old
+# note cited, in the same table. They were not hard to find; they were not
+# looked for.
+#
+# WHAT IS STILL GENUINELY UNPUBLISHED: bias instability and the random-walk
+# terms. IMU.GyroWalk and IMU.AccWalk below remain estimates with no
+# manufacturer figure behind them at all.
+#
+# THE UNIT CAVEAT — READ THIS BEFORE SUBSTITUTING THE DATASHEET NUMBERS.
+# A noise density is conventionally per square-root hertz, and ORB-SLAM3's
+# IMU.NoiseGyro / IMU.NoiseAcc are strictly that (it prints their units as
+# rad/s/sqrt(Hz) and m/s^2/sqrt(Hz)). THE DATASHEET WRITES NO DENOMINATOR: it
+# says "2.3 mg" and "0.20 dps" and stops. Two readings are possible:
+#
+# Unit conversions used below, so nobody has to re-derive them:
+#     1 mg  = 9.80665e-3 m/s^2         1 dps = pi/180 = 1.745329e-2 rad/s
+# and the estimates being compared against are the values this template ships
+# with, IMU.NoiseAcc = 2.0e-3 m/s^2/sqrt(Hz) and IMU.NoiseGyro = 1.7e-4
+# rad/s/sqrt(Hz) (make_orbslam3_config.IMU_DEFAULTS).
+#
+#   (a) per sqrt(Hz) as literally written:
+#         accel  2.3 mg   x 9.80665e-3  = 2.2555e-2 m/s^2/sqrt(Hz)
+#                                       -> 2.2555e-2 / 2.0e-3 = 11.3x
+#         gyro   0.20 dps x 1.745329e-2 = 3.4907e-3 rad/s/sqrt(Hz)
+#                                       -> 3.4907e-3 / 1.7e-4 = 20.5x
+#       Both implausible for a part the same document calls "ultra low noise".
+#
+#   (b) total RMS over the sensor bandwidth -> divide by sqrt(BW). The
+#       datasheet states NO bandwidth, so this needs an assumption; take the
+#       Nyquist of the 200 Hz output rate, BW = 100 Hz, sqrt(BW) = 10:
+#         accel  2.2555e-3 m/s^2/sqrt(Hz)  -> 2.2555e-3 / 2.0e-3 = 1.13x
+#         gyro   3.4907e-4 rad/s/sqrt(Hz)  -> 3.4907e-4 / 1.7e-4 = 2.05x
+#
+# THE TWO FIGURES IN (b) ARE 1.13x AND 2.05x, NOT "~1.2x". This block said
+# "within a factor of ~1.2" until 2026-08-29, which is the ACCELEROMETER's
+# number quoted as if it covered both. The gyroscope is more than twice the
+# estimate below — a real disagreement, reported as agreement. That is the
+# same class of error as the invented depth percentages this file's sibling
+# corrections are about: one flattering number standing in for two.
+#
+# AND NO CHOICE OF BANDWIDTH RESCUES IT. Changing BW divides both figures by
+# the same sqrt(BW), so their ratio is fixed: 20.5 / 11.3 = 1.82. The gyro is
+# 1.82x further from its estimate than the accelerometer is from its own, at
+# every bandwidth. Landing the accelerometer exactly on 2.0e-3 needs
+# BW = 127 Hz; landing the gyroscope exactly on 1.7e-4 needs BW = 422 Hz.
+# There is no single bandwidth at which reading (b) reproduces both defaults,
+# so (b) does not "confirm" the estimates — it is merely closer than (a).
+#
+# (b) is still the more plausible reading on physical grounds. It is not a
+# verified one, and it does not agree with the gyro estimate anyway, so the
+# values below are LEFT ALONE rather than replaced with a number whose unit is
+# a guess. Substituting into a strictly-dimensioned field from an ambiguously
+# dimensioned source would be a worse error than the honest estimate.
+#
+# WHICH ESTIMATE LOOKS SUSPECT, FLAGGED AND NOT CHANGED. If reading (b) is the
+# intended one, IMU.NoiseGyro = 1.7e-4 is roughly half the manufacturer's
+# implied figure, i.e. the filter is told the gyroscope is quieter than the
+# maker claims. That is the optimistic direction. It is NOT edited here: it is
+# a tuning value, one variable per experiment is a standing rule, and the unit
+# question must be settled first. Whoever settles it should re-read this block
+# before touching the number.
+#
+# So the values below are still the conservative defaults commonly used for a
+# consumer-grade MEMS IMU: estimates, not measurements. What has changed is the
+# reason. It is no longer "the manufacturer publishes nothing"; it is "the
+# manufacturer publishes two of the four, without units, and the walk terms not
+# at all".
+#
+# WHAT WOULD SETTLE IT: ask Stereolabs support which reading of the density
+# figures is intended — that is a question with a short answer and it costs an
+# email. Failing that, the Allan-variance run (camera absolutely still on a
+# solid bench for 3+ hours, record /imu/data, analyse with allan_variance_ros
+# or kalibr_allan) still earns its keep, because it delivers the walk terms as
+# well. It is now an IMPROVEMENT, not a prerequisite: a stereo-inertial result
+# produced before it is indicative rather than definitive, and the report
+# should say so — but it is no longer blocked.
+IMU.NoiseGyro: {{IMU_NOISE_GYRO}}
+IMU.NoiseAcc: {{IMU_NOISE_ACC}}
+IMU.GyroWalk: {{IMU_GYRO_WALK}}
+IMU.AccWalk: {{IMU_ACC_WALK}}
+IMU.Frequency: {{IMU_FREQ}}
+IMU.InsertKFsWhenLost: 1
+
+#---------------------------------------------------------------------------
+# ORB Extractor Parameters
+#---------------------------------------------------------------------------
+ORBextractor.nFeatures: {{N_FEATURES}}
+ORBextractor.scaleFactor: 1.2
+ORBextractor.nLevels: 8
+ORBextractor.iniThFAST: 20
+ORBextractor.minThFAST: 7
+
+#---------------------------------------------------------------------------
+# Viewer Parameters
+#---------------------------------------------------------------------------
+Viewer.KeyFrameSize: 0.05
+Viewer.KeyFrameLineWidth: 1.0
+Viewer.GraphLineWidth: 0.9
+Viewer.PointSize: 2.0
+Viewer.CameraSize: 0.08
+Viewer.CameraLineWidth: 3.0
+Viewer.ViewpointX: 0.0
+Viewer.ViewpointY: -0.7
+Viewer.ViewpointZ: -1.8
+Viewer.ViewpointF: 500.0

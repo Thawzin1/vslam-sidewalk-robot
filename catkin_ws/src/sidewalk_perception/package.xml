@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>sidewalk_perception</name>
+  <version>0.2.0</version>
+
+  <description>
+    Phase 2 of the Mitacs sidewalk VSLAM project: bring the Stereolabs ZED X
+    (SKU ZED-312110, GMSL2 via a ZED Link Quad capture card) online on the
+    Jetson AGX Orin, and — more importantly — *prove* that the data it produces
+    is trustworthy before any SLAM algorithm is allowed to consume it.
+
+    The package contains the camera launch configuration, a suite of sensor
+    validation nodes (frame rate, dropped frames, timestamp jitter, IMU rate,
+    frame_id correctness, depth validity), SVO2 record/playback wrappers so that
+    every later phase can re-run on identical raw data, and a dataset manifest
+    system that records exactly which hardware and software produced each
+    recording.
+  </description>
+
+  <maintainer email="thawzin@users.noreply.github.com">Thaw Zin</maintainer>
+  <license>MIT</license>
+  <author email="thawzin@users.noreply.github.com">Thaw Zin</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- Core ROS interfaces. roscpp is declared even though this package is
+       currently pure Python: the depth-validity check is the most likely
+       candidate to be rewritten in C++ if Python cannot keep up with
+       1920x1200 @ 60 FPS, and declaring it now avoids a manifest churn. -->
+  <depend>roscpp</depend>
+  <depend>rospy</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>tf2_ros</depend>
+  <depend>cv_bridge</depend>
+  <depend>image_transport</depend>
+  <depend>message_filters</depend>
+  <depend>rosbag</depend>
+
+  <!-- NOTE ON zed_wrapper
+       zed-ros-wrapper is an external package built by hand from its Noetic
+       branch against the ZED SDK. It is intentionally NOT declared as a
+       dependency here. If it were, this package would fail to configure on any
+       machine without the ZED SDK installed - including an ordinary computer
+       used to edit it, and any CI runner. The launch files locate it at runtime
+       instead, and every validation node degrades gracefully when the camera
+       and its driver are absent. -->
+
+  <!-- Optional runtime tools, used by the validation launch files. Declared as
+       exec_depend so that a missing rqt on a headless robot does not block a
+       build. -->
+  <exec_depend>rqt_plot</exec_depend>
+  <exec_depend>rostopic</exec_depend>
+
+  <export/>
+</package>
